@@ -6,6 +6,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
+import java.util.Map;
+import java.util.StringJoiner;
+
 @Slf4j
 @Component
 public class LoggingInterceptor implements HandlerInterceptor {
@@ -18,9 +21,11 @@ public class LoggingInterceptor implements HandlerInterceptor {
 
         log.info("[REQUEST] {} {}", request.getMethod(), request.getRequestURI());
 
-        String queryString = request.getQueryString();
-        if (queryString != null && !queryString.isBlank()) {
-            log.info("[QUERY] {}", queryString);
+        Map<String, String[]> params = request.getParameterMap();
+        if (!params.isEmpty()) {
+            StringJoiner joiner = new StringJoiner(",");
+            params.keySet().forEach(joiner::add);
+            log.info("[QUERY_KEYS] {}", joiner);
         }
 
         return true;

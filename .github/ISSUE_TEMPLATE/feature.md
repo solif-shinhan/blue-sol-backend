@@ -2,7 +2,9 @@
 name: Feature
 about: 새로운 기능 추가 또는 API 구현
 title: "[Feature] "
-labels: ["✨ Feature"]
+labels: "✨ Feature"
+assignees: ''
+
 ---
 
 ## ✨ 기능 설명

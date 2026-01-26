@@ -37,3 +37,6 @@ out/
 .vscode/
 
 **/application-local.yml
+
+.env
+.ai

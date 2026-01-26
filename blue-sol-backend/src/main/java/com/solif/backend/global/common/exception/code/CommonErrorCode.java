@@ -18,7 +18,6 @@ public enum CommonErrorCode implements ErrorCode {
     VALIDATION_ERROR(HttpStatus.BAD_REQUEST, "COMMON_101", "입력값 검증에 실패했습니다."),
 
     // 인증/인가 에러
-    UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "COMMON_401", "인증이 필요합니다."),
     FORBIDDEN(HttpStatus.FORBIDDEN, "COMMON_403", "접근 권한이 없습니다.");
 
     private final HttpStatus status;

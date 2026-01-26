@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: blue-sol-backend
+
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:prod}
+
+server:
+  port: 8080
+
+logging:
+  level:
+    root: INFO

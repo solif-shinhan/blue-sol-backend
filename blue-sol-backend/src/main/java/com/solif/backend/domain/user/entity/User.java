@@ -11,7 +11,12 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "users")
+@Table(name = "users", uniqueConstraints = {
+    @UniqueConstraint(name = "uk_user_login_id", columnNames = "login_id"),
+    @UniqueConstraint(name = "uk_user_email", columnNames = "email"),
+    @UniqueConstraint(name = "uk_user_phone", columnNames = "phone"),
+    @UniqueConstraint(name = "uk_user_scholar_number", columnNames = "scholar_number")
+})
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
@@ -22,7 +27,7 @@ public class User {
     @Column(name = "user_id")
     private Long userId;
 
-    @Column(name = "login_id", unique = true, nullable = false, length = 50)
+    @Column(name = "login_id", nullable = false, length = 50)
     private String loginId;
 
     @Column(name = "password", nullable = false, length = 255)
@@ -31,13 +36,13 @@ public class User {
     @Column(name = "name", nullable = false, length = 50)
     private String name;
 
-    @Column(name = "phone", unique = true, nullable = false, length = 20)
+    @Column(name = "phone", nullable = false, length = 20)
     private String phone;
 
-    @Column(name = "email", unique = true, nullable = false, length = 100)
+    @Column(name = "email", nullable = false, length = 100)
     private String email;
 
-    @Column(name = "scholar_number", unique = true, nullable = false, length = 50)
+    @Column(name = "scholar_number", nullable = false, length = 50)
     private String scholarNumber;
 
     @Column(name = "region", length = 50)

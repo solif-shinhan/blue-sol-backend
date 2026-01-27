@@ -1,6 +1,7 @@
 package com.solif.backend.global.jwt;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
@@ -92,6 +93,12 @@ public class JwtUtil {
 
     //토큰 만료 시간 추출 (밀리초)
     public long getExpirationFromToken(String token) {
-        return getClaims(token).getExpiration().getTime();
+        try {
+            return getClaims(token).getExpiration().getTime();
+        } catch (ExpiredJwtException e){
+            return e.getClaims().getExpiration().getTime();
+        } catch (Exception e){
+            return 0L;
+        }
     }
 }

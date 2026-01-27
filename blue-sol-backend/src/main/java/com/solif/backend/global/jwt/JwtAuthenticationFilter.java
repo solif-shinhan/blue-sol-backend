@@ -1,6 +1,7 @@
-package com.solif.backend.global.filter;
+package com.solif.backend.global.jwt;
 
-import com.solif.backend.global.util.JwtUtil;
+import com.solif.backend.domain.auth.exception.AuthErrorCode;
+import com.solif.backend.global.common.exception.CustomException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,6 +25,7 @@ import java.util.List;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
+    private final TokenBlacklistService tokenBlacklistService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, 
@@ -37,11 +39,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             // 2. 토큰이 있고 유효한 경우
             if (StringUtils.hasText(token) && jwtUtil.validateToken(token)) {
                 
-                // 3. 토큰에서 사용자 정보 추출
+                // 3. 블랙리스트 체크 (토큰 유효성 검사 후)
+                if (tokenBlacklistService.isBlacklisted(token)) {
+                    log.warn("Blacklisted token attempted");
+                    throw new CustomException(AuthErrorCode.EXPIRED_TOKEN);
+                }
+
+                // 4. 토큰에서 사용자 정보 추출
                 Long userId = jwtUtil.getUserId(token);
                 String loginId = jwtUtil.getLoginId(token);
 
-                // 4. Authentication 객체 생성
+                // 5. Authentication 객체 생성
                 UsernamePasswordAuthenticationToken authentication = 
                     new UsernamePasswordAuthenticationToken(
                         userId,  // principal (사용자 식별자)
@@ -49,10 +57,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         List.of(new SimpleGrantedAuthority("ROLE_USER"))  // authorities (권한)
                     );
 
-                // 5. 요청 정보 설정
+                // 6. 요청 정보 설정
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-                // 6. SecurityContext에 인증 정보 저장
+                // 7. SecurityContext에 인증 정보 저장
                 SecurityContextHolder.getContext().setAuthentication(authentication);
                 
                 log.debug("JWT 인증 성공 - userId: {}, loginId: {}", userId, loginId);
@@ -62,13 +70,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             log.error("JWT 인증 실패: {}", e.getMessage());
         }
 
-        // 7. 다음 필터로 진행
+        // 8. 다음 필터로 진행
         filterChain.doFilter(request, response);
     }
 
-    /**
-     * Request Header에서 Bearer 토큰 추출
-     */
+    //Request Header에서 Bearer 토큰 추출
     private String getTokenFromRequest(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
         

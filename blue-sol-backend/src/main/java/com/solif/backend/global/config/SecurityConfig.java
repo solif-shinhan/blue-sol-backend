@@ -1,6 +1,6 @@
 package com.solif.backend.global.config;
 
-import com.solif.backend.global.filter.JwtAuthenticationFilter;
+import com.solif.backend.global.jwt.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

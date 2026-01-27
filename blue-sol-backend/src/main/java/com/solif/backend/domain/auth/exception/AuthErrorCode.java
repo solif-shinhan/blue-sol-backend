@@ -14,7 +14,8 @@ public enum AuthErrorCode implements ErrorCode {
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "AUTH_002", "인증이 필요합니다."),
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH_003", "유효하지 않은 토큰입니다."),
     EXPIRED_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH_004", "만료된 토큰입니다."),
-    
+    REDIS_CONNECTION_ERROR(HttpStatus.SERVICE_UNAVAILABLE, "AUTH-005", "인증 서비스가 일시적으로 불가합니다"),
+
     // 회원가입 관련 에러
     DUPLICATE_LOGIN_ID(HttpStatus.CONFLICT, "AUTH_101", "이미 사용 중인 아이디입니다."),
     DUPLICATE_EMAIL(HttpStatus.CONFLICT, "AUTH_102", "이미 사용 중인 이메일입니다."),

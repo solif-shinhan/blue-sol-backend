@@ -1,6 +1,6 @@
 package com.solif.backend.global.config;
 
-import com.solif.backend.global.filter.JwtAuthenticationFilter;
+import com.solif.backend.global.jwt.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -55,7 +55,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // 인증 없이 접근 가능한 경로
                         .requestMatchers(
-                                "/api/auth/**",           // 회원가입, 로그인
+                                "/api/auth/signup",       // 회원가입
+                                "/api/auth/login",        // 로그인
                                 "/error",                 // Spring Boot 에러 핸들러
                                 "/swagger-ui/**",         // Swagger UI
                                 "/v3/api-docs/**",        // API 문서

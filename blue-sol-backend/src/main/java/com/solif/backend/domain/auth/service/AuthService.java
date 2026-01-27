@@ -8,7 +8,7 @@ import com.solif.backend.domain.auth.exception.AuthErrorCode;
 import com.solif.backend.domain.user.entity.User;
 import com.solif.backend.domain.user.repository.UserRepository;
 import com.solif.backend.global.common.exception.CustomException;
-import com.solif.backend.global.util.JwtUtil;
+import com.solif.backend.global.jwt.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;

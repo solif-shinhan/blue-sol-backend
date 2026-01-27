@@ -1,5 +1,7 @@
 package com.solif.backend.global.jwt;
 
+import com.solif.backend.domain.auth.exception.AuthErrorCode;
+import com.solif.backend.global.common.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -34,7 +36,7 @@ public class TokenBlacklistService {
             return Boolean.TRUE.equals(redisTemplate.hasKey(key));
         } catch (Exception e) {
             log.error("Redis connection error while checking blacklist", e);
-            return false;
+            throw new CustomException(AuthErrorCode.REDIS_CONNECTION_ERROR);
         }
     }
 }

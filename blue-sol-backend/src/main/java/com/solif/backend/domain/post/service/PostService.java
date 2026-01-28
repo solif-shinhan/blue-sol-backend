@@ -1,5 +1,6 @@
 package com.solif.backend.domain.post.service;
 
+import com.solif.backend.domain.board.code.BoardErrorCode;
 import com.solif.backend.domain.board.entity.Board;
 import com.solif.backend.domain.board.repository.BoardRepository;
 import com.solif.backend.domain.comment.repository.CommentRepository;
@@ -33,7 +34,7 @@ public class PostService {
 
         // Board 존재 확인
         Board board = boardRepository.findById(boardId)
-                .orElseThrow(() -> new CustomException(PostErrorCode.POST_NOT_FOUND));
+                .orElseThrow(() -> new CustomException(BoardErrorCode.BOARD_NOT_FOUND));
 
         // 카테고리 있으면 카테고리별 조회, 없으면 전체 조회
         Slice<Post> posts;
@@ -49,7 +50,7 @@ public class PostService {
 
         // Post -> PostListResponse 변환
         return posts.map(post -> {
-            Integer commentCount = commentRepository.countByPost_PostId(post.getPostId());
+            Long commentCount = commentRepository.countByPost_PostId(post.getPostId());
             return PostListResponse.from(post, commentCount, isAnonymous);
         });
     }
@@ -75,7 +76,7 @@ public class PostService {
         boolean isAnonymous = post.getBoard().getBoardId() == 2L;
 
         // 댓글 수 조회
-        Integer commentCount = commentRepository.countByPost_PostId(postId);
+        Long commentCount = commentRepository.countByPost_PostId(postId);
 
         return PostDetailResponse.from(post, commentCount, isAnonymous);
     }

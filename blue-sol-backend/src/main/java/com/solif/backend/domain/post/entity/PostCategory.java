@@ -1,0 +1,17 @@
+package com.solif.backend.domain.post.entity;
+
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
+@Getter
+@RequiredArgsConstructor
+public enum PostCategory {
+
+    // 고민상담 카테고리
+    STUDY("학업"),
+    JOB("취업"),
+    MONEY("금전"),
+    ETC("기타");
+
+    private final String description;
+}

@@ -18,6 +18,9 @@ import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.Map;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -48,11 +51,21 @@ public class PostService {
         // 익명 여부 판단 (boardId가 2면 고민상담 = 익명)
         boolean isAnonymous = boardId == 2L;
 
+        // N+1 해결: 모든 postId를 모아서 한 번에 댓글 수 조회
+        List<Long> postIds = posts.getContent()
+                .stream()
+                .map(Post::getPostId)
+                .toList();
+
+        // 한 번의 쿼리로 모든 게시글의 댓글 수 조회
+        Map<Long, Long> commentCounts = commentRepository.countByPostIds(postIds);
+
         // Post -> PostListResponse 변환
         return posts.map(post -> {
-            Long commentCount = commentRepository.countByPost_PostId(post.getPostId());
+            Long commentCount = commentCounts.getOrDefault(post.getPostId(), 0L);
             return PostListResponse.from(post, commentCount, isAnonymous);
         });
+
     }
 
     // 게시글 상세 조회 (조회수 증가)

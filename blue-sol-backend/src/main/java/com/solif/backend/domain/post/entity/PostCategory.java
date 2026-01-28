@@ -11,7 +11,11 @@ public enum PostCategory {
     STUDY("학업"),
     JOB("취업"),
     MONEY("금전"),
-    ETC("기타");
+    ETC("기타"),
+
+    // 장학재단 소식 카테고리
+    NOTICE("운영공지"),
+    PROGRAM("프로그램");
 
     private final String description;
 }

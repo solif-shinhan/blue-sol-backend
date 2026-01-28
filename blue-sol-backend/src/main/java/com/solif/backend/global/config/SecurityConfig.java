@@ -57,6 +57,8 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/auth/signup",       // 회원가입
                                 "/api/auth/login",        // 로그인
+                                "/api/v1/posts",          // 게시글 목록 조회
+                                "/api/v1/posts/*",        // 게시글 상세 조회
                                 "/error",                 // Spring Boot 에러 핸들러
                                 "/swagger-ui/**",         // Swagger UI
                                 "/v3/api-docs/**",        // API 문서

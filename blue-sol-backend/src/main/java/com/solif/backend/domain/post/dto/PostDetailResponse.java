@@ -38,7 +38,7 @@ public class PostDetailResponse {
     private Integer viewCount;
 
     @Schema(description = "댓글 수", example = "15")
-    private Integer commentCount;
+    private Long commentCount;
 
     @Schema(description = "작성 일시", example = "2026-01-28T14:30:00")
     private LocalDateTime createdAt;
@@ -46,7 +46,7 @@ public class PostDetailResponse {
     @Schema(description = "수정 일시", example = "2026-01-28T15:00:00", nullable = true)
     private LocalDateTime updatedAt;
 
-    public static PostDetailResponse from(Post post, Integer commentCount, boolean isAnonymous) {
+    public static PostDetailResponse from(Post post, Long commentCount, boolean isAnonymous) {
         return PostDetailResponse.builder()
                 .postId(post.getPostId())
                 .boardId(post.getBoard().getBoardId())

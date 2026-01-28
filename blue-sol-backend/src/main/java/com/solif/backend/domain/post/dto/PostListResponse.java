@@ -32,12 +32,12 @@ public class PostListResponse {
     private Integer viewCount;
 
     @Schema(description = "댓글 수", example = "10")
-    private Integer commentCount;
+    private Long commentCount;
 
     @Schema(description = "작성 일시", example = "2026-01-28T14:30:00")
     private LocalDateTime createdAt;
 
-    public static PostListResponse from(Post post, Integer commentCount, boolean isAnonymous) {
+    public static PostListResponse from(Post post, Long commentCount, boolean isAnonymous) {
         return PostListResponse.builder()
                 .postId(post.getPostId())
                 .boardId(post.getBoard().getBoardId())

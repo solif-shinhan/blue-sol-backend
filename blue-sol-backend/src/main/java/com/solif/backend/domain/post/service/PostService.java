@@ -74,6 +74,9 @@ public class PostService {
         // 익명 여부 판단
         boolean isAnonymous = post.getBoard().getBoardId() == 2L;
 
-        return PostDetailResponse.from(post, isAnonymous);
+        // 댓글 수 조회
+        Integer commentCount = commentRepository.countByPost_PostId(postId);
+
+        return PostDetailResponse.from(post, commentCount, isAnonymous);
     }
 }

@@ -9,7 +9,7 @@ import org.springframework.http.HttpStatus;
 @RequiredArgsConstructor
 public enum InterestSuccessCode implements SuccessCode {
 
-    INTEREST_REGISTER_SUCCESS(HttpStatus.OK, "INTEREST_001", "관심사 등록에 성공했습니다.");
+    INTEREST_REGISTER_SUCCESS(HttpStatus.OK, "INTEREST_S001", "관심사 등록에 성공했습니다.");
 
     private final HttpStatus status;
     private final String code;

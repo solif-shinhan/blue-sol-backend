@@ -35,13 +35,18 @@ public class InterestService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(InterestErrorCode.USER_NOT_FOUND));
 
-        // 2. 카테고리 유효성 검증
+        // 2. 중복 제거 후 카테고리 목록 생성
+        List<String> uniqueCategories = request.getCategoryNames().stream()
+                .distinct()
+                .toList();
+
+        // 3. 카테고리 유효성 검증
         validateCategories(request.getCategoryNames());
 
-        // 3. 기존 관심사 삭제 (덮어쓰기)
+        // 4. 기존 관심사 삭제 (덮어쓰기)
         userInterestRepository.deleteAllByUser_UserId(userId);
 
-        // 4. 새 관심사 저장
+        // 5. 새 관심사 저장
         List<UserInterest> interests = request.getCategoryNames().stream()
                 .map(categoryName -> UserInterest.builder()
                         .user(user)
@@ -51,8 +56,8 @@ public class InterestService {
 
         userInterestRepository.saveAll(interests);
 
-        // 5. 응답 반환
-        return InterestResponse.of(interests.size(), request.getCategoryNames());
+        // 6. 응답 반환
+        return InterestResponse.of(interests.size(), uniqueCategories);
     }
 
     private void validateCategories(List<String> categoryNames) {

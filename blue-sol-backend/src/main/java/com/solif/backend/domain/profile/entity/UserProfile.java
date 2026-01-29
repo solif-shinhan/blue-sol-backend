@@ -37,7 +37,7 @@ public class UserProfile {
     @Column(name = "main_goal", nullable = false, columnDefinition = "TEXT")
     private String mainGoal;
 
-    @Column(name = "solid_goal_name", nullable = false, unique = true, columnDefinition = "TEXT")
+    @Column(name = "solid_goal_name", nullable = false, columnDefinition = "TEXT")
     private String solidGoalName;
 
     @Column(name = "qr_code_data", nullable = false, unique = true, columnDefinition = "TEXT")

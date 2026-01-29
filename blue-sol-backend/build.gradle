@@ -39,9 +39,9 @@ dependencies {
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.3'
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.3'
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-	implementation 'software.amazon.awssdk:s3:2.20.68' // AWS S3
-	implementation 'com.google.zxing:core:3.5.2' // QR Code 생성 (ZXing)
-	implementation 'com.google.zxing:javase:3.5.2' // QR Code 생성 (ZXing)
+	implementation 'software.amazon.awssdk:s3:2.29.43' // AWS S3
+	implementation 'com.google.zxing:core:3.5.4' // QR Code 생성 (ZXing)
+	implementation 'com.google.zxing:javase:3.5.4' // QR Code 생성 (ZXing)
 
 	runtimeOnly 'com.h2database:h2'
 }

@@ -1,5 +1,6 @@
 package com.solif.backend.domain.post.service;
 
+import com.solif.backend.domain.auth.exception.AuthErrorCode;
 import com.solif.backend.domain.board.code.BoardErrorCode;
 import com.solif.backend.domain.board.entity.Board;
 import com.solif.backend.domain.board.repository.BoardRepository;
@@ -130,7 +131,7 @@ public class PostService {
 
         // 사용자 조회
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new CustomException(PostErrorCode.UNAUTHORIZED_POST_ACCESS));
+                .orElseThrow(() -> new CustomException(AuthErrorCode.USER_NOT_FOUND));
 
         // 게시판 조회
         Board board = boardRepository.findById(request.getBoardId())

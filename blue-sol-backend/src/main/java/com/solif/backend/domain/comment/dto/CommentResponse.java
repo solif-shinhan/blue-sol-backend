@@ -41,7 +41,7 @@ public class CommentResponse {
                 .commentId(comment.getCommentId())
                 .postId(comment.getPost().getPostId())
                 .authorName(comment.getCommentIsAnonymous() ? "익명" : comment.getUser().getName())
-                .authorId(comment.getUser().getUserId())
+                .authorId(comment.getCommentIsAnonymous() ? null : comment.getUser().getUserId())
                 .commentContent(comment.getCommentContent())
                 .commentIsAnonymous(comment.getCommentIsAnonymous())
                 .createdAt(comment.getCreatedAt())

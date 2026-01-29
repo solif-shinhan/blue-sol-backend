@@ -43,30 +43,34 @@ public class PostService {
         Board board = boardRepository.findById(boardId)
                 .orElseThrow(() -> new CustomException(BoardErrorCode.BOARD_NOT_FOUND));
 
+        // 익명 여부 판단 (boardId가 2면 고민상담 = 익명)
+        boolean isAnonymous = boardId == 2L;
+
         // 카테고리 있으면 카테고리별 조회, 없으면 전체 조회
         Slice<Post> posts;
         // boardId=1 (활동 후기)은 멘토링 후기만 조회 (자치회 제외)
+        // 익명 게시판은 Author fetch 안 함. But, 나머지 게시판은 Author fetch join
         if (boardId == 1L) {
             if (category != null) {
-                // 카테고리별 조회
-                posts = postRepository.findByBoard_BoardIdAndPostCategoryAndDeletedAtIsNull(
-                        boardId, category, pageable);
+                posts = isAnonymous
+                        ? postRepository.findByBoard_BoardIdAndPostCategoryAndDeletedAtIsNull(boardId, category, pageable)
+                        : postRepository.findByBoard_BoardIdAndPostCategoryAndDeletedAtIsNullWithAuthor(boardId, category, pageable);
             } else {
-                // 전체 조회 (카테고리 있는 것만 = 멘토링 후기만)
-                posts = postRepository.findMentoringPostsByBoardId(boardId, pageable);
+                posts = isAnonymous
+                        ? postRepository.findMentoringPostsByBoardId(boardId, pageable)
+                        : postRepository.findMentoringPostsByBoardIdWithAuthor(boardId, pageable);
             }
         } else {
-            // 나머지 게시판 (고민상담, 재단소식)
             if (category != null) {
-                posts = postRepository.findByBoard_BoardIdAndPostCategoryAndDeletedAtIsNull(
-                        boardId, category, pageable);
+                posts = isAnonymous
+                        ? postRepository.findByBoard_BoardIdAndPostCategoryAndDeletedAtIsNull(boardId, category, pageable)
+                        : postRepository.findByBoard_BoardIdAndPostCategoryAndDeletedAtIsNullWithAuthor(boardId, category, pageable);
             } else {
-                posts = postRepository.findByBoard_BoardIdAndDeletedAtIsNull(boardId, pageable);
+                posts = isAnonymous
+                        ? postRepository.findByBoard_BoardIdAndDeletedAtIsNull(boardId, pageable)
+                        : postRepository.findByBoard_BoardIdAndDeletedAtIsNullWithAuthor(boardId, pageable);
             }
         }
-
-        // 익명 여부 판단 (boardId가 2면 고민상담 = 익명)
-        boolean isAnonymous = boardId == 2L;
 
         // N+1 해결: 모든 postId를 모아서 한 번에 댓글 수 조회
         List<Long> postIds = posts.getContent()

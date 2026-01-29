@@ -4,6 +4,7 @@ import com.solif.backend.domain.post.entity.Post;
 import com.solif.backend.domain.post.entity.PostCategory;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -26,6 +27,36 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             "AND p.postCategory IS NOT NULL " +
             "AND p.deletedAt IS NULL")
     Slice<Post> findMentoringPostsByBoardId(
+            @Param("boardId") Long boardId,
+            Pageable pageable
+    );
+
+    @EntityGraph(attributePaths = {"author"})
+    @Query("SELECT p FROM Post p " +
+            "WHERE p.board.boardId = :boardId " +
+            "AND p.deletedAt IS NULL")
+    Slice<Post> findByBoard_BoardIdAndDeletedAtIsNullWithAuthor(
+            @Param("boardId") Long boardId,
+            Pageable pageable
+    );
+
+    @EntityGraph(attributePaths = {"author"})
+    @Query("SELECT p FROM Post p " +
+            "WHERE p.board.boardId = :boardId " +
+            "AND p.postCategory = :postCategory " +
+            "AND p.deletedAt IS NULL")
+    Slice<Post> findByBoard_BoardIdAndPostCategoryAndDeletedAtIsNullWithAuthor(
+            @Param("boardId") Long boardId,
+            @Param("postCategory") PostCategory postCategory,
+            Pageable pageable
+    );
+
+    @EntityGraph(attributePaths = {"author"})
+    @Query("SELECT p FROM Post p " +
+            "WHERE p.board.boardId = :boardId " +
+            "AND p.postCategory IS NOT NULL " +
+            "AND p.deletedAt IS NULL")
+    Slice<Post> findMentoringPostsByBoardIdWithAuthor(
             @Param("boardId") Long boardId,
             Pageable pageable
     );

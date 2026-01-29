@@ -139,15 +139,8 @@ public class PostService {
                 .orElseThrow(() -> new CustomException(AuthErrorCode.USER_NOT_FOUND));
 
         // 게시판 조회
-        Long boardId = request.getBoardId();
-        Board board = boardRepository.findById(boardId)
+        Board board = boardRepository.findById(request.getBoardId())
                 .orElseThrow(() -> new CustomException(BoardErrorCode.BOARD_NOT_FOUND));
-
-        // 멘토링 후기(1), 고민상담(2), 재단소식(3) 모두 카테고리 필수
-        PostCategory category = request.getPostCategory();
-        if (category == null) {
-            throw new CustomException(PostErrorCode.CATEGORY_REQUIRED);
-        }
 
         // 게시판별 카테고리 검증
         validateCategoryForBoard(request.getBoardId(), request.getPostCategory());

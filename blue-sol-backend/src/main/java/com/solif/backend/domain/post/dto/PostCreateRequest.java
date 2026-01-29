@@ -17,7 +17,8 @@ public class PostCreateRequest {
     @Schema(description = "게시판 ID (1: 활동후기, 2: 고민상담, 3: 재단소식)", example = "2")
     private Long boardId;
 
-    @Schema(description = "카테고리 (필수)", example = "STUDY", nullable = true)
+    @NotNull(message = "카테고리는 필수입니다.")
+    @Schema(description = "카테고리", example = "STUDY")
     private PostCategory postCategory;
 
     @NotBlank(message = "제목은 필수입니다.")

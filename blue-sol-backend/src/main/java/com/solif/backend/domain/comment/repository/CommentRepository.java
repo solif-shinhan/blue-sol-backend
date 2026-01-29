@@ -1,5 +1,6 @@
 package com.solif.backend.domain.comment.repository;
 
+import com.solif.backend.domain.comment.dto.PostCommentCount;
 import com.solif.backend.domain.comment.entity.Comment;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -17,8 +18,9 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     Long countByPost_PostId(Long postId);
 
     // 여러 게시글의 댓글 수 한 번에 조회
-    @Query("SELECT c.post.postId, COUNT(c) FROM Comment c " +
+    @Query("SELECT new com.solif.backend.domain.comment.dto.PostCommentCount(c.post.postId, COUNT(c)) " +
+            "FROM Comment c " +
             "WHERE c.post.postId IN :postIds " +
             "GROUP BY c.post.postId")
-    Map<Long, Long> countByPostIds(@Param("postIds") List<Long> postIds);
+    List<PostCommentCount> countByPostIds(@Param("postIds") List<Long> postIds);
 }

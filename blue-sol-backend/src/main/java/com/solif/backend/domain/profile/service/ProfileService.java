@@ -109,7 +109,9 @@ public class ProfileService {
                 .toList();
 
         // 3. 목표 JSON을 리스트로 변환
-        List<String> mainGoals = convertJsonToList(profile.getMainGoal());
+        List<String> mainGoals = profile.getMainGoal() != null
+                ? convertJsonToList(profile.getMainGoal())
+                : List.of();
 
         return ProfileResponse.builder()
                 .profileId(profile.getProfileId())

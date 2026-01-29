@@ -43,32 +43,34 @@ public class PostService {
         Board board = boardRepository.findById(boardId)
                 .orElseThrow(() -> new CustomException(BoardErrorCode.BOARD_NOT_FOUND));
 
-        // 익명 여부 판단 (boardId가 2면 고민상담 = 익명)
-        boolean isAnonymous = boardId == 2L;
+        // 익명 여부 판단 (boardId=1: 실명, boardId=2: 익명, boardId=3: 실명)
+        boolean isAnonymous = (boardId == 2L);
 
         // 카테고리 있으면 카테고리별 조회, 없으면 전체 조회
         Slice<Post> posts;
-        // boardId=1 (활동 후기)은 멘토링 후기만 조회 (자치회 제외)
-        // 익명 게시판은 Author fetch 안 함. But, 나머지 게시판은 Author fetch join
+
+        // boardId=1 (활동 후기) - 실명, 멘토링 후기만 조회 (자치회 제외)
         if (boardId == 1L) {
             if (category != null) {
-                posts = isAnonymous
-                        ? postRepository.findByBoard_BoardIdAndPostCategoryAndDeletedAtIsNull(boardId, category, pageable)
-                        : postRepository.findByBoard_BoardIdAndPostCategoryAndDeletedAtIsNullWithAuthor(boardId, category, pageable);
+                posts = postRepository.findByBoard_BoardIdAndPostCategoryAndDeletedAtIsNullWithAuthor(boardId, category, pageable);
             } else {
-                posts = isAnonymous
-                        ? postRepository.findMentoringPostsByBoardId(boardId, pageable)
-                        : postRepository.findMentoringPostsByBoardIdWithAuthor(boardId, pageable);
+                posts = postRepository.findMentoringPostsByBoardIdWithAuthor(boardId, pageable);
             }
-        } else {
+        }
+        // boardId=2 (고민상담) - 익명, Author fetch 불필요
+        else if (boardId == 2L) {
             if (category != null) {
-                posts = isAnonymous
-                        ? postRepository.findByBoard_BoardIdAndPostCategoryAndDeletedAtIsNull(boardId, category, pageable)
-                        : postRepository.findByBoard_BoardIdAndPostCategoryAndDeletedAtIsNullWithAuthor(boardId, category, pageable);
+                posts = postRepository.findByBoard_BoardIdAndPostCategoryAndDeletedAtIsNull(boardId, category, pageable);
             } else {
-                posts = isAnonymous
-                        ? postRepository.findByBoard_BoardIdAndDeletedAtIsNull(boardId, pageable)
-                        : postRepository.findByBoard_BoardIdAndDeletedAtIsNullWithAuthor(boardId, pageable);
+                posts = postRepository.findByBoard_BoardIdAndDeletedAtIsNull(boardId, pageable);
+            }
+        }
+        // boardId=3 (재단소식) - 실명
+        else {
+            if (category != null) {
+                posts = postRepository.findByBoard_BoardIdAndPostCategoryAndDeletedAtIsNullWithAuthor(boardId, category, pageable);
+            } else {
+                posts = postRepository.findByBoard_BoardIdAndDeletedAtIsNullWithAuthor(boardId, pageable);
             }
         }
 

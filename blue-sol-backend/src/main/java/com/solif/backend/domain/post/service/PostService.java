@@ -3,6 +3,7 @@ package com.solif.backend.domain.post.service;
 import com.solif.backend.domain.board.code.BoardErrorCode;
 import com.solif.backend.domain.board.entity.Board;
 import com.solif.backend.domain.board.repository.BoardRepository;
+import com.solif.backend.domain.comment.dto.PostCommentCount;
 import com.solif.backend.domain.comment.repository.CommentRepository;
 import com.solif.backend.domain.post.dto.PostDetailResponse;
 import com.solif.backend.domain.post.dto.PostListResponse;
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -57,15 +59,21 @@ public class PostService {
                 .map(Post::getPostId)
                 .toList();
 
-        // 한 번의 쿼리로 모든 게시글의 댓글 수 조회
-        Map<Long, Long> commentCounts = commentRepository.countByPostIds(postIds);
+        // 빈 리스트 처리: postIds가 비어있으면 빈 Map 반환
+        Map<Long, Long> commentCounts = postIds.isEmpty()
+                ? Map.of()
+                : commentRepository.countByPostIds(postIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        PostCommentCount::getPostId,
+                        PostCommentCount::getCommentCount
+                ));
 
         // Post -> PostListResponse 변환
         return posts.map(post -> {
             Long commentCount = commentCounts.getOrDefault(post.getPostId(), 0L);
             return PostListResponse.from(post, commentCount, isAnonymous);
         });
-
     }
 
     // 게시글 상세 조회 (조회수 증가)

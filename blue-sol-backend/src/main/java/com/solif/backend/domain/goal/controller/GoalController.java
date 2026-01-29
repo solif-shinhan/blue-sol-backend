@@ -39,7 +39,7 @@ public class GoalController {
 
     @Operation(
             summary = "목표 개수 조회",
-            description = "작성한 목표 개수와 최대 목표 개수를 조회합니다.",
+            description = "작성한 목표 개수를 조회합니다.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @GetMapping("/count")

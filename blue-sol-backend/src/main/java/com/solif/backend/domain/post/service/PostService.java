@@ -21,10 +21,8 @@ import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -46,29 +44,31 @@ public class PostService {
         Board board = boardRepository.findById(boardId)
                 .orElseThrow(() -> new CustomException(BoardErrorCode.BOARD_NOT_FOUND));
 
-        // 익명 여부 판단 (boardId=1: 실명, boardId=2: 익명, boardId=3: 실명)
-        boolean isAnonymous = (boardId == 2L);
-
         // 카테고리 있으면 카테고리별 조회, 없으면 전체 조회
         Slice<Post> posts;
 
-        // boardId=1 (활동 후기) - 실명, 멘토링 후기만 조회 (자치회 제외)
+        // boardId=1 (자치회 활동 후기) - category 없음
         if (boardId == 1L) {
+            // 자치회는 전체만 (카테고리 없음)
+            posts = postRepository.findByBoard_BoardIdAndDeletedAtIsNullWithAuthor(boardId, pageable);
+        }
+        // boardId=2 (멘토링 후기) - category 있음
+        else if (boardId == 2L) {
             if (category != null) {
                 posts = postRepository.findByBoard_BoardIdAndPostCategoryAndDeletedAtIsNullWithAuthor(boardId, category, pageable);
             } else {
-                posts = postRepository.findMentoringPostsByBoardIdWithAuthor(boardId, pageable);
+                posts = postRepository.findByBoard_BoardIdAndDeletedAtIsNullWithAuthor(boardId, pageable);
             }
         }
-        // boardId=2 (고민상담) - 익명, Author fetch 불필요
-        else if (boardId == 2L) {
+        // boardId=3 (고민상담) - 익명, category 있음
+        else if (boardId == 3L) {
             if (category != null) {
                 posts = postRepository.findByBoard_BoardIdAndPostCategoryAndDeletedAtIsNull(boardId, category, pageable);
             } else {
                 posts = postRepository.findByBoard_BoardIdAndDeletedAtIsNull(boardId, pageable);
             }
         }
-        // boardId=3 (재단소식) - 실명
+        // boardId=4 (재단소식) - category 있음
         else {
             if (category != null) {
                 posts = postRepository.findByBoard_BoardIdAndPostCategoryAndDeletedAtIsNullWithAuthor(boardId, category, pageable);
@@ -76,6 +76,9 @@ public class PostService {
                 posts = postRepository.findByBoard_BoardIdAndDeletedAtIsNullWithAuthor(boardId, pageable);
             }
         }
+
+        // 익명 여부 판단 (boardId=3만 익명)
+        boolean isAnonymous = (boardId == 3L);
 
         // N+1 해결: 모든 postId를 모아서 한 번에 댓글 수 조회
         List<Long> postIds = posts.getContent()
@@ -117,8 +120,8 @@ public class PostService {
         // 조회수 증가
         post.increaseViewCount();
 
-        // 익명 여부 판단
-        boolean isAnonymous = post.getBoard().getBoardId() == 2L;
+        // 익명 여부 판단 (boardId=3만 익명)
+        boolean isAnonymous = (post.getBoard().getBoardId() == 3L);
 
         // 댓글 수 조회
         Long commentCount = commentRepository.countByPost_PostId(postId);
@@ -146,8 +149,8 @@ public class PostService {
             throw new CustomException(PostErrorCode.CATEGORY_REQUIRED);
         }
 
-        // 게시판별 허용 카테고리 검증
-        validateCategoryByBoard(boardId, category);
+        // 게시판별 카테고리 검증
+        validateCategoryForBoard(request.getBoardId(), request.getPostCategory());
 
         // Post 엔티티 생성
         Post post = Post.builder()
@@ -216,48 +219,56 @@ public class PostService {
         post.softDelete();
     }
 
-    private void validateCategoryByBoard(Long boardId, PostCategory category) {
-        // 활동 후기(1) - (자치회 후기는 별도 API)
+    // 게시판별 카테고리 검증
+    private void validateCategoryForBoard(Long boardId, PostCategory category) {
+        // boardId=1 (자치회 활동 후기): 카테고리 불필요 (NULL)
         if (boardId == 1L) {
-            Set<PostCategory> allowed = EnumSet.of(
-                    PostCategory.STUDY,
-                    PostCategory.ADMISSION,
-                    PostCategory.JOB,
-                    PostCategory.ETC
-            );
-            if (!allowed.contains(category)) {
-                throw new CustomException(PostErrorCode.INVALID_CATEGORY_FOR_BOARD);
+            if (category != null) {
+                throw new CustomException(PostErrorCode.CATEGORY_NOT_ALLOWED);
             }
             return;
         }
 
-        // 고민상담(2)
+        // boardId=2 (멘토링 후기): STUDY, ADMISSION, JOB, ETC 필수
         if (boardId == 2L) {
-            Set<PostCategory> allowed = EnumSet.of(
-                    PostCategory.STUDY,
-                    PostCategory.ADMISSION,
-                    PostCategory.JOB,
-                    PostCategory.ETC
-            );
-            if (!allowed.contains(category)) {
+            if (category == null) {
+                throw new CustomException(PostErrorCode.CATEGORY_REQUIRED);
+            }
+            if (category != PostCategory.STUDY &&
+                    category != PostCategory.ADMISSION &&
+                    category != PostCategory.JOB &&
+                    category != PostCategory.ETC) {
                 throw new CustomException(PostErrorCode.INVALID_CATEGORY_FOR_BOARD);
             }
             return;
         }
 
-        // 재단소식(3)
+        // boardId=3 (고민상담): STUDY, ADMISSION, JOB, ETC 필수
         if (boardId == 3L) {
-            Set<PostCategory> allowed = EnumSet.of(
-                    PostCategory.NOTICE,
-                    PostCategory.PROGRAM
-            );
-            if (!allowed.contains(category)) {
+            if (category == null) {
+                throw new CustomException(PostErrorCode.CATEGORY_REQUIRED);
+            }
+            if (category != PostCategory.STUDY &&
+                    category != PostCategory.ADMISSION &&
+                    category != PostCategory.JOB &&
+                    category != PostCategory.ETC) {
                 throw new CustomException(PostErrorCode.INVALID_CATEGORY_FOR_BOARD);
             }
             return;
         }
 
-        // 그 외 게시판은 정책 없으면 막는 게 안전
-        throw new CustomException(PostErrorCode.BOARD_NOT_SUPPORTED);
+        // boardId=4 (재단소식): NOTICE, PROGRAM 필수
+        if (boardId == 4L) {
+            if (category == null) {
+                throw new CustomException(PostErrorCode.CATEGORY_REQUIRED);
+            }
+            if (category != PostCategory.NOTICE && category != PostCategory.PROGRAM) {
+                throw new CustomException(PostErrorCode.INVALID_CATEGORY_FOR_BOARD);
+            }
+            return;
+        }
+
+        // 그 외 게시판은 지원하지 않음
+        throw new CustomException(PostErrorCode.INVALID_BOARD);
     }
 }

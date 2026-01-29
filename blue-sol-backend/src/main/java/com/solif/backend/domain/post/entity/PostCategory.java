@@ -9,8 +9,8 @@ public enum PostCategory {
 
     // 고민상담 카테고리
     STUDY("학업"),
+    ADMISSION("진학"),
     JOB("취업"),
-    MONEY("금전"),
     ETC("기타"),
 
     // 장학재단 소식 카테고리

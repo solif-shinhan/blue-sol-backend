@@ -1,16 +1,18 @@
 package com.solif.backend.domain.post.service;
 
+import com.solif.backend.domain.auth.exception.AuthErrorCode;
 import com.solif.backend.domain.board.code.BoardErrorCode;
 import com.solif.backend.domain.board.entity.Board;
 import com.solif.backend.domain.board.repository.BoardRepository;
 import com.solif.backend.domain.comment.dto.PostCommentCount;
 import com.solif.backend.domain.comment.repository.CommentRepository;
-import com.solif.backend.domain.post.dto.PostDetailResponse;
-import com.solif.backend.domain.post.dto.PostListResponse;
+import com.solif.backend.domain.post.dto.*;
 import com.solif.backend.domain.post.entity.Post;
 import com.solif.backend.domain.post.entity.PostCategory;
 import com.solif.backend.domain.post.code.PostErrorCode;
 import com.solif.backend.domain.post.repository.PostRepository;
+import com.solif.backend.domain.user.entity.User;
+import com.solif.backend.domain.user.repository.UserRepository;
 import com.solif.backend.global.common.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +34,7 @@ public class PostService {
     private final PostRepository postRepository;
     private final BoardRepository boardRepository;
     private final CommentRepository commentRepository;
+    private final UserRepository userRepository;
 
     // 게시글 목록 조회
     public Slice<PostListResponse> getPosts(Long boardId, PostCategory category, Pageable pageable) {
@@ -43,15 +46,39 @@ public class PostService {
 
         // 카테고리 있으면 카테고리별 조회, 없으면 전체 조회
         Slice<Post> posts;
-        if (category != null) {
-            posts = postRepository.findByBoard_BoardIdAndPostCategoryAndDeletedAtIsNull(
-                    boardId, category, pageable);
-        } else {
-            posts = postRepository.findByBoard_BoardIdAndDeletedAtIsNull(boardId, pageable);
+
+        // boardId=1 (자치회 활동 후기) - category 없음
+        if (boardId == 1L) {
+            // 자치회는 전체만 (카테고리 없음)
+            posts = postRepository.findByBoard_BoardIdAndDeletedAtIsNullWithAuthor(boardId, pageable);
+        }
+        // boardId=2 (멘토링 후기) - category 있음
+        else if (boardId == 2L) {
+            if (category != null) {
+                posts = postRepository.findByBoard_BoardIdAndPostCategoryAndDeletedAtIsNullWithAuthor(boardId, category, pageable);
+            } else {
+                posts = postRepository.findByBoard_BoardIdAndDeletedAtIsNullWithAuthor(boardId, pageable);
+            }
+        }
+        // boardId=3 (고민상담) - 익명, category 있음
+        else if (boardId == 3L) {
+            if (category != null) {
+                posts = postRepository.findByBoard_BoardIdAndPostCategoryAndDeletedAtIsNull(boardId, category, pageable);
+            } else {
+                posts = postRepository.findByBoard_BoardIdAndDeletedAtIsNull(boardId, pageable);
+            }
+        }
+        // boardId=4 (재단소식) - category 있음
+        else {
+            if (category != null) {
+                posts = postRepository.findByBoard_BoardIdAndPostCategoryAndDeletedAtIsNullWithAuthor(boardId, category, pageable);
+            } else {
+                posts = postRepository.findByBoard_BoardIdAndDeletedAtIsNullWithAuthor(boardId, pageable);
+            }
         }
 
-        // 익명 여부 판단 (boardId가 2면 고민상담 = 익명)
-        boolean isAnonymous = boardId == 2L;
+        // 익명 여부 판단 (boardId=3만 익명)
+        boolean isAnonymous = (boardId == 3L);
 
         // N+1 해결: 모든 postId를 모아서 한 번에 댓글 수 조회
         List<Long> postIds = posts.getContent()
@@ -76,7 +103,7 @@ public class PostService {
         });
     }
 
-    // 게시글 상세 조회 (조회수 증가)
+    // 게시글 상세 조회
     @Transactional
     public PostDetailResponse getPostDetail(Long postId) {
         log.info("게시글 상세 조회 - postId: {}", postId);
@@ -93,12 +120,148 @@ public class PostService {
         // 조회수 증가
         post.increaseViewCount();
 
-        // 익명 여부 판단
-        boolean isAnonymous = post.getBoard().getBoardId() == 2L;
+        // 익명 여부 판단 (boardId=3만 익명)
+        boolean isAnonymous = (post.getBoard().getBoardId() == 3L);
 
         // 댓글 수 조회
         Long commentCount = commentRepository.countByPost_PostId(postId);
 
         return PostDetailResponse.from(post, commentCount, isAnonymous);
+    }
+
+    // 게시글 작성
+    @Transactional
+    public PostCreateResponse createPost(Long userId, PostCreateRequest request) {
+        log.info("게시글 작성 - userId: {}, boardId: {}", userId, request.getBoardId());
+
+        // 사용자 조회
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(AuthErrorCode.USER_NOT_FOUND));
+
+        // 게시판 조회
+        Board board = boardRepository.findById(request.getBoardId())
+                .orElseThrow(() -> new CustomException(BoardErrorCode.BOARD_NOT_FOUND));
+
+        // 게시판별 카테고리 검증
+        validateCategoryForBoard(request.getBoardId(), request.getPostCategory());
+
+        // Post 엔티티 생성
+        Post post = Post.builder()
+                .author(user)
+                .board(board)
+                .postCategory(request.getPostCategory())
+                .postTitle(request.getPostTitle())
+                .postContent(request.getPostContent())
+                .build();
+
+        // 저장
+        Post savedPost = postRepository.save(post);
+
+        // TODO: mentoringRequestId 처리 (나중에 멘토링 도메인 구현 시)
+        // if (request.getMentoringRequestId() != null) {
+        //     mentoringRequestRepository.updateReviewPostId(
+        //         request.getMentoringRequestId(), savedPost.getPostId());
+        // }
+
+        return PostCreateResponse.from(savedPost);
+    }
+
+    // 게시글 수정
+    @Transactional
+    public void updatePost(Long userId, Long postId, PostUpdateRequest request) {
+        log.info("게시글 수정 - userId: {}, postId: {}", userId, postId);
+
+        // 게시글 조회
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new CustomException(PostErrorCode.POST_NOT_FOUND));
+
+        // 삭제된 게시글 체크
+        if (post.isDeleted()) {
+            throw new CustomException(PostErrorCode.DELETED_POST);
+        }
+
+        // 작성자 본인 확인
+        if (!post.isAuthor(userId)) {
+            throw new CustomException(PostErrorCode.UNAUTHORIZED_POST_ACCESS);
+        }
+
+        // 게시글 수정
+        post.updatePost(request.getPostTitle(), request.getPostContent());
+    }
+
+    // 게시글 삭제 (Soft Delete)
+    @Transactional
+    public void deletePost(Long userId, Long postId) {
+        log.info("게시글 삭제 - userId: {}, postId: {}", userId, postId);
+
+        // 게시글 조회
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new CustomException(PostErrorCode.POST_NOT_FOUND));
+
+        // 이미 삭제된 게시글 체크
+        if (post.isDeleted()) {
+            throw new CustomException(PostErrorCode.DELETED_POST);
+        }
+
+        // 작성자 본인 확인
+        if (!post.isAuthor(userId)) {
+            throw new CustomException(PostErrorCode.UNAUTHORIZED_POST_ACCESS);
+        }
+
+        // Soft Delete
+        post.softDelete();
+    }
+
+    // 게시판별 카테고리 검증
+    private void validateCategoryForBoard(Long boardId, PostCategory category) {
+        // boardId=1 (자치회 활동 후기): 카테고리 불필요 (NULL)
+        if (boardId == 1L) {
+            if (category != null) {
+                throw new CustomException(PostErrorCode.CATEGORY_NOT_ALLOWED);
+            }
+            return;
+        }
+
+        // boardId=2 (멘토링 후기): STUDY, ADMISSION, JOB, ETC 필수
+        if (boardId == 2L) {
+            if (category == null) {
+                throw new CustomException(PostErrorCode.CATEGORY_REQUIRED);
+            }
+            if (category != PostCategory.STUDY &&
+                    category != PostCategory.ADMISSION &&
+                    category != PostCategory.JOB &&
+                    category != PostCategory.ETC) {
+                throw new CustomException(PostErrorCode.INVALID_CATEGORY_FOR_BOARD);
+            }
+            return;
+        }
+
+        // boardId=3 (고민상담): STUDY, ADMISSION, JOB, ETC 필수
+        if (boardId == 3L) {
+            if (category == null) {
+                throw new CustomException(PostErrorCode.CATEGORY_REQUIRED);
+            }
+            if (category != PostCategory.STUDY &&
+                    category != PostCategory.ADMISSION &&
+                    category != PostCategory.JOB &&
+                    category != PostCategory.ETC) {
+                throw new CustomException(PostErrorCode.INVALID_CATEGORY_FOR_BOARD);
+            }
+            return;
+        }
+
+        // boardId=4 (재단소식): NOTICE, PROGRAM 필수
+        if (boardId == 4L) {
+            if (category == null) {
+                throw new CustomException(PostErrorCode.CATEGORY_REQUIRED);
+            }
+            if (category != PostCategory.NOTICE && category != PostCategory.PROGRAM) {
+                throw new CustomException(PostErrorCode.INVALID_CATEGORY_FOR_BOARD);
+            }
+            return;
+        }
+
+        // 그 외 게시판은 지원하지 않음
+        throw new CustomException(PostErrorCode.INVALID_BOARD);
     }
 }

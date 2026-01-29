@@ -67,6 +67,8 @@ jobs:
             JWT_SECRET=${{ secrets.JWT_SECRET }}
             REDIS_HOST=${{ secrets.REDIS_HOST }}
             REDIS_PORT=${{ secrets.REDIS_PORT }}
+            AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+            AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
             EOF
 
             docker compose pull backend-stg

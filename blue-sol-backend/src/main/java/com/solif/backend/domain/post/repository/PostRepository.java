@@ -5,6 +5,8 @@ import com.solif.backend.domain.post.entity.PostCategory;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface PostRepository extends JpaRepository<Post, Long> {
 
@@ -15,6 +17,16 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     Slice<Post> findByBoard_BoardIdAndPostCategoryAndDeletedAtIsNull(
             Long boardId,
             PostCategory postCategory,
+            Pageable pageable
+    );
+
+    // 멘토링 후기 전체 (카테고리 있는 것만)
+    @Query("SELECT p FROM Post p " +
+            "WHERE p.board.boardId = :boardId " +
+            "AND p.postCategory IS NOT NULL " +
+            "AND p.deletedAt IS NULL")
+    Slice<Post> findMentoringPostsByBoardId(
+            @Param("boardId") Long boardId,
             Pageable pageable
     );
 }

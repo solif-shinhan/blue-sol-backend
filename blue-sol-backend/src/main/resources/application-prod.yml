@@ -28,3 +28,10 @@ jwt:
   access-token-expiration: 3600000
   refresh-token-expiration: 604800000
 
+cloud:
+  aws:
+    s3:
+      bucket: blue-sol-bucket
+    region:
+      static: ap-northeast-2
+

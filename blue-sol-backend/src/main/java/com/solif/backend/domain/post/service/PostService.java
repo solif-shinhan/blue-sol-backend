@@ -21,8 +21,10 @@ import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -134,13 +136,18 @@ public class PostService {
                 .orElseThrow(() -> new CustomException(AuthErrorCode.USER_NOT_FOUND));
 
         // 게시판 조회
-        Board board = boardRepository.findById(request.getBoardId())
+        Long boardId = request.getBoardId();
+        Board board = boardRepository.findById(boardId)
                 .orElseThrow(() -> new CustomException(BoardErrorCode.BOARD_NOT_FOUND));
 
         // 멘토링 후기(1), 고민상담(2), 재단소식(3) 모두 카테고리 필수
-        if (request.getPostCategory() == null) {
+        PostCategory category = request.getPostCategory();
+        if (category == null) {
             throw new CustomException(PostErrorCode.CATEGORY_REQUIRED);
         }
+
+        // 게시판별 허용 카테고리 검증
+        validateCategoryByBoard(boardId, category);
 
         // Post 엔티티 생성
         Post post = Post.builder()
@@ -207,5 +214,50 @@ public class PostService {
 
         // Soft Delete
         post.softDelete();
+    }
+
+    private void validateCategoryByBoard(Long boardId, PostCategory category) {
+        // 활동 후기(1) - (자치회 후기는 별도 API)
+        if (boardId == 1L) {
+            Set<PostCategory> allowed = EnumSet.of(
+                    PostCategory.STUDY,
+                    PostCategory.ADMISSION,
+                    PostCategory.JOB,
+                    PostCategory.ETC
+            );
+            if (!allowed.contains(category)) {
+                throw new CustomException(PostErrorCode.INVALID_CATEGORY_FOR_BOARD);
+            }
+            return;
+        }
+
+        // 고민상담(2)
+        if (boardId == 2L) {
+            Set<PostCategory> allowed = EnumSet.of(
+                    PostCategory.STUDY,
+                    PostCategory.ADMISSION,
+                    PostCategory.JOB,
+                    PostCategory.ETC
+            );
+            if (!allowed.contains(category)) {
+                throw new CustomException(PostErrorCode.INVALID_CATEGORY_FOR_BOARD);
+            }
+            return;
+        }
+
+        // 재단소식(3)
+        if (boardId == 3L) {
+            Set<PostCategory> allowed = EnumSet.of(
+                    PostCategory.NOTICE,
+                    PostCategory.PROGRAM
+            );
+            if (!allowed.contains(category)) {
+                throw new CustomException(PostErrorCode.INVALID_CATEGORY_FOR_BOARD);
+            }
+            return;
+        }
+
+        // 그 외 게시판은 정책 없으면 막는 게 안전
+        throw new CustomException(PostErrorCode.BOARD_NOT_SUPPORTED);
     }
 }

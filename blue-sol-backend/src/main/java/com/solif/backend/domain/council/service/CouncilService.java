@@ -6,8 +6,10 @@ import com.solif.backend.domain.council.dto.*;
 import com.solif.backend.domain.council.entity.Council;
 import com.solif.backend.domain.council.entity.CouncilMember;
 import com.solif.backend.domain.council.entity.CouncilMemberRole;
+import com.solif.backend.domain.council.entity.CouncilRule;
 import com.solif.backend.domain.council.repository.CouncilMemberRepository;
 import com.solif.backend.domain.council.repository.CouncilRepository;
+import com.solif.backend.domain.council.repository.CouncilRuleRepository;
 import com.solif.backend.domain.user.entity.User;
 import com.solif.backend.domain.user.repository.UserRepository;
 import com.solif.backend.global.common.exception.CustomException;
@@ -29,6 +31,7 @@ public class CouncilService {
 
     private final CouncilRepository councilRepository;
     private final CouncilMemberRepository councilMemberRepository;
+    private final CouncilRuleRepository councilRuleRepository;
     private final UserRepository userRepository;
 
     // 자치회 목록 조회
@@ -140,6 +143,8 @@ public class CouncilService {
         Council council = Council.builder()
                 .leader(leader)
                 .councilName(request.getCouncilName())
+                .region(request.getRegion())
+                .activityCategory(request.getActivityCategory())
                 .description(request.getDescription())
                 .totalBudget(request.getTotalBudget())
                 .profileImageFileId(request.getProfileImageFileId())
@@ -173,7 +178,19 @@ public class CouncilService {
             addedMemberCount = councilMembers.size();
         }
 
-        // 멤버들한테 알림 발송
+        // 활동 규칙 추가
+        if (request.getRules() != null && !request.getRules().isEmpty()) {
+            List<CouncilRule> rules = request.getRules().stream()
+                    .map(ruleContent -> CouncilRule.builder()
+                            .council(savedCouncil)
+                            .ruleContent(ruleContent)
+                            .build())
+                    .collect(Collectors.toList());
+
+            councilRuleRepository.saveAll(rules);
+        }
+
+        // 알림 발송
 
         return CouncilCreateResponse.from(savedCouncil, addedMemberCount + 1);
     }
@@ -203,6 +220,8 @@ public class CouncilService {
         // 자치회 수정
         council.updateCouncil(
                 request.getCouncilName(),
+                request.getRegion(),
+                request.getActivityCategory(),
                 request.getDescription(),
                 request.getTotalBudget()
         );

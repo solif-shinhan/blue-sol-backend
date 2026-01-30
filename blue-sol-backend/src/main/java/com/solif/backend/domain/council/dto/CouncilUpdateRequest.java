@@ -22,4 +22,6 @@ public class CouncilUpdateRequest {
 
     @NotNull(message = "총 예산은 필수입니다.")
     private Long totalBudget;
+
+    private Long profileImageFileId;
 }

@@ -69,12 +69,13 @@ public class Council {
     // 비즈니스 로직
     public void updateCouncil(String councilName, String region,
                               String activityCategory, String description,
-                              Long totalBudget) {
+                              Long totalBudget, Long profileImageFileId) {
         this.councilName = councilName;
         this.region = region;
         this.activityCategory = activityCategory;
         this.description = description;
         this.totalBudget = totalBudget;
+        this.profileImageFileId = profileImageFileId;
     }
 
     public void decreaseBudget(Long usedBudget) {

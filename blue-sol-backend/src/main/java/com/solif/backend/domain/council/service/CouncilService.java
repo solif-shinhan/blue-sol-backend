@@ -223,7 +223,8 @@ public class CouncilService {
                 request.getRegion(),
                 request.getActivityCategory(),
                 request.getDescription(),
-                request.getTotalBudget()
+                request.getTotalBudget(),
+                request.getProfileImageFileId()
         );
     }
 }

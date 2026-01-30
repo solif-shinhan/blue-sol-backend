@@ -40,13 +40,19 @@ public class PostDetailResponse {
     @Schema(description = "댓글 수", example = "15")
     private Long commentCount;
 
+    @Schema(description = "좋아요 수", example = "7")
+    private Long likeCount;
+
+    @Schema(description = "현재 사용자가 좋아요 했는지 여부", example = "true")
+    private Boolean isLikedByUser;
+
     @Schema(description = "작성 일시", example = "2026-01-28T14:30:00")
     private LocalDateTime createdAt;
 
     @Schema(description = "수정 일시", example = "2026-01-28T15:00:00", nullable = true)
     private LocalDateTime updatedAt;
 
-    public static PostDetailResponse from(Post post, Long commentCount, boolean isAnonymous) {
+    public static PostDetailResponse from(Post post, Long commentCount, Long likeCount, Boolean isLikedByUser, boolean isAnonymous) {
         return PostDetailResponse.builder()
                 .postId(post.getPostId())
                 .boardId(post.getBoard().getBoardId())
@@ -57,6 +63,8 @@ public class PostDetailResponse {
                 .authorName(isAnonymous ? "익명" : post.getAuthor().getName())
                 .viewCount(post.getViewCount())
                 .commentCount(commentCount)
+                .likeCount(likeCount)
+                .isLikedByUser(isLikedByUser)
                 .createdAt(post.getCreatedAt())
                 .updatedAt(post.getUpdatedAt())
                 .build();

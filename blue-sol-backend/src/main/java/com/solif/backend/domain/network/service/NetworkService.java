@@ -144,6 +144,9 @@ public class NetworkService {
             throw new CustomException(NetworkErrorCode.INVALID_INTERACTION_TYPE);
         }
 
+        // 역할 기반 상호작용 타입 검증
+        validateInteractionType(sender, receiver, notificationType);
+
         if (notificationType == NotificationType.CHEER) {
             title = "응원이 도착했어요!";
             content = sender.getName() + "님이 응원을 보냈어요";
@@ -257,13 +260,39 @@ public class NetworkService {
     }
 
     private String determineButtonType(User me, User target) {
-        // 내가 선배면 CHEER(응원하기), 아니면 HELP(경험나누기)
-        if (me.getUserRole() == User.UserRole.SENIOR ||
-            me.getUserRole() == User.UserRole.GRADUATE ||
-            me.getUserRole() == User.UserRole.MASTER) {
+        // 내가 상대보다 윗 역할이면 CHEER(응원하기)
+        // 동일 역할이거나 아랫 역할이면 HELP(경험나누기)
+        int myLevel = getRoleLevel(me.getUserRole());
+        int targetLevel = getRoleLevel(target.getUserRole());
+
+        if (myLevel > targetLevel) {
             return "CHEER";
         }
         return "HELP";
+    }
+
+    private int getRoleLevel(User.UserRole role) {
+        return switch (role) {
+            case JUNIOR -> 1;
+            case SENIOR -> 2;
+            case GRADUATE -> 3;
+            case MASTER -> 4;
+        };
+    }
+
+    private void validateInteractionType(User sender, User receiver, NotificationType type) {
+        int senderLevel = getRoleLevel(sender.getUserRole());
+        int receiverLevel = getRoleLevel(receiver.getUserRole());
+
+        // CHEER는 보내는 사람이 받는 사람보다 윗 역할일 때만 가능
+        if (type == NotificationType.CHEER && senderLevel <= receiverLevel) {
+            throw new CustomException(NetworkErrorCode.INTERACTION_NOT_ALLOWED);
+        }
+
+        // HELP는 보내는 사람이 받는 사람과 같거나 아래 역할일 때만 가능
+        if (type == NotificationType.HELP && senderLevel > receiverLevel) {
+            throw new CustomException(NetworkErrorCode.INTERACTION_NOT_ALLOWED);
+        }
     }
 
     private List<NetworkRecommendationResponse.RecommendedUser> findUsersWithSameInterests(User user, List<String> myInterests) {

@@ -18,6 +18,7 @@ public class CouncilListResponse {
     public static class CouncilItem {
         private Long councilId;
         private String councilName;
+        private String region;
         private Long memberCount;
         private String profileImageUrl;
 
@@ -25,6 +26,7 @@ public class CouncilListResponse {
             return CouncilItem.builder()
                     .councilId(council.getCouncilId())
                     .councilName(council.getCouncilName())
+                    .region(council.getRegion())
                     .memberCount(memberCount)
                     .profileImageUrl(null)  // 이미지 처리
                     .build();

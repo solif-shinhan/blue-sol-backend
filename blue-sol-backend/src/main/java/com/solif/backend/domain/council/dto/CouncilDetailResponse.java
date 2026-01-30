@@ -13,6 +13,8 @@ public class CouncilDetailResponse {
 
     private Long councilId;
     private String councilName;
+    private String region;
+    private String activityCategory;
     private Long leaderUserId;
     private String leaderName;
     private String description;
@@ -37,6 +39,8 @@ public class CouncilDetailResponse {
         return CouncilDetailResponse.builder()
                 .councilId(council.getCouncilId())
                 .councilName(council.getCouncilName())
+                .region(council.getRegion())
+                .activityCategory(council.getActivityCategory())
                 .leaderUserId(council.getLeader().getUserId())
                 .leaderName(council.getLeader().getName())
                 .description(council.getDescription())
@@ -60,6 +64,8 @@ public class CouncilDetailResponse {
         return CouncilDetailResponse.builder()
                 .councilId(council.getCouncilId())
                 .councilName(council.getCouncilName())
+                .region(council.getRegion())
+                .activityCategory(council.getActivityCategory())
                 .leaderUserId(council.getLeader().getUserId())
                 .leaderName(council.getLeader().getName())
                 .description(council.getDescription())

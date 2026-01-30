@@ -12,6 +12,12 @@ public class CouncilUpdateRequest {
     @NotBlank(message = "자치회 이름은 필수입니다.")
     private String councilName;
 
+    @NotBlank(message = "활동 지역은 필수입니다.")
+    private String region;
+
+    @NotBlank(message = "활동 주제는 필수입니다.")
+    private String activityCategory;
+
     private String description;
 
     @NotNull(message = "총 예산은 필수입니다.")

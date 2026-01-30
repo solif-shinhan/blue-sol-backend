@@ -30,6 +30,12 @@ public class Council {
     @Column(name = "council_name", nullable = false, length = 100)
     private String councilName;
 
+    @Column(name = "region", length = 50)
+    private String region;  // 활동 지역
+
+    @Column(name = "activity_category", length = 50)
+    private String activityCategory;  // 활동 주제
+
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
@@ -47,10 +53,13 @@ public class Council {
     private LocalDateTime createdAt;
 
     @Builder
-    public Council(User leader, String councilName, String description,
+    public Council(User leader, String councilName, String region,
+                   String activityCategory, String description,
                    Long totalBudget, Long profileImageFileId) {
         this.leader = leader;
         this.councilName = councilName;
+        this.region = region;
+        this.activityCategory = activityCategory;
         this.description = description;
         this.totalBudget = totalBudget != null ? totalBudget : 0L;
         this.currentBudget = totalBudget != null ? totalBudget : 0L;
@@ -58,8 +67,12 @@ public class Council {
     }
 
     // 비즈니스 로직
-    public void updateCouncil(String councilName, String description, Long totalBudget) {
+    public void updateCouncil(String councilName, String region,
+                              String activityCategory, String description,
+                              Long totalBudget) {
         this.councilName = councilName;
+        this.region = region;
+        this.activityCategory = activityCategory;
         this.description = description;
         this.totalBudget = totalBudget;
     }

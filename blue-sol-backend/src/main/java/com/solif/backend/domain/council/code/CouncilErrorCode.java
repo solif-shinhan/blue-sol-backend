@@ -25,7 +25,10 @@ public enum CouncilErrorCode implements ErrorCode {
     ONLY_LEADER_CAN_DELETE_RULE(HttpStatus.FORBIDDEN, "COUNCIL_009", "자치회 리더만 활동 규칙을 삭제할 수 있습니다."),
 
     // 예산 관련
-    INSUFFICIENT_BUDGET(HttpStatus.BAD_REQUEST, "COUNCIL_010", "예산이 부족합니다.");
+    INSUFFICIENT_BUDGET(HttpStatus.BAD_REQUEST, "COUNCIL_010", "예산이 부족합니다."),
+
+    // 자치회 소속 관련
+    ALREADY_IN_COUNCIL(HttpStatus.BAD_REQUEST, "COUNCIL_011", "이미 다른 자치회에 소속되어 있습니다.");
 
     private final HttpStatus status;
     private final String code;

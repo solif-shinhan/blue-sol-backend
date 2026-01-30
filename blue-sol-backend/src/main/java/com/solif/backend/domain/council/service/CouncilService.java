@@ -139,6 +139,11 @@ public class CouncilService {
         User leader = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(AuthErrorCode.USER_NOT_FOUND));
 
+        // 이미 자치회에 소속되어 있는지 확인
+        councilMemberRepository.findByUser(leader).ifPresent(existingMember -> {
+            throw new CustomException(CouncilErrorCode.ALREADY_IN_COUNCIL);
+        });
+
         // 자치회 생성
         Council council = Council.builder()
                 .leader(leader)

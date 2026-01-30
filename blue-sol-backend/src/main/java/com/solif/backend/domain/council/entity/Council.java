@@ -1,6 +1,8 @@
 package com.solif.backend.domain.council.entity;
 
+import com.solif.backend.domain.council.code.CouncilErrorCode;
 import com.solif.backend.domain.user.entity.User;
+import com.solif.backend.global.common.exception.CustomException;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -70,6 +72,17 @@ public class Council {
     public void updateCouncil(String councilName, String region,
                               String activityCategory, String description,
                               Long totalBudget, Long profileImageFileId) {
+        // 사용한 예산 계산
+        Long usedBudget = this.totalBudget - this.currentBudget;
+
+        // 총 예산이 줄어들었을 때, 이미 사용한 예산보다 작으면 에러
+        if (totalBudget < usedBudget) {
+            throw new CustomException(CouncilErrorCode.BUDGET_REDUCTION_NOT_ALLOWED);
+        }
+
+        // 총 예산 변경에 따른 남은 예산 조정
+        this.currentBudget = totalBudget - usedBudget;
+
         this.councilName = councilName;
         this.region = region;
         this.activityCategory = activityCategory;
@@ -79,10 +92,12 @@ public class Council {
     }
 
     public void decreaseBudget(Long usedBudget) {
-        if (this.currentBudget < usedBudget) {
-            throw new IllegalArgumentException("예산이 부족합니다.");
+        if (usedBudget == null || usedBudget <= 0) {
+            throw new IllegalArgumentException("사용 예산은 0 이상이어야 합니다.");
         }
-        this.currentBudget -= usedBudget;
+
+        // 예산 초과 허용, 단 currentBudget은 음수 불가 (0원으로 표시)
+        this.currentBudget = Math.max(0L, this.currentBudget - usedBudget);
     }
 
     public boolean isLeader(Long userId) {

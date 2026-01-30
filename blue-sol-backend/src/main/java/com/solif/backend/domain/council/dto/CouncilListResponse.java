@@ -4,21 +4,30 @@ import com.solif.backend.domain.council.entity.Council;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.util.List;
+
 @Getter
 @Builder
 public class CouncilListResponse {
 
-    private Long councilId;
-    private String councilName;
-    private Long memberCount;
-    private String profileImageUrl;
+    private CouncilMyResponse myCouncil;  // 본인 자치회 정보 (없으면 null)
+    private List<CouncilItem> councils;   // 전체 자치회 리스트
 
-    public static CouncilListResponse from(Council council, Long memberCount) {
-        return CouncilListResponse.builder()
-                .councilId(council.getCouncilId())
-                .councilName(council.getCouncilName())
-                .memberCount(memberCount)
-                .profileImageUrl(null)  // 이미지 처리
-                .build();
+    @Getter
+    @Builder
+    public static class CouncilItem {
+        private Long councilId;
+        private String councilName;
+        private Long memberCount;
+        private String profileImageUrl;
+
+        public static CouncilItem from(Council council, Long memberCount) {
+            return CouncilItem.builder()
+                    .councilId(council.getCouncilId())
+                    .councilName(council.getCouncilName())
+                    .memberCount(memberCount)
+                    .profileImageUrl(null)  // 이미지 처리
+                    .build();
+        }
     }
 }

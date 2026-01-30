@@ -10,4 +10,7 @@ public interface UserProfileRepository extends JpaRepository<UserProfile, Long> 
     Optional<UserProfile> findByUser_UserId(Long userId);
 
     boolean existsByUser_UserId(Long userId);
+
+    // QR 코드로 프로필 조회
+    Optional<UserProfile> findByQrCodeData(String qrCodeData);
 }

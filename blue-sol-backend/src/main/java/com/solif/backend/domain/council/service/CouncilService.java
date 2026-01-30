@@ -169,18 +169,31 @@ public class CouncilService {
         // 초대된 멤버들 MEMBER로 등록
         int addedMemberCount = 0;
         if (request.getMemberUserIds() != null && !request.getMemberUserIds().isEmpty()) {
-            List<User> members = userRepository.findAllById(request.getMemberUserIds());
-
-            List<CouncilMember> councilMembers = members.stream()
-                    .map(member -> CouncilMember.builder()
-                            .user(member)
-                            .council(savedCouncil)
-                            .role(CouncilMemberRole.MEMBER)
-                            .build())
+            // 리더 제외 + 중복 제거
+            List<Long> memberIds = request.getMemberUserIds().stream()
+                    .filter(id -> !id.equals(userId))
+                    .distinct()
                     .collect(Collectors.toList());
 
-            councilMemberRepository.saveAll(councilMembers);
-            addedMemberCount = councilMembers.size();
+            if (!memberIds.isEmpty()) {
+                List<User> members = userRepository.findAllById(memberIds);
+
+                // 존재하지 않는 사용자 ID 검증
+                if (members.size() != memberIds.size()) {
+                    throw new CustomException(AuthErrorCode.USER_NOT_FOUND);
+                }
+
+                List<CouncilMember> councilMembers = members.stream()
+                        .map(member -> CouncilMember.builder()
+                                .user(member)
+                                .council(savedCouncil)
+                                .role(CouncilMemberRole.MEMBER)
+                                .build())
+                        .collect(Collectors.toList());
+
+                councilMemberRepository.saveAll(councilMembers);
+                addedMemberCount = councilMembers.size();
+            }
         }
 
         // 활동 규칙 추가

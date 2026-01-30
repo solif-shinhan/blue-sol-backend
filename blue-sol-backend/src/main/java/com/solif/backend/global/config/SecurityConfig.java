@@ -4,6 +4,7 @@ import com.solif.backend.global.jwt.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -54,11 +55,14 @@ public class SecurityConfig {
                 // 요청 권한 설정
                 .authorizeHttpRequests(auth -> auth
                         // 인증 없이 접근 가능한 경로
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/v1/posts",                    // 게시글 목록 조회
+                                "/api/v1/posts/*/comments"          // 댓글 목록 조회
+                        ).permitAll()
+
                         .requestMatchers(
                                 "/api/auth/signup",               // 회원가입
                                 "/api/auth/login",                // 로그인
-                                "/api/v1/posts",                  // 게시글 목록 조회
-                                "/api/v1/posts/*/comments",       // 댓글 목록 조회
                                 "/error",                         // Spring Boot 에러 핸들러
                                 "/swagger-ui/**",                 // Swagger UI
                                 "/v3/api-docs/**",                // API 문서

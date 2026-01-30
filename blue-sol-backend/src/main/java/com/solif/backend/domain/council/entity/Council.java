@@ -92,7 +92,7 @@ public class Council {
     }
 
     public void decreaseBudget(Long usedBudget) {
-        if (usedBudget == null || usedBudget <= 0) {
+        if (usedBudget == null || usedBudget < 0) {
             throw new IllegalArgumentException("사용 예산은 0 이상이어야 합니다.");
         }
 

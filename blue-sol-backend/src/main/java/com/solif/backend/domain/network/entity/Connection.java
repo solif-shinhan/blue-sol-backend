@@ -47,6 +47,9 @@ public class Connection {
         this.register = register;
         this.target = target;
         this.status = status;
+        if (status == ConnectionStatus.ACCEPTED){
+            this.acceptedAt = LocalDateTime.now();
+        }
     }
 
     public void accept() {

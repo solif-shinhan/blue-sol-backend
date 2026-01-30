@@ -20,4 +20,6 @@ public interface ConnectionRepository extends JpaRepository<Connection, Long> {
 
     // 특정 사용자와의 연결 여부 확인 (양방향)
     boolean existsByRegisterAndTargetOrTargetAndRegister(User register1, User target1, User target2, User register2);
+
+    List<Connection> findAllByRegisterAndStatusOrTargetAndStatus(User user, ConnectionStatus connectionStatus, User user1, ConnectionStatus connectionStatus1);
 }

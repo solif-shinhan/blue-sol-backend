@@ -1,5 +1,6 @@
 package com.solif.backend.domain.network.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
@@ -43,6 +44,7 @@ public class NetworkSearchResponse {
         private List<String> interests;
 
         @Schema(description = "이미 연결 여부")
+        @JsonProperty("isConnected")
         private boolean isConnected;
     }
 }

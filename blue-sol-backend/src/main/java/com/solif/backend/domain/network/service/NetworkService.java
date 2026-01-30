@@ -42,7 +42,11 @@ public class NetworkService {
     public NetworkListResponse getMyNetworks(Long userId) {
         User user = findUserById(userId);
 
-        List<Connection> connections = connectionRepository.findAllByRegisterAndStatus(user, ConnectionStatus.ACCEPTED);
+        List<Connection> connections =
+                connectionRepository.findAllByRegisterAndStatusOrTargetAndStatus(
+                        user, ConnectionStatus.ACCEPTED,
+                        user, ConnectionStatus.ACCEPTED
+                );
 
         List<NetworkListResponse.FriendSummary> addedFriends = connections.stream()
                 .map(conn -> {
@@ -107,7 +111,9 @@ public class NetworkService {
         }
 
         // 이미 연결되어 있는지 확인
-        if (connectionRepository.existsByRegisterAndTarget(user, targetUser)) {
+        if (connectionRepository.existsByRegisterAndTargetOrTargetAndRegister(
+                user, targetUser, targetUser, user
+        )) {
             throw new CustomException(NetworkErrorCode.CONNECTION_ALREADY_EXISTS);
         }
 

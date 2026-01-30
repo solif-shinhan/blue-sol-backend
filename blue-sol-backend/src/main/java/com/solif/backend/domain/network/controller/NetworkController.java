@@ -42,7 +42,7 @@ public class NetworkController {
     @PostMapping
     public ResponseEntity<SuccessResponse<NetworkAddResponse>> addNetwork(
             @AuthenticationPrincipal Long userId,
-            @RequestBody NetworkAddRequest request
+            @Valid @RequestBody NetworkAddRequest request
     ) {
         NetworkAddResponse response = networkService.addNetwork(userId, request);
         return ResponseFactory.success(NetworkSuccessCode.NETWORK_ADD_SUCCESS, response);

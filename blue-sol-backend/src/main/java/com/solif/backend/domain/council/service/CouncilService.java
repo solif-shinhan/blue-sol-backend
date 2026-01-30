@@ -183,6 +183,13 @@ public class CouncilService {
                     throw new CustomException(AuthErrorCode.USER_NOT_FOUND);
                 }
 
+                // 이미 자치회에 소속된 사용자 검증
+                for (User member : members) {
+                    councilMemberRepository.findByUser(member).ifPresent(existingMember -> {
+                        throw new CustomException(CouncilErrorCode.ALREADY_IN_COUNCIL);
+                    });
+                }
+
                 List<CouncilMember> councilMembers = members.stream()
                         .map(member -> CouncilMember.builder()
                                 .user(member)

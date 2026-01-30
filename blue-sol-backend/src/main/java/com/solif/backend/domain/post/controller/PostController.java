@@ -40,12 +40,16 @@ public class PostController {
         return ResponseFactory.success(PostSuccessCode.POST_LIST_SUCCESS, posts);
     }
 
-    @Operation(summary = "게시글 상세 조회", description = "게시글 상세 내용을 조회합니다. 조회수가 1 증가합니다.")
+    @Operation(
+            summary = "게시글 상세 조회",
+            description = "게시글 상세 내용을 조회합니다. 조회수가 1 증가합니다.",
+            security = @SecurityRequirement(name = "bearerAuth"))
     @GetMapping("/{postId}")
     public ResponseEntity<SuccessResponse<PostDetailResponse>> getPostDetail(
+            @AuthenticationPrincipal Long userId,
             @PathVariable Long postId
     ) {
-        PostDetailResponse post = postService.getPostDetail(postId);
+        PostDetailResponse post = postService.getPostDetail(userId, postId);
         return ResponseFactory.success(PostSuccessCode.POST_DETAIL_SUCCESS, post);
     }
 

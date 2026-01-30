@@ -11,6 +11,7 @@ import com.solif.backend.domain.post.entity.Post;
 import com.solif.backend.domain.post.entity.PostCategory;
 import com.solif.backend.domain.post.code.PostErrorCode;
 import com.solif.backend.domain.post.repository.PostRepository;
+import com.solif.backend.domain.postlike.repository.PostLikeRepository;
 import com.solif.backend.domain.user.entity.User;
 import com.solif.backend.domain.user.repository.UserRepository;
 import com.solif.backend.global.common.exception.CustomException;
@@ -35,6 +36,7 @@ public class PostService {
     private final BoardRepository boardRepository;
     private final CommentRepository commentRepository;
     private final UserRepository userRepository;
+    private final PostLikeRepository postLikeRepository;
 
     // 게시글 목록 조회
     public Slice<PostListResponse> getPosts(Long boardId, PostCategory category, Pageable pageable) {
@@ -105,7 +107,7 @@ public class PostService {
 
     // 게시글 상세 조회
     @Transactional
-    public PostDetailResponse getPostDetail(Long postId) {
+    public PostDetailResponse getPostDetail(Long userId, Long postId) {
         log.info("게시글 상세 조회 - postId: {}", postId);
 
         // 게시글 조회
@@ -126,7 +128,13 @@ public class PostService {
         // 댓글 수 조회
         Long commentCount = commentRepository.countByPost_PostId(postId);
 
-        return PostDetailResponse.from(post, commentCount, isAnonymous);
+        // 좋아요 수 조회
+        Long likeCount = postLikeRepository.countByPost_PostId(postId);
+
+        // 현재 사용자의 좋아요 여부 조회
+        Boolean isLikedByUser = postLikeRepository.existsByUser_UserIdAndPost_PostId(userId, postId);
+
+        return PostDetailResponse.from(post, commentCount, likeCount, isLikedByUser, isAnonymous);
     }
 
     // 게시글 작성

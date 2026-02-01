@@ -1,5 +1,8 @@
 package com.solif.backend.domain.message.service;
 
+import com.solif.backend.domain.notification.entity.NotificationType;
+import com.solif.backend.domain.notification.entity.TargetType;
+import com.solif.backend.domain.notification.service.NotificationService;
 import com.solif.backend.domain.auth.exception.AuthErrorCode;
 import com.solif.backend.domain.message.code.MessageErrorCode;
 import com.solif.backend.domain.message.dto.*;
@@ -26,6 +29,7 @@ public class MessageService {
 
     private final MessageRepository messageRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
     // TODO: FileAttachmentRepository 추가 (파일 첨부 기능 구현 시)
 
     // 쪽지 발송
@@ -56,10 +60,15 @@ public class MessageService {
 
         Message savedMessage = messageRepository.save(message);
 
-        // TODO: 파일 첨부 처리 (fileIds가 있을 경우)
-        // if (request.getFileIds() != null && !request.getFileIds().isEmpty()) {
-        //     fileAttachmentService.attachFiles("MESSAGE", savedMessage.getMessageId(), request.getFileIds());
-        // }
+        // 수신자에게 알림 생성 + SSE 실시간 전송
+        notificationService.send(
+                request.getReceiverId(),
+                NotificationType.MESSAGE,
+                TargetType.MESSAGE,
+                savedMessage.getMessageId(),
+                "새로운 쪽지가 도착했습니다.",
+                savedMessage.getMessageTitle()
+        );
 
         return MessageSendResponse.from(savedMessage);
     }

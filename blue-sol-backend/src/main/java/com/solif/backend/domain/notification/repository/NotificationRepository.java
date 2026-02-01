@@ -1,16 +1,24 @@
 package com.solif.backend.domain.notification.repository;
 
 import com.solif.backend.domain.notification.entity.Notification;
+import com.solif.backend.domain.notification.entity.NotificationType;
 import com.solif.backend.domain.user.entity.User;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
 
-    // 사용자의 알림 목록 조회
-    List<Notification> findAllByReceiverOrderByCreatedAtDesc(User receiver);
+    // 카테고리별 전체 조회 (페이징)
+    Slice<Notification> findByReceiverAndNotificationTypeInOrderByCreatedAtDesc(
+            User receiver, List<NotificationType> types, Pageable pageable);
 
-    // 읽지 않은 알림 수
+    // 카테고리별 안읽은 알림만 조회 (페이징)
+    Slice<Notification> findByReceiverAndNotificationTypeInAndIsReadFalseOrderByCreatedAtDesc(
+            User receiver, List<NotificationType> types, Pageable pageable);
+
+    // 안읽은 알림 수
     long countByReceiverAndIsReadFalse(User receiver);
 }

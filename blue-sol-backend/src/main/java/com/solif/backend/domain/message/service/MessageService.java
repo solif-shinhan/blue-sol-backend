@@ -2,7 +2,7 @@ package com.solif.backend.domain.message.service;
 
 import com.solif.backend.domain.notification.entity.NotificationType;
 import com.solif.backend.domain.notification.entity.TargetType;
-import com.solif.backend.domain.notification.service.NotificationService;
+import com.solif.backend.domain.notification.event.NotificationEvent;
 import com.solif.backend.domain.auth.exception.AuthErrorCode;
 import com.solif.backend.domain.message.code.MessageErrorCode;
 import com.solif.backend.domain.message.dto.*;
@@ -13,6 +13,7 @@ import com.solif.backend.domain.user.repository.UserRepository;
 import com.solif.backend.global.common.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
@@ -29,7 +30,7 @@ public class MessageService {
 
     private final MessageRepository messageRepository;
     private final UserRepository userRepository;
-    private final NotificationService notificationService;
+    private final ApplicationEventPublisher eventPublisher;
     // TODO: FileAttachmentRepository 추가 (파일 첨부 기능 구현 시)
 
     // 쪽지 발송
@@ -60,20 +61,15 @@ public class MessageService {
 
         Message savedMessage = messageRepository.save(message);
 
-        // 수신자에게 알림 생성 + SSE 실시간 전송 (알림 실패가 쪽지 저장을 롤백시키지 않도록 try-catch)
-        try {
-            notificationService.send(
-                    request.getReceiverId(),
-                    NotificationType.MESSAGE,
-                    TargetType.MESSAGE,
-                    savedMessage.getMessageId(),
-                    "새로운 쪽지가 도착했습니다.",
-                    savedMessage.getMessageTitle()
-            );
-        } catch (Exception e) {
-            log.warn("쪽지 알림 발송 실패 - messageId: {}, receiverId: {}, error: {}",
-                    savedMessage.getMessageId(), request.getReceiverId(), e.getMessage());
-        }
+        // 수신자에게 알림 생성 + SSE 실시간 전송 (트랜잭션 커밋 후 이벤트 리스너에서 처리)
+        eventPublisher.publishEvent(new NotificationEvent(
+                request.getReceiverId(),
+                NotificationType.MESSAGE,
+                TargetType.MESSAGE,
+                savedMessage.getMessageId(),
+                "새로운 쪽지가 도착했습니다.",
+                savedMessage.getMessageTitle()
+        ));
 
         return MessageSendResponse.from(savedMessage);
     }

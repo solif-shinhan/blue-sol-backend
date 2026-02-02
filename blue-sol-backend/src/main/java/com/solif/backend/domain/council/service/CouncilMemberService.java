@@ -107,7 +107,12 @@ public class CouncilMemberService {
                         .build())
                 .collect(Collectors.toList());
 
-        councilMemberRepository.saveAll(newMembers);
+        try {
+            councilMemberRepository.saveAll(newMembers);
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            // 동시성 이슈로 인한 중복 추가 시도
+            throw new CustomException(CouncilErrorCode.ALREADY_IN_COUNCIL);
+        }
 
         // 총 멤버 수 조회
         Long totalMemberCount = councilMemberRepository.countByCouncil(council);

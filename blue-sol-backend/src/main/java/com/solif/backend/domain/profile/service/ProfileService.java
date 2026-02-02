@@ -43,7 +43,7 @@ public class ProfileService {
         }
 
         // 3. QR 코드 생성 및 S3 업로드
-        String qrCodeUrl = qrCodeService.generateAndUpload(userId);
+        QrCodeService.QrResult qrResult = qrCodeService.generateAndUpload(userId);
 
         // 4. 목표 리스트를 JSON 문자열로 변환
         String mainGoalJson = convertListToJson(request.getMainGoals());
@@ -55,12 +55,13 @@ public class ProfileService {
                 .backgroundPattern(request.getBackgroundPattern())
                 .mainGoal(mainGoalJson)
                 .solidGoalName(request.getSolidGoalName())
-                .qrCodeData(qrCodeUrl)
+                .qrCodeData(qrResult.qrData())
+                .qrImageUrl(qrResult.imageUrl())
                 .build();
 
         userProfileRepository.save(profile);
 
-        return ProfileCreateResponse.of(profile.getProfileId(), qrCodeUrl);
+        return ProfileCreateResponse.of(profile.getProfileId(), qrResult.imageUrl());
     }
 
     // 프로필 수정
@@ -120,7 +121,7 @@ public class ProfileService {
                 .solidGoalName(profile.getSolidGoalName())
                 .userCharacter(profile.getUserCharacter())
                 .backgroundPattern(profile.getBackgroundPattern())
-                .qrCodeUrl(profile.getQrCodeData())
+                .qrCodeUrl(profile.getQrImageUrl())   // S3 이미지 URL 반환
                 .interests(interests)
                 .build();
     }

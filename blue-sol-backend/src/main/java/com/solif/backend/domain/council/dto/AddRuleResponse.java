@@ -15,7 +15,7 @@ public class AddRuleResponse {
     @Schema(description = "추가된 규칙 ID", example = "5")
     private Long ruleId;
 
-    @Schema(description = "규칙 내용", example = "공지 올라오면 '네크 이더라도' 남겨주기")
+    @Schema(description = "규칙 내용", example = "공지 올라오면 '체크 이모티콘' 남겨주기")
     private String ruleContent;
 
     @Schema(description = "총 규칙 수", example = "3")

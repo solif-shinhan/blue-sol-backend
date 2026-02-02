@@ -3,7 +3,6 @@ package com.solif.backend.domain.council.controller;
 import com.solif.backend.domain.council.code.CouncilSuccessCode;
 import com.solif.backend.domain.council.dto.AddMemberRequest;
 import com.solif.backend.domain.council.dto.AddMemberResponse;
-import com.solif.backend.domain.council.dto.DeleteMemberResponse;
 import com.solif.backend.domain.council.dto.MemberListResponse;
 import com.solif.backend.domain.council.service.CouncilMemberService;
 import com.solif.backend.global.common.response.ResponseFactory;
@@ -62,14 +61,14 @@ public class CouncilMemberController {
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @DeleteMapping("/{userId}")
-    public ResponseEntity<SuccessResponse<DeleteMemberResponse>> deleteMember(
+    public ResponseEntity<SuccessResponse<Void>> deleteMember(
             @AuthenticationPrincipal Long currentUserId,
             @Parameter(description = "자치회 ID", required = true, example = "1")
             @PathVariable Long councilId,
             @Parameter(description = "삭제할 사용자 ID", required = true, example = "2")
             @PathVariable("userId") Long userIdToDelete
     ) {
-        DeleteMemberResponse response = councilMemberService.deleteMember(currentUserId, councilId, userIdToDelete);
-        return ResponseFactory.success(CouncilSuccessCode.MEMBER_DELETE_SUCCESS, response);
+        councilMemberService.deleteMember(currentUserId, councilId, userIdToDelete);
+        return ResponseFactory.success(CouncilSuccessCode.MEMBER_DELETE_SUCCESS);
     }
 }

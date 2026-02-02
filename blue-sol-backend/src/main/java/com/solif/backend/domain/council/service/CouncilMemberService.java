@@ -4,7 +4,6 @@ import com.solif.backend.domain.auth.exception.AuthErrorCode;
 import com.solif.backend.domain.council.code.CouncilErrorCode;
 import com.solif.backend.domain.council.dto.AddMemberResponse;
 import com.solif.backend.domain.council.dto.CouncilMemberResponse;
-import com.solif.backend.domain.council.dto.DeleteMemberResponse;
 import com.solif.backend.domain.council.dto.MemberListResponse;
 import com.solif.backend.domain.council.entity.Council;
 import com.solif.backend.domain.council.entity.CouncilMember;
@@ -124,7 +123,7 @@ public class CouncilMemberService {
 
     // 자치회 멤버 삭제
     @Transactional
-    public DeleteMemberResponse deleteMember(Long userId, Long councilId, Long userIdToDelete) {
+    public void deleteMember(Long userId, Long councilId, Long userIdToDelete) {
         log.info("자치회 멤버 삭제 - userId: {}, councilId: {}, userIdToDelete: {}", userId, councilId, userIdToDelete);
 
         // 사용자 조회
@@ -160,12 +159,5 @@ public class CouncilMemberService {
 
         // 멤버 삭제
         councilMemberRepository.delete(memberToDelete);
-
-        // 총 멤버 수 조회
-        Long totalMemberCount = councilMemberRepository.countByCouncil(council);
-
-        // 알림 발송 (TODO: 나중에 구현)
-
-        return DeleteMemberResponse.of(councilId, userIdToDelete, totalMemberCount.intValue());
     }
 }

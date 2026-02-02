@@ -66,7 +66,7 @@ public class CouncilRuleService {
                 .orElseThrow(() -> new CustomException(CouncilErrorCode.COUNCIL_NOT_FOUND));
 
         // 리더 권한 확인
-        validateLeaderAuthority(currentUser, council);
+        validateLeaderAuthority(currentUser, council, CouncilErrorCode.ONLY_LEADER_CAN_ADD_RULE);
 
         // CouncilRule 생성 및 저장
         CouncilRule newRule = CouncilRule.builder()
@@ -101,7 +101,7 @@ public class CouncilRuleService {
                 .orElseThrow(() -> new CustomException(CouncilErrorCode.COUNCIL_NOT_FOUND));
 
         // 리더 권한 확인
-        validateLeaderAuthority(currentUser, council);
+        validateLeaderAuthority(currentUser, council, CouncilErrorCode.ONLY_LEADER_CAN_DELETE_RULE);
 
         // 규칙 조회
         CouncilRule rule = councilRuleRepository.findById(ruleId)
@@ -117,13 +117,13 @@ public class CouncilRuleService {
     }
 
     // 리더 권한 검증 (private helper method)
-    private void validateLeaderAuthority(User user, Council council) {
+    private void validateLeaderAuthority(User user, Council council, CouncilErrorCode errorCode) {
         CouncilMember member = councilMemberRepository
                 .findByCouncilAndUser(council, user)
                 .orElseThrow(() -> new CustomException(CouncilErrorCode.NOT_COUNCIL_MEMBER));
 
         if (!member.isLeader()) {
-            throw new CustomException(CouncilErrorCode.ONLY_LEADER_CAN_ADD_RULE);
+            throw new CustomException(errorCode);
         }
     }
 }

@@ -43,6 +43,9 @@ public class UserProfile {
     @Column(name = "qr_code_data", nullable = false, unique = true, columnDefinition = "TEXT")
     private String qrCodeData;
 
+    @Column(name = "qr_image_url", columnDefinition = "TEXT")
+    private String qrImageUrl;
+
     @Column(name = "complete_goal_count", nullable = false)
     private Integer completeGoalCount = 0;
 
@@ -59,13 +62,14 @@ public class UserProfile {
 
     @Builder
     public UserProfile(User user, String userCharacter, String backgroundPattern,
-                       String mainGoal, String solidGoalName, String qrCodeData) {
+                       String mainGoal, String solidGoalName, String qrCodeData, String qrImageUrl) {
         this.user = user;
         this.userCharacter = userCharacter;
         this.backgroundPattern = backgroundPattern;
         this.mainGoal = mainGoal;
         this.solidGoalName = solidGoalName;
         this.qrCodeData = qrCodeData;
+        this.qrImageUrl = qrImageUrl;
         this.completeGoalCount = 0;
         this.connectionCount = 0;
     }
@@ -75,5 +79,9 @@ public class UserProfile {
         if (userCharacter != null) this.userCharacter = userCharacter;
         if (solidGoalName != null) this.solidGoalName = solidGoalName;
         if (backgroundPattern != null) this.backgroundPattern = backgroundPattern;
+    }
+
+    public void incrementConnectionCount() {
+        this.connectionCount++;
     }
 }

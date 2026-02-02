@@ -24,12 +24,14 @@ public class QrCodeService {
     private static final int QR_WIDTH = 300;
     private static final int QR_HEIGHT = 300;
 
+    public record QrResult(String qrData, String imageUrl) {}
+
     /**
      * QR 코드 생성 및 S3 업로드
      * @param userId 사용자 ID
-     * @return QR 코드 이미지 URL
+     * @return QR 코드 고유 데이터 + 이미지 URL
      */
-    public String generateAndUpload(Long userId) {
+    public QrResult generateAndUpload(Long userId) {
         // 1. QR 코드에 담길 고유 데이터 생성
         String qrData = "SOL-" + UUID.randomUUID().toString();
 
@@ -40,9 +42,9 @@ public class QrCodeService {
         String fileName = "user_" + userId + "_" + System.currentTimeMillis() + ".png";
         String imageUrl = s3Service.upload("qrcodes", fileName, qrImage, "image/png");
 
-        log.info("QR 코드 생성 완료 - userId: {}, url: {}", userId, imageUrl);
+        log.info("QR 코드 생성 완료 - userId: {}, data: {}, url: {}", userId, qrData, imageUrl);
 
-        return imageUrl;
+        return new QrResult(qrData, imageUrl);
     }
 
     /**

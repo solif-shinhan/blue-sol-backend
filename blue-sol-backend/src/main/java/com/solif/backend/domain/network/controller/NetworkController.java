@@ -36,7 +36,7 @@ public class NetworkController {
 
     @Operation(
             summary = "교류망 추가",
-            description = "QR 코드 또는 사용자 ID로 교류망에 추가합니다.",
+            description = "사용자 ID로 교류망에 추가합니다.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @PostMapping
@@ -46,6 +46,20 @@ public class NetworkController {
     ) {
         NetworkAddResponse response = networkService.addNetwork(userId, request);
         return ResponseFactory.success(NetworkSuccessCode.NETWORK_ADD_SUCCESS, response);
+    }
+
+    @Operation(
+            summary = "QR 코드 스캔으로 교류망 추가",
+            description = "QR 코드를 스캔하면 상대방을 나의 교류망에 추가하고, 상대방에게 알림을 발송합니다.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @PostMapping("/qr-scan")
+    public ResponseEntity<SuccessResponse<NetworkAddResponse>> addNetworkByQrScan(
+            @AuthenticationPrincipal Long userId,
+            @RequestParam String qrData
+    ) {
+        NetworkAddResponse response = networkService.addNetworkByQrScan(userId, qrData);
+        return ResponseFactory.success(NetworkSuccessCode.NETWORK_QR_ADD_SUCCESS, response);
     }
 
     @Operation(

@@ -105,46 +105,74 @@ public class NetworkService {
                 .build();
     }
 
-    // 교류망 추가
+    // 교류망 추가 (사용자 ID로)
     @Transactional
     public NetworkAddResponse addNetwork(Long userId, NetworkAddRequest request) {
         User user = findUserById(userId);
         User targetUser;
 
-        // QR 코드 또는 userId로 대상 찾기
-        if (request.getTargetQrCode() != null) {
-            targetUser = findUserByQrCode(request.getTargetQrCode());
-        } else if (request.getTargetUserId() != null) {
+        if (request.getTargetUserId() != null) {
             targetUser = findUserById(request.getTargetUserId());
         } else {
             throw new CustomException(NetworkErrorCode.INVALID_QR_CODE);
         }
 
+        return createConnection(user, targetUser);
+    }
+
+    // QR 코드 스캔으로 교류망 추가
+    @Transactional
+    public NetworkAddResponse addNetworkByQrScan(Long userId, String qrData) {
+        User scanner = findUserById(userId);
+        User targetUser = findUserByQrCode(qrData);
+
+        // 교류망 생성
+        NetworkAddResponse response = createConnection(scanner, targetUser);
+
+        // 알림 발송: QR이 찍힌 사용자(targetUser)에게 알림
+        Notification notification = Notification.builder()
+                .receiver(targetUser)
+                .notificationType(NotificationType.CONNECTION)
+                .targetType(TargetType.NETWORK)
+                .targetId(scanner.getUserId())
+                .notificationTitle("교류망에 추가되었어요!")
+                .notificationContent(scanner.getName() + "님이 교류망에 나를 추가했어요")
+                .build();
+        notificationRepository.save(notification);
+
+        return response;
+    }
+
+    // 교류망 생성 공통 로직
+    private NetworkAddResponse createConnection(User register, User target) {
         // 자기 자신 추가 방지
-        if (user.getUserId().equals(targetUser.getUserId())) {
+        if (register.getUserId().equals(target.getUserId())) {
             throw new CustomException(NetworkErrorCode.SELF_CONNECTION_NOT_ALLOWED);
         }
 
         // 이미 연결되어 있는지 확인
         if (connectionRepository.existsByRegisterAndTargetOrTargetAndRegister(
-                user, targetUser, targetUser, user
+                register, target, target, register
         )) {
             throw new CustomException(NetworkErrorCode.CONNECTION_ALREADY_EXISTS);
         }
 
-        // 연결 생성 (바로 ACCEPTED 상태로)
+        // 연결 생성 (바로 ACCEPTED)
         Connection connection = Connection.builder()
-                .register(user)
-                .target(targetUser)
+                .register(register)
+                .target(target)
                 .status(ConnectionStatus.ACCEPTED)
                 .build();
-
         connectionRepository.save(connection);
+
+        // QR을 찍은 사람(register)의 connectionCount만 증가
+        UserProfile registerProfile = findProfileByUser(register);
+        registerProfile.incrementConnectionCount();
 
         return NetworkAddResponse.builder()
                 .connectionId(connection.getConnectionId())
-                .targetUserId(targetUser.getUserId())
-                .targetUserName(targetUser.getName())
+                .targetUserId(target.getUserId())
+                .targetUserName(target.getName())
                 .createdAt(connection.getCreatedAt())
                 .build();
     }

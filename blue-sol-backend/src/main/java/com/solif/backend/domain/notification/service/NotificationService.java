@@ -183,7 +183,7 @@ public class NotificationService {
                     .id(emitterId)
                     .name(eventName)
                     .data(data));
-        } catch (IOException e) {
+        } catch (IOException | IllegalStateException e) {
             log.warn("SSE 전송 실패 - emitterId: {}, 제거합니다.", emitterId);
             sseEmitterRepository.deleteById(emitterId);
         }

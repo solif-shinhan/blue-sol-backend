@@ -80,7 +80,7 @@ public class CouncilMemberService {
                 .collect(Collectors.toList());
 
         if (uniqueUserIds.isEmpty()) {
-            throw new IllegalArgumentException("추가할 사용자가 없습니다.");
+            throw new CustomException(CouncilErrorCode.EMPTY_USER_IDS_TO_ADD);
         }
 
         // 사용자 조회

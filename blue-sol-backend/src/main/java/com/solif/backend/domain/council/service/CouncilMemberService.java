@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -92,10 +93,9 @@ public class CouncilMemberService {
         }
 
         // 이미 자치회에 소속된 사용자 검증
-        for (User user : usersToAdd) {
-            councilMemberRepository.findByUser(user).ifPresent(existingMember -> {
-                throw new CustomException(CouncilErrorCode.ALREADY_IN_COUNCIL);
-            });
+        Set<Long> existingUserIds = councilMemberRepository.findUserIdsAlreadyInAnyCouncil(uniqueUserIds);
+        if (!existingUserIds.isEmpty()) {
+            throw new CustomException(CouncilErrorCode.ALREADY_IN_COUNCIL);
         }
 
         // CouncilMember 생성 및 저장

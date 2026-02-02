@@ -17,7 +17,12 @@ public enum CouncilSuccessCode implements SuccessCode {
     // 자치회 생성/수정/삭제
     COUNCIL_CREATE_SUCCESS(HttpStatus.CREATED, "COUNCIL_CREATE_203", "자치회 생성에 성공했습니다."),
     COUNCIL_UPDATE_SUCCESS(HttpStatus.OK, "COUNCIL_UPDATE_204", "자치회 수정에 성공했습니다."),
-    COUNCIL_DELETE_SUCCESS(HttpStatus.OK, "COUNCIL_DELETE_205", "자치회 삭제에 성공했습니다.");
+    COUNCIL_DELETE_SUCCESS(HttpStatus.OK, "COUNCIL_DELETE_205", "자치회 삭제에 성공했습니다."),
+
+    // 멤버 관리
+    MEMBER_LIST_SUCCESS(HttpStatus.OK, "COUNCIL_206", "멤버 목록 조회에 성공했습니다."),
+    MEMBER_ADD_SUCCESS(HttpStatus.OK, "COUNCIL_207", "멤버 추가에 성공했습니다."),
+    MEMBER_DELETE_SUCCESS(HttpStatus.OK, "COUNCIL_208", "멤버 삭제에 성공했습니다.");
 
     private final HttpStatus status;
     private final String code;

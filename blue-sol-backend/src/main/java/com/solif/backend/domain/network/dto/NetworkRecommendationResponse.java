@@ -49,5 +49,11 @@ public class NetworkRecommendationResponse {
 
         @Schema(description = "관심사 목록")
         private List<String> interests;
+
+        @Schema(description = "자치회 소속 여부", example = "true")
+        private Boolean isInCouncil;
+
+        @Schema(description = "소속 자치회 이름", example = "제주최강산한이들")
+        private String councilName;
     }
 }

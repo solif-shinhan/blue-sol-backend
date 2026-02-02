@@ -67,5 +67,11 @@ public class NetworkListResponse {
 
         @Schema(description = "버튼 타입", example = "CHEER")
         private String buttonType;
+
+        @Schema(description = "자치회 소속 여부", example = "true")
+        private Boolean isInCouncil;
+
+        @Schema(description = "소속 자치회 이름", example = "제주최강산한이들")
+        private String councilName;
     }
 }

@@ -88,7 +88,7 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(Arrays.asList("https://blue-sol.netlify.app", "http://localhost:3000"));
 
         // 허용할 HTTP 메서드
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
 
         // 허용할 헤더 (Authorization 헤더 포함)
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Cache-Control"));
@@ -97,7 +97,7 @@ public class SecurityConfig {
         configuration.setAllowCredentials(true);
 
         // 브라우저에서 Authorization 헤더를 읽을 수 있도록 노출
-        configuration.addExposedHeader("Authorization");
+        configuration.setExposedHeaders(Arrays.asList("Authorization", "X-Accel-Buffering"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface CouncilMemberRepository extends JpaRepository<CouncilMember, Long> {
 
@@ -25,6 +26,11 @@ public interface CouncilMemberRepository extends JpaRepository<CouncilMember, Lo
 
     // 사용자로 소속 자치회 조회
     Optional<CouncilMember> findByUser(User user);
+
+    // 사용자 ID 목록으로 이미 자치회에 소속된 사용자 ID 조회 (배치)
+    @Query("SELECT cm.user.userId FROM CouncilMember cm WHERE cm.user.userId IN :userIds")
+    Set<Long> findUserIdsAlreadyInAnyCouncil(@Param("userIds") List<Long> userIds);
+
 
     // 자치회와 사용자 목록으로 멤버 삭제
     @Modifying(clearAutomatically = true)

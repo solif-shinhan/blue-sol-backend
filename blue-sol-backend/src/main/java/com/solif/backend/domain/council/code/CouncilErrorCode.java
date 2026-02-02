@@ -18,6 +18,7 @@ public enum CouncilErrorCode implements ErrorCode {
     ONLY_LEADER_CAN_ADD_MEMBER(HttpStatus.FORBIDDEN, "COUNCIL_004", "자치회 리더만 멤버를 추가할 수 있습니다."),
     ONLY_LEADER_CAN_DELETE_MEMBER(HttpStatus.FORBIDDEN, "COUNCIL_005", "자치회 리더만 멤버를 삭제할 수 있습니다."),
     LEADER_CANNOT_DELETE_SELF(HttpStatus.BAD_REQUEST, "COUNCIL_006", "리더는 본인을 삭제할 수 없습니다."),
+    EMPTY_USER_IDS_TO_ADD(HttpStatus.BAD_REQUEST, "COUNCIL_013", "추가할 사용자가 없습니다."),
 
     // 활동 규칙 관련
     RULE_NOT_FOUND(HttpStatus.NOT_FOUND, "COUNCIL_007", "존재하지 않는 활동 규칙입니다."),

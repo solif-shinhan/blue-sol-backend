@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -59,7 +60,7 @@ public class NotificationService {
 
      //알림 생성 후 실시간 전송
      //다른 도메인 서비스(MessageService 등)에서 호출합니다.
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public Notification send(Long receiverUserId, NotificationType type, TargetType targetType,
                              Long targetId, String title, String content) {
 

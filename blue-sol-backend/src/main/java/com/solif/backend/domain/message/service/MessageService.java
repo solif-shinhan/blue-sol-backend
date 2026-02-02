@@ -60,15 +60,20 @@ public class MessageService {
 
         Message savedMessage = messageRepository.save(message);
 
-        // 수신자에게 알림 생성 + SSE 실시간 전송
-        notificationService.send(
-                request.getReceiverId(),
-                NotificationType.MESSAGE,
-                TargetType.MESSAGE,
-                savedMessage.getMessageId(),
-                "새로운 쪽지가 도착했습니다.",
-                savedMessage.getMessageTitle()
-        );
+        // 수신자에게 알림 생성 + SSE 실시간 전송 (알림 실패가 쪽지 저장을 롤백시키지 않도록 try-catch)
+        try {
+            notificationService.send(
+                    request.getReceiverId(),
+                    NotificationType.MESSAGE,
+                    TargetType.MESSAGE,
+                    savedMessage.getMessageId(),
+                    "새로운 쪽지가 도착했습니다.",
+                    savedMessage.getMessageTitle()
+            );
+        } catch (Exception e) {
+            log.warn("쪽지 알림 발송 실패 - messageId: {}, receiverId: {}, error: {}",
+                    savedMessage.getMessageId(), request.getReceiverId(), e.getMessage());
+        }
 
         return MessageSendResponse.from(savedMessage);
     }

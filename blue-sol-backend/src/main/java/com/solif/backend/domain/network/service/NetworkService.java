@@ -12,10 +12,9 @@ import com.solif.backend.domain.network.entity.Connection;
 import com.solif.backend.domain.network.entity.ConnectionStatus;
 import com.solif.backend.domain.network.exception.NetworkErrorCode;
 import com.solif.backend.domain.network.repository.ConnectionRepository;
-import com.solif.backend.domain.notification.entity.Notification;
 import com.solif.backend.domain.notification.entity.NotificationType;
 import com.solif.backend.domain.notification.entity.TargetType;
-import com.solif.backend.domain.notification.repository.NotificationRepository;
+import com.solif.backend.domain.notification.service.NotificationService;
 import com.solif.backend.domain.profile.entity.UserProfile;
 import com.solif.backend.domain.profile.repository.UserProfileRepository;
 import com.solif.backend.domain.user.entity.User;
@@ -35,7 +34,7 @@ import java.util.stream.Collectors;
 public class NetworkService {
 
     private final ConnectionRepository connectionRepository;
-    private final NotificationRepository notificationRepository;
+    private final NotificationService notificationService;
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
     private final UserInterestRepository userInterestRepository;
@@ -129,16 +128,15 @@ public class NetworkService {
         // 교류망 생성
         NetworkAddResponse response = createConnection(scanner, targetUser);
 
-        // 알림 발송: QR이 찍힌 사용자(targetUser)에게 알림
-        Notification notification = Notification.builder()
-                .receiver(targetUser)
-                .notificationType(NotificationType.CONNECTION)
-                .targetType(TargetType.NETWORK)
-                .targetId(scanner.getUserId())
-                .notificationTitle("교류망에 추가되었어요!")
-                .notificationContent(scanner.getName() + "님이 교류망에 나를 추가했어요")
-                .build();
-        notificationRepository.save(notification);
+        // 알림 발송: QR이 찍힌 사용자(targetUser)에게 알림 (DB 저장 + SSE 실시간 전송)
+        notificationService.send(
+                targetUser.getUserId(),
+                NotificationType.CONNECTION,
+                TargetType.NETWORK,
+                scanner.getUserId(),
+                "교류망에 추가되었어요!",
+                scanner.getName() + "님이 교류망에 나를 추가했어요"
+        );
 
         return response;
     }
@@ -206,16 +204,16 @@ public class NetworkService {
             throw new CustomException(NetworkErrorCode.INVALID_INTERACTION_TYPE);
         }
 
-        Notification notification = Notification.builder()
-                .receiver(receiver)
-                .notificationType(notificationType)
-                .targetType(TargetType.NETWORK)
-                .targetId(sender.getUserId())
-                .notificationTitle(title)
-                .notificationContent(content)
-                .build();
-
-        notificationRepository.save(notification);
+        // 알림 생성 + SSE 실시간 전송
+        com.solif.backend.domain.notification.entity.Notification notification =
+                notificationService.send(
+                        receiver.getUserId(),
+                        notificationType,
+                        TargetType.NETWORK,
+                        sender.getUserId(),
+                        title,
+                        content
+                );
 
         return NetworkInteractionResponse.builder()
                 .notificationId(notification.getNotificationId())

@@ -8,12 +8,15 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "교류망", description = "교류망 API")
+@Validated
 @RestController
 @RequestMapping("/api/v1/networks")
 @RequiredArgsConstructor
@@ -56,7 +59,7 @@ public class NetworkController {
     @PostMapping("/qr-scan")
     public ResponseEntity<SuccessResponse<NetworkAddResponse>> addNetworkByQrScan(
             @AuthenticationPrincipal Long userId,
-            @RequestParam String qrData
+            @NotBlank(message = "QR 데이터는 비어있을 수 없습니다") @RequestParam String qrData
     ) {
         NetworkAddResponse response = networkService.addNetworkByQrScan(userId, qrData);
         return ResponseFactory.success(NetworkSuccessCode.NETWORK_QR_ADD_SUCCESS, response);

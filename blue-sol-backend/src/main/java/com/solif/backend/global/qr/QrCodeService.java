@@ -42,7 +42,7 @@ public class QrCodeService {
         String fileName = "user_" + userId + "_" + System.currentTimeMillis() + ".png";
         String imageUrl = s3Service.upload("qrcodes", fileName, qrImage, "image/png");
 
-        log.info("QR 코드 생성 완료 - userId: {}, data: {}, url: {}", userId, qrData, imageUrl);
+        log.info("QR 코드 생성 완료 - userId: {}, url: {}", userId, imageUrl);
 
         return new QrResult(qrData, imageUrl);
     }

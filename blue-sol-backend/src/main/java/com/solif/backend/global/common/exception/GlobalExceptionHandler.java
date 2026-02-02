@@ -3,6 +3,7 @@ package com.solif.backend.global.common.exception;
 import com.solif.backend.domain.auth.exception.AuthErrorCode;
 import com.solif.backend.global.common.exception.code.CommonErrorCode;
 import com.solif.backend.global.common.response.ErrorResponse;
+import jakarta.validation.ConstraintViolation;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.core.NestedExceptionUtils;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestControllerAdvice
@@ -46,7 +48,24 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse(errorCode.getCode(), errorCode.getMessage(), errors));
     }
 
-    // 3. DataIntegrityViolationException 처리 (3단계 방어)
+    // 3. @Validated + @RequestParam 검증 예외 처리 (ConstraintViolationException)
+    @ExceptionHandler(jakarta.validation.ConstraintViolationException.class)
+    public ResponseEntity<ErrorResponse> handleConstraintViolationException(
+            jakarta.validation.ConstraintViolationException e) {
+        Map<String, String> errors = e.getConstraintViolations().stream()
+                .collect(Collectors.toMap(
+                        v -> v.getPropertyPath().toString(),
+                        ConstraintViolation::getMessage,
+                        (a, b) -> a
+                ));
+
+        CommonErrorCode errorCode = CommonErrorCode.VALIDATION_ERROR;
+        return ResponseEntity
+                .status(errorCode.getStatus())
+                .body(new ErrorResponse(errorCode.getCode(), errorCode.getMessage(), errors));
+    }
+
+    // 4. DataIntegrityViolationException 처리 (3단계 방어)
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponse> handleDataIntegrityViolationException(DataIntegrityViolationException e) {
         ErrorCode errorCode = CommonErrorCode.INTERNAL_SERVER_ERROR;
@@ -133,7 +152,7 @@ public class GlobalExceptionHandler {
         return CommonErrorCode.INTERNAL_SERVER_ERROR;
     }
 
-    // 4. 일반 예외 처리
+    // 5. 일반 예외 처리
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneralException(Exception e) {
         log.error("Unexpected exception", e);

@@ -12,10 +12,9 @@ import com.solif.backend.domain.network.entity.Connection;
 import com.solif.backend.domain.network.entity.ConnectionStatus;
 import com.solif.backend.domain.network.exception.NetworkErrorCode;
 import com.solif.backend.domain.network.repository.ConnectionRepository;
-import com.solif.backend.domain.notification.entity.Notification;
 import com.solif.backend.domain.notification.entity.NotificationType;
 import com.solif.backend.domain.notification.entity.TargetType;
-import com.solif.backend.domain.notification.repository.NotificationRepository;
+import com.solif.backend.domain.notification.service.NotificationService;
 import com.solif.backend.domain.profile.entity.UserProfile;
 import com.solif.backend.domain.profile.repository.UserProfileRepository;
 import com.solif.backend.domain.user.entity.User;
@@ -35,7 +34,7 @@ import java.util.stream.Collectors;
 public class NetworkService {
 
     private final ConnectionRepository connectionRepository;
-    private final NotificationRepository notificationRepository;
+    private final NotificationService notificationService;
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
     private final UserInterestRepository userInterestRepository;
@@ -105,46 +104,73 @@ public class NetworkService {
                 .build();
     }
 
-    // 교류망 추가
+    // 교류망 추가 (사용자 ID로)
     @Transactional
     public NetworkAddResponse addNetwork(Long userId, NetworkAddRequest request) {
         User user = findUserById(userId);
         User targetUser;
 
-        // QR 코드 또는 userId로 대상 찾기
-        if (request.getTargetQrCode() != null) {
-            targetUser = findUserByQrCode(request.getTargetQrCode());
-        } else if (request.getTargetUserId() != null) {
+        if (request.getTargetUserId() != null) {
             targetUser = findUserById(request.getTargetUserId());
         } else {
             throw new CustomException(NetworkErrorCode.INVALID_QR_CODE);
         }
 
+        return createConnection(user, targetUser);
+    }
+
+    // QR 코드 스캔으로 교류망 추가
+    @Transactional
+    public NetworkAddResponse addNetworkByQrScan(Long userId, String qrData) {
+        User scanner = findUserById(userId);
+        User targetUser = findUserByQrCode(qrData);
+
+        // 교류망 생성
+        NetworkAddResponse response = createConnection(scanner, targetUser);
+
+        // 알림 발송: QR이 찍힌 사용자(targetUser)에게 알림 (DB 저장 + SSE 실시간 전송)
+        notificationService.send(
+                targetUser.getUserId(),
+                NotificationType.CONNECTION,
+                TargetType.NETWORK,
+                scanner.getUserId(),
+                "교류망에 추가되었어요!",
+                scanner.getName() + "님이 교류망에 나를 추가했어요"
+        );
+
+        return response;
+    }
+
+    // 교류망 생성 공통 로직
+    private NetworkAddResponse createConnection(User register, User target) {
         // 자기 자신 추가 방지
-        if (user.getUserId().equals(targetUser.getUserId())) {
+        if (register.getUserId().equals(target.getUserId())) {
             throw new CustomException(NetworkErrorCode.SELF_CONNECTION_NOT_ALLOWED);
         }
 
         // 이미 연결되어 있는지 확인
         if (connectionRepository.existsByRegisterAndTargetOrTargetAndRegister(
-                user, targetUser, targetUser, user
+                register, target, target, register
         )) {
             throw new CustomException(NetworkErrorCode.CONNECTION_ALREADY_EXISTS);
         }
 
-        // 연결 생성 (바로 ACCEPTED 상태로)
+        // 연결 생성 (바로 ACCEPTED)
         Connection connection = Connection.builder()
-                .register(user)
-                .target(targetUser)
+                .register(register)
+                .target(target)
                 .status(ConnectionStatus.ACCEPTED)
                 .build();
-
         connectionRepository.save(connection);
+
+        // QR을 찍은 사람(register)의 connectionCount만 증가
+        UserProfile registerProfile = findProfileByUser(register);
+        registerProfile.incrementConnectionCount();
 
         return NetworkAddResponse.builder()
                 .connectionId(connection.getConnectionId())
-                .targetUserId(targetUser.getUserId())
-                .targetUserName(targetUser.getName())
+                .targetUserId(target.getUserId())
+                .targetUserName(target.getName())
                 .createdAt(connection.getCreatedAt())
                 .build();
     }
@@ -178,16 +204,16 @@ public class NetworkService {
             throw new CustomException(NetworkErrorCode.INVALID_INTERACTION_TYPE);
         }
 
-        Notification notification = Notification.builder()
-                .receiver(receiver)
-                .notificationType(notificationType)
-                .targetType(TargetType.NETWORK)
-                .targetId(sender.getUserId())
-                .notificationTitle(title)
-                .notificationContent(content)
-                .build();
-
-        notificationRepository.save(notification);
+        // 알림 생성 + SSE 실시간 전송
+        com.solif.backend.domain.notification.entity.Notification notification =
+                notificationService.send(
+                        receiver.getUserId(),
+                        notificationType,
+                        TargetType.NETWORK,
+                        sender.getUserId(),
+                        title,
+                        content
+                );
 
         return NetworkInteractionResponse.builder()
                 .notificationId(notification.getNotificationId())

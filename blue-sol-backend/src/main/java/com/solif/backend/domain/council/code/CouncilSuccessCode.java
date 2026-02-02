@@ -22,7 +22,12 @@ public enum CouncilSuccessCode implements SuccessCode {
     // 멤버 관리
     MEMBER_LIST_SUCCESS(HttpStatus.OK, "COUNCIL_206", "멤버 목록 조회에 성공했습니다."),
     MEMBER_ADD_SUCCESS(HttpStatus.OK, "COUNCIL_207", "멤버 추가에 성공했습니다."),
-    MEMBER_DELETE_SUCCESS(HttpStatus.OK, "COUNCIL_208", "멤버 삭제에 성공했습니다.");
+    MEMBER_DELETE_SUCCESS(HttpStatus.OK, "COUNCIL_208", "멤버 삭제에 성공했습니다."),
+
+    // 활동 규칙 관리
+    RULE_LIST_SUCCESS(HttpStatus.OK, "COUNCIL_209", "활동 규칙 목록 조회에 성공했습니다."),
+    RULE_ADD_SUCCESS(HttpStatus.CREATED, "COUNCIL_210", "활동 규칙 추가에 성공했습니다."),
+    RULE_DELETE_SUCCESS(HttpStatus.OK, "COUNCIL_211", "활동 규칙 삭제에 성공했습니다.");
 
     private final HttpStatus status;
     private final String code;

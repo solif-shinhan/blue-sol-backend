@@ -10,4 +10,7 @@ public interface CouncilRuleRepository extends JpaRepository<CouncilRule, Long> 
 
     // 자치회로 활동 규칙 목록 조회
     List<CouncilRule> findByCouncilOrderByCreatedAtAsc(Council council);
+
+    // 자치회의 총 규칙 수 조회
+    Long countByCouncil(Council council);
 }

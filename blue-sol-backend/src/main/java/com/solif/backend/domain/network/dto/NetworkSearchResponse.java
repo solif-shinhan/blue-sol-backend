@@ -46,5 +46,12 @@ public class NetworkSearchResponse {
         @Schema(description = "이미 연결 여부")
         @JsonProperty("isConnected")
         private boolean isConnected;
+
+        @Schema(description = "자치회 소속 여부", example = "true")
+        @JsonProperty("isInCouncil")
+        private Boolean isInCouncil;
+
+        @Schema(description = "소속 자치회 이름", example = "제주최강산한이들")
+        private String councilName;
     }
 }

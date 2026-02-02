@@ -31,6 +31,9 @@ public interface CouncilMemberRepository extends JpaRepository<CouncilMember, Lo
     @Query("SELECT cm.user.userId FROM CouncilMember cm WHERE cm.user.userId IN :userIds")
     Set<Long> findUserIdsAlreadyInAnyCouncil(@Param("userIds") List<Long> userIds);
 
+    // 사용자 ID 목록으로 멤버십 조회 (배치)
+    @Query("SELECT cm FROM CouncilMember cm JOIN FETCH cm.council WHERE cm.user.userId IN :userIds")
+    List<CouncilMember> findByUserIdIn(@Param("userIds") Set<Long> userIds);
 
     // 자치회와 사용자 목록으로 멤버 삭제
     @Modifying(clearAutomatically = true)

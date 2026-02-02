@@ -3,6 +3,8 @@ package com.solif.backend.domain.network.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.solif.backend.domain.council.entity.CouncilMember;
+import com.solif.backend.domain.council.repository.CouncilMemberRepository;
 import com.solif.backend.domain.interest.entity.UserInterest;
 import com.solif.backend.domain.interest.repository.UserInterestRepository;
 import com.solif.backend.domain.network.dto.*;
@@ -23,7 +25,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,6 +39,7 @@ public class NetworkService {
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
     private final UserInterestRepository userInterestRepository;
+    private final CouncilMemberRepository councilMemberRepository;
     private final ObjectMapper objectMapper;
 
     // 나의 교류망 목록 조회
@@ -61,6 +65,12 @@ public class NetworkService {
                 })
                 .collect(Collectors.toList());
 
+        // 자치회 정보 배치 조회 (N+1 방지)
+        List<Long> targetUserIds = connections.stream()
+                .map(conn -> conn.getTarget().getUserId())
+                .collect(Collectors.toList());
+        Map<Long, CouncilMember> membershipMap = getCouncilMembershipMap(targetUserIds);
+
         List<NetworkListResponse.NetworkCard> networkCards = connections.stream()
                 .map(conn -> {
                     User target = conn.getTarget();
@@ -68,6 +78,9 @@ public class NetworkService {
                     List<String> interests = getInterestsByUser(target);
                     List<String> mainGoals = convertJsonToList(profile.getMainGoal());
                     String buttonType = determineButtonType(user, target);
+
+                    // 자치회 정보 추가
+                    CouncilMember membership = membershipMap.get(target.getUserId());
 
                     return NetworkListResponse.NetworkCard.builder()
                             .userId(target.getUserId())
@@ -78,6 +91,8 @@ public class NetworkService {
                             .mainGoals(mainGoals)
                             .interests(interests)
                             .buttonType(buttonType)
+                            .isInCouncil(membership != null)
+                            .councilName(membership != null ? membership.getCouncil().getCouncilName() : null)
                             .build();
                 })
                 .collect(Collectors.toList());
@@ -214,12 +229,22 @@ public class NetworkService {
 
         List<User> searchedUsers = userRepository.findByNameContaining(keyword);
 
+        // 자치회 정보 배치 조회 (N+1 방지)
+        List<Long> userIds = searchedUsers.stream()
+                .map(User::getUserId)
+                .filter(id -> !id.equals(userId))
+                .collect(Collectors.toList());
+        Map<Long, CouncilMember> membershipMap = getCouncilMembershipMap(userIds);
+
         List<NetworkSearchResponse.SearchedUser> users = searchedUsers.stream()
                 .filter(u -> !u.getUserId().equals(userId))
                 .map(u -> {
                     UserProfile profile = userProfileRepository.findByUser_UserId(u.getUserId()).orElse(null);
                     List<String> interests = getInterestsByUser(u);
                     boolean isConnected = connectionRepository.existsByRegisterAndTarget(user, u);
+
+                    // 자치회 정보 추가
+                    CouncilMember membership = membershipMap.get(u.getUserId());
 
                     return NetworkSearchResponse.SearchedUser.builder()
                             .userId(u.getUserId())
@@ -229,6 +254,8 @@ public class NetworkService {
                             .solidGoalName(profile != null ? profile.getSolidGoalName() : null)
                             .interests(interests)
                             .isConnected(isConnected)
+                            .isInCouncil(membership != null)
+                            .councilName(membership != null ? membership.getCouncil().getCouncilName() : null)
                             .build();
                 })
                 .collect(Collectors.toList());
@@ -263,6 +290,20 @@ public class NetworkService {
                 .stream()
                 .map(UserInterest::getCategoryName)
                 .collect(Collectors.toList());
+    }
+
+    // 자치회 멤버십 배치 조회 (N+1 방지)
+    private Map<Long, CouncilMember> getCouncilMembershipMap(List<Long> userIds) {
+        if (userIds.isEmpty()) {
+            return Map.of();
+        }
+
+        Set<Long> userIdSet = new HashSet<>(userIds);
+        return councilMemberRepository.findByUserIdIn(userIdSet).stream()
+                .collect(Collectors.toMap(
+                        cm -> cm.getUser().getUserId(),
+                        Function.identity()
+                ));
     }
 
     private String determineButtonType(User me, User target) {
@@ -306,14 +347,25 @@ public class NetworkService {
             return List.of();
         }
 
-        return userInterestRepository.findAllByCategoryNameIn(myInterests).stream()
+        List<User> users = userInterestRepository.findAllByCategoryNameIn(myInterests).stream()
                 .map(UserInterest::getUser)
                 .filter(u -> !u.getUserId().equals(user.getUserId()))
                 .distinct()
                 .limit(10)
+                .collect(Collectors.toList());
+
+        // 자치회 정보 배치 조회 (N+1 방지)
+        List<Long> userIds = users.stream()
+                .map(User::getUserId)
+                .collect(Collectors.toList());
+        Map<Long, CouncilMember> membershipMap = getCouncilMembershipMap(userIds);
+
+        return users.stream()
                 .map(u -> {
                     UserProfile profile = userProfileRepository.findByUser_UserId(u.getUserId()).orElse(null);
                     List<String> interests = getInterestsByUser(u);
+                    CouncilMember membership = membershipMap.get(u.getUserId());
+
                     return NetworkRecommendationResponse.RecommendedUser.builder()
                             .userId(u.getUserId())
                             .userName(u.getName())
@@ -321,18 +373,31 @@ public class NetworkService {
                             .backgroundPattern(profile != null ? profile.getBackgroundPattern() : null)
                             .solidGoalName(profile != null ? profile.getSolidGoalName() : null)
                             .interests(interests)
+                            .isInCouncil(membership != null)
+                            .councilName(membership != null ? membership.getCouncil().getCouncilName() : null)
                             .build();
                 })
                 .collect(Collectors.toList());
     }
 
     private List<NetworkRecommendationResponse.RecommendedUser> findAllUsersExcept(User user) {
-        return userRepository.findAll().stream()
+        List<User> users = userRepository.findAll().stream()
                 .filter(u -> !u.getUserId().equals(user.getUserId()))
                 .limit(20)
+                .collect(Collectors.toList());
+
+        // 자치회 정보 배치 조회 (N+1 방지)
+        List<Long> userIds = users.stream()
+                .map(User::getUserId)
+                .collect(Collectors.toList());
+        Map<Long, CouncilMember> membershipMap = getCouncilMembershipMap(userIds);
+
+        return users.stream()
                 .map(u -> {
                     UserProfile profile = userProfileRepository.findByUser_UserId(u.getUserId()).orElse(null);
                     List<String> interests = getInterestsByUser(u);
+                    CouncilMember membership = membershipMap.get(u.getUserId());
+
                     return NetworkRecommendationResponse.RecommendedUser.builder()
                             .userId(u.getUserId())
                             .userName(u.getName())
@@ -340,6 +405,8 @@ public class NetworkService {
                             .backgroundPattern(profile != null ? profile.getBackgroundPattern() : null)
                             .solidGoalName(profile != null ? profile.getSolidGoalName() : null)
                             .interests(interests)
+                            .isInCouncil(membership != null)
+                            .councilName(membership != null ? membership.getCouncil().getCouncilName() : null)
                             .build();
                 })
                 .collect(Collectors.toList());

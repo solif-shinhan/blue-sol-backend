@@ -9,7 +9,8 @@ import org.springframework.http.HttpStatus;
 @RequiredArgsConstructor
 public enum UserSuccessCode implements SuccessCode {
     
-    GET_MY_INFO_SUCCESS(HttpStatus.OK, "USER_001", "내 정보 조회 성공");
+    GET_MY_INFO_SUCCESS(HttpStatus.OK, "USER_001", "내 정보 조회 성공"),
+    USER_SEARCH_SUCCESS(HttpStatus.OK, "USER_002", "사용자 검색 성공");
 
     private final HttpStatus status;
     private final String code;

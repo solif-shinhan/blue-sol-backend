@@ -27,6 +27,7 @@ public enum CouncilErrorCode implements ErrorCode {
 
     // 예산 관련
     INSUFFICIENT_BUDGET(HttpStatus.BAD_REQUEST, "COUNCIL_010", "예산이 부족합니다."),
+    INVALID_BUDGET_AMOUNT(HttpStatus.BAD_REQUEST, "COUNCIL_013", "예산 금액이 유효하지 않습니다."),
 
     // 자치회 소속 관련
     ALREADY_IN_COUNCIL(HttpStatus.BAD_REQUEST, "COUNCIL_011", "이미 다른 자치회에 소속되어 있습니다."),

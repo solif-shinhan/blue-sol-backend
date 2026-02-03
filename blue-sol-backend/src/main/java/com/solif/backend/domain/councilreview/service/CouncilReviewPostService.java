@@ -242,8 +242,8 @@ public class CouncilReviewPostService {
         Long newTotalCost = request.getTotalCost();
 
         Council council = reviewPost.getCouncil();
-        council.decreaseBudget(-oldTotalCost); // 복구 (음수로 차감 = 증가)
-        council.decreaseBudget(newTotalCost);   // 재차감
+        council.increaseBudget(oldTotalCost);    // 복구
+        council.decreaseBudget(newTotalCost);    // 재차감
 
         // 6. 활동 후기 정보 업데이트
         reviewPost.updateReviewPost(
@@ -291,7 +291,7 @@ public class CouncilReviewPostService {
 
         // 7. 예산 복구
         Council council = reviewPost.getCouncil();
-        council.decreaseBudget(-reviewPost.getTotalCost()); // 음수로 차감 = 증가
+        council.increaseBudget(reviewPost.getTotalCost());
 
         log.info("활동 후기 삭제 완료 - postId: {}", councilReviewPostId);
     }

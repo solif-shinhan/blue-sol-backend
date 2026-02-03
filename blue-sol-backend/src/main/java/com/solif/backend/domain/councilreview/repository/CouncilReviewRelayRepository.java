@@ -6,8 +6,11 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public interface CouncilReviewRelayRepository extends JpaRepository<CouncilReviewRelay, Long> {
 
@@ -74,4 +77,24 @@ public interface CouncilReviewRelayRepository extends JpaRepository<CouncilRevie
             "WHERE crr.councilReviewPost.councilReviewPostId = :postId " +
             "ORDER BY crr.relayOrder ASC")
     List<CouncilReviewRelay> findByCouncilReviewPostIdOrderByRelayOrder(@Param("postId") Long postId);
+
+    // 여러 게시글의 릴레이 수를 한 번에 조회 (N+1 방지)
+    @Query("SELECT r.councilReviewPost.councilReviewPostId, COUNT(r) " +
+            "FROM CouncilReviewRelay r " +
+            "WHERE r.councilReviewPost.councilReviewPostId IN :postIds " +
+            "GROUP BY r.councilReviewPost.councilReviewPostId")
+    List<Object[]> countByPostIdsRaw(@Param("postIds") List<Long> postIds);
+
+    default Map<Long, Long> countByPostIds(List<Long> postIds) {
+        if (postIds == null || postIds.isEmpty()) {
+            return new HashMap<>();
+        }
+
+        List<Object[]> results = countByPostIdsRaw(postIds);
+        return results.stream()
+                .collect(Collectors.toMap(
+                        row -> (Long) row[0],
+                        row -> (Long) row[1]
+                ));
+    }
 }

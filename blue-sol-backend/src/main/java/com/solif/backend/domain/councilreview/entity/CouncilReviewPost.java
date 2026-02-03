@@ -73,7 +73,7 @@ public class CouncilReviewPost {
         // 활동 정보 업데이트
         this.activityDate = activityDate;
         this.activityLocation = activityLocation;
-        this.totalCost = totalCost;
+        this.totalCost = totalCost != null ? totalCost : 0L;
     }
 
     public void softDelete() {

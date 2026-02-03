@@ -6,7 +6,10 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public interface CouncilReviewParticipantRepository extends JpaRepository<CouncilReviewParticipant, Long> {
 
@@ -49,4 +52,24 @@ public interface CouncilReviewParticipantRepository extends JpaRepository<Counci
     @Query("SELECT crp.user.userId FROM CouncilReviewParticipant crp " +
             "WHERE crp.councilReviewPost.councilReviewPostId = :postId")
     List<Long> findUserIdsByCouncilReviewPostId(@Param("postId") Long postId);
+
+    // 여러 게시글의 참여자 수를 한 번에 조회 (N+1 방지)
+    @Query("SELECT p.councilReviewPost.councilReviewPostId, COUNT(p) " +
+            "FROM CouncilReviewParticipant p " +
+            "WHERE p.councilReviewPost.councilReviewPostId IN :postIds " +
+            "GROUP BY p.councilReviewPost.councilReviewPostId")
+    List<Object[]> countByPostIdsRaw(@Param("postIds") List<Long> postIds);
+
+    default Map<Long, Long> countByPostIds(List<Long> postIds) {
+        if (postIds == null || postIds.isEmpty()) {
+            return new HashMap<>();
+        }
+
+        List<Object[]> results = countByPostIdsRaw(postIds);
+        return results.stream()
+                .collect(Collectors.toMap(
+                        row -> (Long) row[0],
+                        row -> (Long) row[1]
+                ));
+    }
 }

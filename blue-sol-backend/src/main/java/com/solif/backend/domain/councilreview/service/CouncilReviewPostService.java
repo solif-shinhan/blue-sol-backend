@@ -59,9 +59,7 @@ public class CouncilReviewPostService {
     private final CommentRepository commentRepository;
     private final PostLikeRepository postLikeRepository;
 
-    /**
-     * 자치회별 활동 후기 목록 조회
-     */
+    // 자치회별 활동 후기 목록 조회
     public Slice<CouncilReviewPostListResponse> getCouncilReviewPosts(Long councilId, Pageable pageable) {
         log.info("활동 후기 목록 조회 - councilId: {}", councilId);
 
@@ -92,9 +90,7 @@ public class CouncilReviewPostService {
         });
     }
 
-    /**
-     * 활동 후기 상세 조회
-     */
+    // 활동 후기 상세 조회
     @Transactional
     public CouncilReviewPostDetailResponse getCouncilReviewPostDetail(Long userId, Long postId) {
         log.info("활동 후기 상세 조회 - postId: {}, userId: {}", postId, userId);
@@ -142,9 +138,7 @@ public class CouncilReviewPostService {
         );
     }
 
-    /**
-     * 활동 후기 생성 (리더 전용)
-     */
+    // 활동 후기 생성 (리더 전용)
     @Transactional
     public CouncilReviewPostCreateResponse createCouncilReviewPost(
             Long userId, Long councilId, CouncilReviewPostCreateRequest request
@@ -221,9 +215,7 @@ public class CouncilReviewPostService {
         );
     }
 
-    /**
-     * 활동 후기 수정 (리더 전용)
-     */
+    // 활동 후기 수정 (리더 전용)
     @Transactional
     public void updateCouncilReviewPost(Long userId, Long postId, CouncilReviewPostUpdateRequest request) {
         log.info("활동 후기 수정 - userId: {}, postId: {}", userId, postId);
@@ -269,9 +261,7 @@ public class CouncilReviewPostService {
         log.info("활동 후기 수정 완료 - postId: {}", postId);
     }
 
-    /**
-     * 활동 후기 삭제 (리더 전용, Soft Delete)
-     */
+    // 활동 후기 삭제 (리더 전용, Soft Delete)
     @Transactional
     public void deleteCouncilReviewPost(Long userId, Long postId) {
         log.info("활동 후기 삭제 - userId: {}, postId: {}", userId, postId);
@@ -306,9 +296,7 @@ public class CouncilReviewPostService {
         log.info("활동 후기 삭제 완료 - postId: {}", postId);
     }
 
-    /**
-     * 참여자 검증 (모두 자치회 멤버여야 함)
-     */
+    // 참여자 검증 (모두 자치회 멤버여야 함)
     private void validateParticipants(Long councilId, List<Long> participantUserIds) {
         log.info("참여자 검증 - councilId: {}, participantUserIds: {}", councilId, participantUserIds);
 
@@ -333,9 +321,7 @@ public class CouncilReviewPostService {
         log.info("참여자 검증 완료 - 모두 자치회 멤버");
     }
 
-    /**
-     * 참여자 생성
-     */
+    // 참여자 생성
     private void createParticipants(CouncilReviewPost reviewPost, List<Long> participantUserIds) {
         log.info("참여자 생성 - reviewPostId: {}, count: {}",
                 reviewPost.getCouncilReviewPostId(), participantUserIds.size());
@@ -357,9 +343,7 @@ public class CouncilReviewPostService {
         log.info("참여자 생성 완료 - {} 명", participants.size());
     }
 
-    /**
-     * 참여자 업데이트 (추가/제거)
-     */
+    // 참여자 업데이트 (추가/제거)
     private void updateParticipants(CouncilReviewPost reviewPost, List<Long> newParticipantUserIds) {
         log.info("참여자 업데이트 - reviewPostId: {}", reviewPost.getCouncilReviewPostId());
 

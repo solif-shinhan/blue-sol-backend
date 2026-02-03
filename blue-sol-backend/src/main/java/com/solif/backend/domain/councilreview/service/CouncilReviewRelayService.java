@@ -35,9 +35,7 @@ public class CouncilReviewRelayService {
     private final CouncilReviewQuestionService questionService;
     private final UserRepository userRepository;
 
-    /**
-     * 릴레이 작성
-     */
+    // 릴레이 후기 작성
     @Transactional
     public Map<String, Object> createRelay(Long userId, Long postId, CouncilReviewRelayCreateRequest request) {
         log.info("릴레이 작성 - userId: {}, postId: {}, questionId: {}", userId, postId, request.getQuestionId());
@@ -99,9 +97,7 @@ public class CouncilReviewRelayService {
         );
     }
 
-    /**
-     * 릴레이 수정
-     */
+    // 릴레이 수정
     @Transactional
     public void updateRelay(Long userId, Long relayId, CouncilReviewRelayUpdateRequest request) {
         log.info("릴레이 수정 - userId: {}, relayId: {}", userId, relayId);
@@ -121,9 +117,7 @@ public class CouncilReviewRelayService {
         log.info("릴레이 수정 완료 - relayId: {}", relayId);
     }
 
-    /**
-     * 릴레이 삭제
-     */
+    // 릴레이 삭제
     @Transactional
     public void deleteRelay(Long userId, Long relayId) {
         log.info("릴레이 삭제 - userId: {}, relayId: {}", userId, relayId);
@@ -167,9 +161,7 @@ public class CouncilReviewRelayService {
         log.info("relay_order 재정렬 완료 - postId: {}, 총 릴레이 수: {}", postId, relays.size());
     }
 
-    /**
-     * 특정 활동 후기의 모든 릴레이 조회 (상세 조회용)
-     */
+    // 특정 활동 후기의 모든 릴레이 조회 (상세 조회용)
     public List<CouncilReviewRelayResponse> getRelaysByPostId(Long postId, Long currentUserId) {
         log.info("릴레이 목록 조회 - postId: {}", postId);
 

@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 @Slf4j
@@ -44,5 +45,19 @@ public class S3Service {
         log.info("S3 업로드 완료: {}", url);
 
         return url;
+    }
+
+    /**
+     * S3에서 파일 삭제
+     * @param objectKey 삭제할 파일의 key (예: "uploads/uuid.png")
+     */
+    public void delete(String objectKey) {
+        DeleteObjectRequest request = DeleteObjectRequest.builder()
+                .bucket(bucket)
+                .key(objectKey)
+                .build();
+
+        s3Client.deleteObject(request);
+        log.info("S3 삭제 완료: {}", objectKey);
     }
 }

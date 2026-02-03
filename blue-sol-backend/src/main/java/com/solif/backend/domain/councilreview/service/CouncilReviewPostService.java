@@ -34,10 +34,7 @@ import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -70,16 +67,35 @@ public class CouncilReviewPostService {
         // 활동 후기 목록 조회
         Slice<CouncilReviewPost> posts = reviewPostRepository.findByCouncilIdWithPostAndCouncil(councilId, pageable);
 
+        // 빈 결과 처리
+        if (!posts.hasContent()) {
+            return posts.map(post -> CouncilReviewPostListResponse.from(
+                    post, 0L, 0L, 0L, 0L, null
+            ));
+        }
+
+        // 게시글 ID 목록 추출
+        List<Long> councilReviewPostIds = posts.getContent().stream()
+                .map(CouncilReviewPost::getCouncilReviewPostId)
+                .collect(Collectors.toList());
+
+        // Post ID 목록 추출 (좋아요, 댓글 카운트용)
+        List<Long> postIds = posts.getContent().stream()
+                .map(post -> post.getPost().getPostId())
+                .collect(Collectors.toList());
+
+        // 배치 쿼리로 한 번에 조회 (N+1 방지)
+        Map<Long, Long> participantCounts = participantRepository.countByPostIds(councilReviewPostIds);
+        Map<Long, Long> relayCounts = relayRepository.countByPostIds(councilReviewPostIds);
+        Map<Long, Long> likeCounts = postLikeRepository.countByPostIds(postIds);
+        Map<Long, Long> commentCounts = commentRepository.countByPostIdsAsMap(postIds);
+
         // DTO 변환
         return posts.map(post -> {
-            Long participantCount = participantRepository.countByCouncilReviewPost_CouncilReviewPostId(
-                    post.getCouncilReviewPostId()
-            );
-            Long relayCount = relayRepository.countByCouncilReviewPost_CouncilReviewPostId(
-                    post.getCouncilReviewPostId()
-            );
-            Long likeCount = postLikeRepository.countByPost_PostId(post.getPost().getPostId());
-            Long commentCount = commentRepository.countByPost_PostId(post.getPost().getPostId());
+            Long participantCount = participantCounts.getOrDefault(post.getCouncilReviewPostId(), 0L);
+            Long relayCount = relayCounts.getOrDefault(post.getCouncilReviewPostId(), 0L);
+            Long likeCount = likeCounts.getOrDefault(post.getPost().getPostId(), 0L);
+            Long commentCount = commentCounts.getOrDefault(post.getPost().getPostId(), 0L);
 
             // TODO: 첫 번째 이미지 URL (file_attachment 연동 후 구현)
             String thumbnailImageUrl = null;

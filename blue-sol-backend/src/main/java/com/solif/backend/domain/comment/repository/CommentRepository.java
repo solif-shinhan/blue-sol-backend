@@ -6,8 +6,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public interface CommentRepository extends JpaRepository<Comment, Long> {
 
@@ -23,4 +25,18 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
             "WHERE c.post.postId IN :postIds " +
             "GROUP BY c.post.postId")
     List<PostCommentCount> countByPostIds(@Param("postIds") List<Long> postIds);
+
+    // Map으로 변환하는 편의 메서드
+    default Map<Long, Long> countByPostIdsAsMap(List<Long> postIds) {
+        if (postIds == null || postIds.isEmpty()) {
+            return new HashMap<>();
+        }
+
+        List<PostCommentCount> results = countByPostIds(postIds);
+        return results.stream()
+                .collect(Collectors.toMap(
+                        PostCommentCount::getPostId,
+                        PostCommentCount::getCommentCount
+                ));
+    }
 }

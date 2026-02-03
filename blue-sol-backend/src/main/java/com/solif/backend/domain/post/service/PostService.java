@@ -6,6 +6,8 @@ import com.solif.backend.domain.board.entity.Board;
 import com.solif.backend.domain.board.repository.BoardRepository;
 import com.solif.backend.domain.comment.dto.PostCommentCount;
 import com.solif.backend.domain.comment.repository.CommentRepository;
+import com.solif.backend.domain.councilreview.entity.CouncilReviewPost;
+import com.solif.backend.domain.councilreview.repository.CouncilReviewPostRepository;
 import com.solif.backend.domain.post.dto.*;
 import com.solif.backend.domain.post.entity.Post;
 import com.solif.backend.domain.post.entity.PostCategory;
@@ -37,6 +39,7 @@ public class PostService {
     private final CommentRepository commentRepository;
     private final UserRepository userRepository;
     private final PostLikeRepository postLikeRepository;
+    private final CouncilReviewPostRepository councilReviewPostRepository;
 
     // 게시글 목록 조회
     public Slice<PostListResponse> getPosts(Long boardId, PostCategory category, Pageable pageable) {
@@ -100,8 +103,25 @@ public class PostService {
 
         // Post -> PostListResponse 변환
         return posts.map(post -> {
-            Long commentCount = commentCounts.getOrDefault(post.getPostId(), 0L);
-            return PostListResponse.from(post, commentCount, isAnonymous);
+            Long commentCount = commentRepository.countByPost_PostId(post.getPostId());
+
+            // 자치회 활동 후기인 경우 추가 정보 조회
+            String councilName = null;
+            String thumbnailImageUrl = null;
+
+            if (boardId == 1L) { // 자치회 활동 후기
+                CouncilReviewPost reviewPost = councilReviewPostRepository
+                        .findByPostId(post.getPostId())
+                        .orElse(null);
+
+                if (reviewPost != null) {
+                    councilName = reviewPost.getCouncil().getCouncilName();
+                    // TODO: 첫 번째 이미지 조회 (file_attachment 연동 후)
+                    thumbnailImageUrl = null;
+                }
+            }
+
+            return PostListResponse.from(post, commentCount, isAnonymous, councilName, thumbnailImageUrl);
         });
     }
 

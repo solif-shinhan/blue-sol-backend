@@ -91,13 +91,29 @@ public class Council {
         this.profileImageFileId = profileImageFileId;
     }
 
+    // 예산 차감 (활동 후기 작성 시)
     public void decreaseBudget(Long usedBudget) {
         if (usedBudget == null || usedBudget < 0) {
-            throw new IllegalArgumentException("사용 예산은 0 이상이어야 합니다.");
+            throw new CustomException(CouncilErrorCode.INVALID_BUDGET_AMOUNT);
         }
 
-        // 예산 초과 허용, 단 currentBudget은 음수 불가 (0원으로 표시)
-        this.currentBudget = Math.max(0L, this.currentBudget - usedBudget);
+        // 예산 차감
+        this.currentBudget = this.currentBudget - usedBudget;
+
+        // 예산이 음수가 되면 0원으로 표시 (예산 초과 허용)
+        if (this.currentBudget < 0) {
+            this.currentBudget = 0L;
+        }
+    }
+
+    // 예산 복구 (활동 후기 수정/삭제 시)
+    public void increaseBudget(Long refundBudget) {
+        if (refundBudget == null || refundBudget < 0) {
+            throw new CustomException(CouncilErrorCode.INVALID_BUDGET_AMOUNT);
+        }
+
+        // 복구는 총 예산을 초과할 수 없음
+        this.currentBudget = Math.min(this.totalBudget, this.currentBudget + refundBudget);
     }
 
     public boolean isLeader(Long userId) {

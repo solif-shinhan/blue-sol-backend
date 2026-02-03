@@ -24,6 +24,10 @@ public interface CouncilMemberRepository extends JpaRepository<CouncilMember, Lo
     @Query("SELECT cm FROM CouncilMember cm JOIN FETCH cm.user WHERE cm.council = :council ORDER BY cm.role DESC, cm.joinedAt ASC")
     List<CouncilMember> findByCouncilOrderByRoleDescJoinedAtAsc(@Param("council") Council council);
 
+    // 자치회 ID로 멤버 목록 조회
+    @Query("SELECT cm FROM CouncilMember cm JOIN FETCH cm.user WHERE cm.council.councilId = :councilId")
+    List<CouncilMember> findByCouncil_CouncilId(@Param("councilId") Long councilId);
+
     // 사용자로 소속 자치회 조회
     Optional<CouncilMember> findByUser(User user);
 

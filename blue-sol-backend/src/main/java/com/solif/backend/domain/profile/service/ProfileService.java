@@ -159,6 +159,7 @@ public class ProfileService {
         String baseUrl = String.format("https://%s.s3.%s.amazonaws.com/", bucket, region);
 
         return fileKeys.stream()
+                .filter(this::isImageFile)
                 .map(key -> BackgroundListResponse.of(key, baseUrl + key))
                 .toList();
     }
@@ -169,7 +170,20 @@ public class ProfileService {
         String baseUrl = String.format("https://%s.s3.%s.amazonaws.com/", bucket, region);
 
         return fileKeys.stream()
+                .filter(this::isImageFile)
                 .map(key -> CharacterListResponse.of(key, baseUrl + key))
                 .toList();
+    }
+
+    /**
+     * 확장자를 통해 이미지 파일 여부를 확인합니다.
+     */
+    private boolean isImageFile(String fileName) {
+        String lowerCaseName = fileName.toLowerCase();
+        return lowerCaseName.endsWith(".png") ||
+                lowerCaseName.endsWith(".jpg") ||
+                lowerCaseName.endsWith(".jpeg") ||
+                lowerCaseName.endsWith(".svg") ||
+                lowerCaseName.endsWith(".webp");
     }
 }

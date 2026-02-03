@@ -9,6 +9,7 @@ import com.solif.backend.domain.file.entity.TargetType;
 import com.solif.backend.domain.file.exception.FileException;
 import com.solif.backend.domain.file.repository.FileAttachmentRepository;
 import com.solif.backend.domain.file.repository.FileRepository;
+import com.solif.backend.global.common.exception.CustomException;
 import com.solif.backend.global.s3.S3Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -46,37 +47,58 @@ public class FileService {
     @Transactional
     public List<FileUploadResponse> uploadFiles(List<MultipartFile> files, String folder) {
         List<FileUploadResponse> responses = new ArrayList<>();
+        List<String> uploadedKeys = new ArrayList<>(); // 2. 원자성 확보를 위한 업로드 목록 추적
 
-        for (MultipartFile multipartFile : files) {
-            try {
+        try {
+            for (MultipartFile multipartFile : files) {
                 String originalName = multipartFile.getOriginalFilename();
-                String extension = extractExtension(originalName);
-                String fileName = UUID.randomUUID() + extension;
+                String fileName = UUID.randomUUID() + extractExtension(originalName);
                 String contentType = multipartFile.getContentType();
-                long sizeBytes = multipartFile.getSize();
+                String objectKey = folder + "/" + fileName;
 
-                // S3 업로드
+                // 1. S3Service에서 이미 CustomException을 던지므로 중복 래핑 없이 호출
                 s3Service.upload(folder, fileName, multipartFile.getBytes(), contentType);
+                uploadedKeys.add(objectKey); // 업로드 성공 시 키 기록
 
-                // DB 저장
+                // 3. 로그 보강: 업로드된 파일 정보 기록
+                log.info("S3 업로드 진행 중 - OriginalName: {}, Key: {}", originalName, objectKey);
+
                 File file = File.builder()
                         .bucket(bucket)
-                        .objectKey(folder + "/" + fileName)
+                        .objectKey(objectKey)
                         .originalName(originalName)
                         .contentType(contentType)
-                        .sizeBytes(sizeBytes)
+                        .sizeBytes(multipartFile.getSize())
                         .build();
 
                 fileRepository.save(file);
                 responses.add(FileUploadResponse.from(file, region));
-
-            } catch (IOException e) {
-                log.error("파일 업로드 실패: {}", e.getMessage());
-                throw new FileException(FILE_UPLOAD_FAILED);
             }
-        }
 
-        return responses;
+            log.info("총 {}개의 파일 업로드 및 DB 저장 완료", responses.size());
+            return responses;
+
+        } catch (Exception e) {
+            // 2. 원자성 확보: 실패 시 이미 S3에 올라간 파일들 삭제 (Cleanup)
+            log.error("파일 업로드 과정 중 에러 발생. 이미 업로드된 파일 {}개를 삭제합니다.", uploadedKeys.size());
+            for (String key : uploadedKeys) {
+                try {
+                    s3Service.delete(key);
+                } catch (Exception ignore) {
+                    log.warn("Cleanup 중 파일 삭제 실패 - Key: {}", key);
+                }
+            }
+
+            // 1. 예외 일관성 해결: 명시적 형변환으로 에러 해결
+            if (e instanceof FileException) {
+                throw (FileException) e;
+            }
+            if (e instanceof CustomException) {
+                throw (CustomException) e;
+            }
+
+            throw new FileException(FILE_UPLOAD_FAILED);
+        }
     }
 
     /**
@@ -105,10 +127,20 @@ public class FileService {
      */
     @Transactional
     public void detachFile(Long fileAttachmentId) {
+        // 1. 첨부 정보 조회
         FileAttachment attachment = fileAttachmentRepository.findById(fileAttachmentId)
                 .orElseThrow(() -> new FileException(FILE_ATTACHMENT_NOT_FOUND));
 
+        File file = attachment.getFile();
+        String objectKey = file.getObjectKey(); // S3 삭제에 필요한 Key
+
+        // 2. DB 레코드 삭제 (연결 정보 및 파일 정보)
         fileAttachmentRepository.delete(attachment);
+        fileRepository.delete(file);
+
+        // 3. S3 실제 파일 삭제 (DB 삭제 성공 후 수행)
+        s3Service.delete(objectKey);
+        log.info("파일 삭제 완료 - ID: {}, S3 Key: {}", file.getFileId(), objectKey);
     }
 
     /**

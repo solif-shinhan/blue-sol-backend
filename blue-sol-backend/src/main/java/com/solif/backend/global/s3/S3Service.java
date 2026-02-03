@@ -1,13 +1,18 @@
 package com.solif.backend.global.s3;
 
+import com.solif.backend.domain.file.exception.FileException;
+import com.solif.backend.global.common.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+
+import static com.solif.backend.domain.file.exception.FileException.FileErrorCode.FILE_UPLOAD_FAILED;
 
 @Slf4j
 @Service
@@ -32,19 +37,20 @@ public class S3Service {
      */
     public String upload(String folder, String fileName, byte[] data, String contentType) {
         String key = folder + "/" + fileName;
+        try {
+            PutObjectRequest request = PutObjectRequest.builder()
+                    .bucket(bucket)
+                    .key(key)
+                    .contentType(contentType)
+                    .build();
 
-        PutObjectRequest request = PutObjectRequest.builder()
-                .bucket(bucket)
-                .key(key)
-                .contentType(contentType)
-                .build();
+            s3Client.putObject(request, RequestBody.fromBytes(data));
 
-        s3Client.putObject(request, RequestBody.fromBytes(data));
-
-        String url = String.format("https://%s.s3.%s.amazonaws.com/%s", bucket, region, key);
-        log.info("S3 업로드 완료: {}", url);
-
-        return url;
+            return String.format("https://%s.s3.%s.amazonaws.com/%s", bucket, region, key);
+        }catch (SdkException e){
+            log.error("S3 업로드 실패 - Key: {}, Error: {}", key, e.getMessage());
+            throw new FileException(FILE_UPLOAD_FAILED);
+        }
     }
 
     /**
@@ -52,6 +58,9 @@ public class S3Service {
      * @param objectKey 삭제할 파일의 key (예: "uploads/uuid.png")
      */
     public void delete(String objectKey) {
+        if (objectKey == null || objectKey.isBlank()) return;
+
+        try {
         DeleteObjectRequest request = DeleteObjectRequest.builder()
                 .bucket(bucket)
                 .key(objectKey)
@@ -59,5 +68,9 @@ public class S3Service {
 
         s3Client.deleteObject(request);
         log.info("S3 삭제 완료: {}", objectKey);
+        } catch (SdkException e) {
+            log.error("S3 삭제 실패 - Key: {}, Error: {}", objectKey, e.getMessage());
+            throw new FileException(FILE_UPLOAD_FAILED);
+        }
     }
 }

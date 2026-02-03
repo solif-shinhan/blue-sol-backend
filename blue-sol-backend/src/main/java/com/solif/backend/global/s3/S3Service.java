@@ -1,7 +1,7 @@
 package com.solif.backend.global.s3;
 
+import com.amazonaws.services.s3.AmazonS3;
 import com.solif.backend.domain.file.exception.FileException;
-import com.solif.backend.global.common.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,6 +11,10 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import com.amazonaws.services.s3.model.ListObjectsV2Result;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
+
+import java.util.List;
 
 import static com.solif.backend.domain.file.exception.FileException.FileErrorCode.FILE_UPLOAD_FAILED;
 
@@ -20,6 +24,7 @@ import static com.solif.backend.domain.file.exception.FileException.FileErrorCod
 public class S3Service {
 
     private final S3Client s3Client;
+    private final AmazonS3 amazonS3;
 
     @Value("${cloud.aws.s3.bucket}")
     private String bucket;
@@ -72,5 +77,13 @@ public class S3Service {
             log.error("S3 삭제 실패 - Key: {}, Error: {}", objectKey, e.getMessage());
             throw new FileException(FILE_UPLOAD_FAILED);
         }
+    }
+
+    public List<String> getFileList(String bucket, String prefix) {
+        ListObjectsV2Result result = amazonS3.listObjectsV2(bucket, prefix);
+        return result.getObjectSummaries().stream()
+                .map(S3ObjectSummary::getKey)
+                .filter(key -> !key.equals(prefix))
+                .toList();
     }
 }

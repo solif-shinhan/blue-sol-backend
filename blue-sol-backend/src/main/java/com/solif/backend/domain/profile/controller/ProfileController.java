@@ -13,6 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @Tag(name = "프로필", description = "온보딩 프로필 API")
 @RestController
 @RequestMapping("/api/profiles")
@@ -59,6 +61,26 @@ public class ProfileController {
             @AuthenticationPrincipal Long userId
     ) {
         ProfileResponse response = profileService.getProfile(userId);
+        return ResponseFactory.success(ProfileSuccessCode.PROFILE_READ_SUCCESS, response);
+    }
+
+    @Operation(
+            summary = "배경화면 리스트 조회",
+            description = "선택 가능한 카드 배경화면 리스트를 조회합니다."
+    )
+    @GetMapping("/backgrounds")
+    public ResponseEntity<SuccessResponse<List<BackgroundListResponse>>> getBackgrounds() {
+        List<BackgroundListResponse> response = profileService.getBackgroundList();
+        return ResponseFactory.success(ProfileSuccessCode.PROFILE_READ_SUCCESS, response);
+    }
+
+    @Operation(
+            summary = "캐릭터 리스트 조회",
+            description = "선택 가능한 카드 배경화면 리스트를 조회합니다."
+    )
+    @GetMapping("/characters")
+    public ResponseEntity<SuccessResponse<List<CharacterListResponse>>> getCharacters() {
+        List<CharacterListResponse> response = profileService.getCharacterList();
         return ResponseFactory.success(ProfileSuccessCode.PROFILE_READ_SUCCESS, response);
     }
 }

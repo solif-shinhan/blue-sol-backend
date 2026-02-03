@@ -13,6 +13,7 @@ import com.solif.backend.domain.user.entity.User;
 import com.solif.backend.domain.user.repository.UserRepository;
 import com.solif.backend.global.common.exception.CustomException;
 import com.solif.backend.global.qr.QrCodeService;
+import com.solif.backend.global.s3.S3Service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -36,6 +37,7 @@ public class ProfileService {
     private final UserInterestRepository userInterestRepository;
     private final QrCodeService qrCodeService;
     private final ObjectMapper objectMapper;
+    private final S3Service s3Service;
 
     // 프로필 생성
     @Transactional
@@ -149,5 +151,39 @@ public class ProfileService {
         } catch (JsonProcessingException e) {
             throw new RuntimeException("JSON 파싱 실패", e);
         }
+    }
+
+    //배경화면 리스트 조회
+    public List<BackgroundListResponse> getBackgroundList() {
+        List<String> fileKeys = s3Service.getFileList(bucket, "selectbgs/");
+        String baseUrl = String.format("https://%s.s3.%s.amazonaws.com/", bucket, region);
+
+        return fileKeys.stream()
+                .filter(this::isImageFile)
+                .map(key -> BackgroundListResponse.of(key, baseUrl + key))
+                .toList();
+    }
+
+    //캐릭터 리스트 조회
+    public List<CharacterListResponse> getCharacterList() {
+        List<String> fileKeys = s3Service.getFileList(bucket, "characters/");
+        String baseUrl = String.format("https://%s.s3.%s.amazonaws.com/", bucket, region);
+
+        return fileKeys.stream()
+                .filter(this::isImageFile)
+                .map(key -> CharacterListResponse.of(key, baseUrl + key))
+                .toList();
+    }
+
+    /**
+     * 확장자를 통해 이미지 파일 여부를 확인합니다.
+     */
+    private boolean isImageFile(String fileName) {
+        String lowerCaseName = fileName.toLowerCase();
+        return lowerCaseName.endsWith(".png") ||
+                lowerCaseName.endsWith(".jpg") ||
+                lowerCaseName.endsWith(".jpeg") ||
+                lowerCaseName.endsWith(".svg") ||
+                lowerCaseName.endsWith(".webp");
     }
 }

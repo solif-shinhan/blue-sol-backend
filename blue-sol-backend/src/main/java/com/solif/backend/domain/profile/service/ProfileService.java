@@ -24,6 +24,8 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class ProfileService {
 
+    private static final String S3_BASE_URL = "https://blue-sol-bucket.s3.ap-northeast-2.amazonaws.com/";
+
     private final UserProfileRepository userProfileRepository;
     private final UserRepository userRepository;
     private final UserInterestRepository userInterestRepository;
@@ -120,7 +122,9 @@ public class ProfileService {
                 .mainGoals(mainGoals)
                 .solidGoalName(profile.getSolidGoalName())
                 .userCharacter(profile.getUserCharacter())
+                .characterImageUrl(S3_BASE_URL + profile.getUserCharacter())
                 .backgroundPattern(profile.getBackgroundPattern())
+                .backgroundImageUrl(S3_BASE_URL + profile.getBackgroundPattern())
                 .qrCodeUrl(profile.getQrImageUrl())   // S3 이미지 URL 반환
                 .interests(interests)
                 .build();

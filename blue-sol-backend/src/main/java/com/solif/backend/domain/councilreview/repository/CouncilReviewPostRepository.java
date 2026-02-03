@@ -29,7 +29,8 @@ public interface CouncilReviewPostRepository extends JpaRepository<CouncilReview
             "JOIN FETCH crp.post p " +
             "JOIN FETCH p.author " +
             "JOIN FETCH crp.council c " +
-            "WHERE crp.councilReviewPostId = :postId")
+            "WHERE crp.councilReviewPostId = :postId " +
+            "AND crp.deletedAt IS NULL")
     Optional<CouncilReviewPost> findByIdWithPostAndCouncil(@Param("postId") Long postId);
 
     // Post ID로 조회

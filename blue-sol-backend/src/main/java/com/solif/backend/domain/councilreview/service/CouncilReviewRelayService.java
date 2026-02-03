@@ -37,15 +37,15 @@ public class CouncilReviewRelayService {
 
     // 릴레이 후기 작성
     @Transactional
-    public Map<String, Object> createRelay(Long userId, Long postId, CouncilReviewRelayCreateRequest request) {
-        log.info("릴레이 작성 - userId: {}, postId: {}, questionId: {}", userId, postId, request.getQuestionId());
+    public Map<String, Object> createRelay(Long userId, Long councilReviewPostId, CouncilReviewRelayCreateRequest request) {
+        log.info("릴레이 작성 - userId: {}, postId: {}, questionId: {}", userId, councilReviewPostId, request.getQuestionId());
 
         // 1. 사용자 조회
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(AuthErrorCode.USER_NOT_FOUND));
 
         // 2. 활동 후기 조회
-        CouncilReviewPost post = postRepository.findById(postId)
+        CouncilReviewPost post = postRepository.findById(councilReviewPostId)
                 .orElseThrow(() -> new CustomException(CouncilReviewErrorCode.COUNCIL_REVIEW_POST_NOT_FOUND));
 
         // 3. 삭제된 게시글 체크
@@ -54,13 +54,13 @@ public class CouncilReviewRelayService {
         }
 
         // 4. 참여자 권한 확인
-        boolean isParticipant = participantRepository.existsByCouncilReviewPostIdAndUserId(postId, userId);
+        boolean isParticipant = participantRepository.existsByCouncilReviewPostIdAndUserId(councilReviewPostId, userId);
         if (!isParticipant) {
             throw new CustomException(CouncilReviewErrorCode.NOT_PARTICIPANT);
         }
 
         // 5. 이미 작성했는지 확인 (1인 1회 제한)
-        boolean alreadyWritten = relayRepository.existsByCouncilReviewPostIdAndWriterUserId(postId, userId);
+        boolean alreadyWritten = relayRepository.existsByCouncilReviewPostIdAndWriterUserId(councilReviewPostId, userId);
         if (alreadyWritten) {
             throw new CustomException(CouncilReviewErrorCode.ALREADY_WRITTEN_RELAY);
         }
@@ -69,13 +69,13 @@ public class CouncilReviewRelayService {
         CouncilReviewQuestion question = questionService.validateAndGetQuestion(request.getQuestionId());
 
         // 7. 질문 중복 체크 (같은 활동 후기 내에서 중복 불가)
-        List<Long> usedQuestionIds = relayRepository.findUsedQuestionIdsByPostId(postId);
+        List<Long> usedQuestionIds = relayRepository.findUsedQuestionIdsByPostId(councilReviewPostId);
         if (usedQuestionIds.contains(request.getQuestionId())) {
             throw new CustomException(CouncilReviewErrorCode.QUESTION_ALREADY_USED);
         }
 
         // 8. relay_order 자동 배정 (MAX + 1)
-        Integer maxOrder = relayRepository.findMaxRelayOrderByPostId(postId);
+        Integer maxOrder = relayRepository.findMaxRelayOrderByPostId(councilReviewPostId);
         Integer newOrder = maxOrder + 1;
 
         // 9. 릴레이 생성

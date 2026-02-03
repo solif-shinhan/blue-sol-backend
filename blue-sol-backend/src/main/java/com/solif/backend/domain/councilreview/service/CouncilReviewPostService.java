@@ -92,11 +92,11 @@ public class CouncilReviewPostService {
 
     // 활동 후기 상세 조회
     @Transactional
-    public CouncilReviewPostDetailResponse getCouncilReviewPostDetail(Long userId, Long postId) {
-        log.info("활동 후기 상세 조회 - postId: {}, userId: {}", postId, userId);
+    public CouncilReviewPostDetailResponse getCouncilReviewPostDetail(Long userId, Long councilReviewPostId) {
+        log.info("활동 후기 상세 조회 - postId: {}, userId: {}", councilReviewPostId, userId);
 
         // 1. 활동 후기 조회
-        CouncilReviewPost post = reviewPostRepository.findByIdWithPostAndCouncil(postId)
+        CouncilReviewPost post = reviewPostRepository.findByIdWithPostAndCouncil(councilReviewPostId)
                 .orElseThrow(() -> new CustomException(CouncilReviewErrorCode.COUNCIL_REVIEW_POST_NOT_FOUND));
 
         // 2. 삭제된 게시글 체크
@@ -112,13 +112,13 @@ public class CouncilReviewPostService {
 
         // 5. 참여자 목록 조회
         List<CouncilReviewParticipant> participants = participantRepository
-                .findByCouncilReviewPostIdWithUser(postId);
+                .findByCouncilReviewPostIdWithUser(councilReviewPostId);
         List<CouncilReviewParticipantResponse> participantResponses = participants.stream()
                 .map(CouncilReviewParticipantResponse::from)
                 .collect(Collectors.toList());
 
         // 6. 릴레이 목록 조회
-        List<CouncilReviewRelayResponse> relayResponses = relayService.getRelaysByPostId(postId, userId);
+        List<CouncilReviewRelayResponse> relayResponses = relayService.getRelaysByPostId(councilReviewPostId, userId);
 
         // 7. 좋아요 수, 댓글 수 조회
         Long likeCount = postLikeRepository.countByPost_PostId(post.getPost().getPostId());
@@ -217,11 +217,11 @@ public class CouncilReviewPostService {
 
     // 활동 후기 수정 (리더 전용)
     @Transactional
-    public void updateCouncilReviewPost(Long userId, Long postId, CouncilReviewPostUpdateRequest request) {
-        log.info("활동 후기 수정 - userId: {}, postId: {}", userId, postId);
+    public void updateCouncilReviewPost(Long userId, Long councilReviewPostId, CouncilReviewPostUpdateRequest request) {
+        log.info("활동 후기 수정 - userId: {}, postId: {}", userId, councilReviewPostId);
 
         // 1. 활동 후기 조회
-        CouncilReviewPost reviewPost = reviewPostRepository.findByIdWithPostAndCouncil(postId)
+        CouncilReviewPost reviewPost = reviewPostRepository.findByIdWithPostAndCouncil(councilReviewPostId)
                 .orElseThrow(() -> new CustomException(CouncilReviewErrorCode.COUNCIL_REVIEW_POST_NOT_FOUND));
 
         // 2. 삭제된 게시글 체크
@@ -258,16 +258,16 @@ public class CouncilReviewPostService {
 
         // 8. TODO: 이미지 업데이트 (file_attachment 연동)
 
-        log.info("활동 후기 수정 완료 - postId: {}", postId);
+        log.info("활동 후기 수정 완료 - postId: {}", councilReviewPostId);
     }
 
     // 활동 후기 삭제 (리더 전용, Soft Delete)
     @Transactional
-    public void deleteCouncilReviewPost(Long userId, Long postId) {
-        log.info("활동 후기 삭제 - userId: {}, postId: {}", userId, postId);
+    public void deleteCouncilReviewPost(Long userId, Long councilReviewPostId) {
+        log.info("활동 후기 삭제 - userId: {}, postId: {}", userId, councilReviewPostId);
 
         // 1. 활동 후기 조회
-        CouncilReviewPost reviewPost = reviewPostRepository.findByIdWithPostAndCouncil(postId)
+        CouncilReviewPost reviewPost = reviewPostRepository.findByIdWithPostAndCouncil(councilReviewPostId)
                 .orElseThrow(() -> new CustomException(CouncilReviewErrorCode.COUNCIL_REVIEW_POST_NOT_FOUND));
 
         // 2. 이미 삭제된 게시글 체크
@@ -284,16 +284,16 @@ public class CouncilReviewPostService {
         reviewPost.softDelete();
 
         // 5. 모든 릴레이 Hard Delete
-        relayRepository.deleteByCouncilReviewPostId(postId);
+        relayRepository.deleteByCouncilReviewPostId(councilReviewPostId);
 
         // 6. 모든 참여자 Hard Delete
-        participantRepository.deleteByCouncilReviewPostId(postId);
+        participantRepository.deleteByCouncilReviewPostId(councilReviewPostId);
 
         // 7. 예산 복구
         Council council = reviewPost.getCouncil();
         council.decreaseBudget(-reviewPost.getTotalCost()); // 음수로 차감 = 증가
 
-        log.info("활동 후기 삭제 완료 - postId: {}", postId);
+        log.info("활동 후기 삭제 완료 - postId: {}", councilReviewPostId);
     }
 
     // 참여자 검증 (모두 자치회 멤버여야 함)

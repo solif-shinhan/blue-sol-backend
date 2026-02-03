@@ -34,13 +34,13 @@ public class CouncilReviewRelayController {
             description = "자치회 멤버가 활동 후기에 릴레이 글을 이어쓰기합니다. 참여자만 작성 가능하며 1인 1회 제한입니다. 질문은 중복 사용할 수 없습니다.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    @PostMapping("/council-review-posts/{postId}/relays")
+    @PostMapping("/council-review-posts/{councilReviewPostId}/relays")
     public ResponseEntity<SuccessResponse<Map<String, Object>>> createRelay(
             @AuthenticationPrincipal Long userId,
-            @PathVariable Long postId,
+            @PathVariable Long councilReviewPostId,
             @Valid @RequestBody CouncilReviewRelayCreateRequest request
     ) {
-        Map<String, Object> response = relayService.createRelay(userId, postId, request);
+        Map<String, Object> response = relayService.createRelay(userId, councilReviewPostId, request);
         return ResponseFactory.success(CouncilReviewSuccessCode.COUNCIL_REVIEW_RELAY_CREATE_SUCCESS, response);
     }
 

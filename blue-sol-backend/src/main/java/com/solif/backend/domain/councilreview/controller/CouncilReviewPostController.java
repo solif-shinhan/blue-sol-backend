@@ -51,12 +51,12 @@ public class CouncilReviewPostController {
             description = "활동 후기 상세 정보 및 모든 릴레이 글을 조회합니다. 조회수가 1 증가합니다. 모든 인증 사용자가 조회 가능합니다.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    @GetMapping("/council-review-posts/{postId}")
+    @GetMapping("/council-review-posts/{councilReviewPostId}")
     public ResponseEntity<SuccessResponse<CouncilReviewPostDetailResponse>> getCouncilReviewPostDetail(
             @AuthenticationPrincipal Long userId,
-            @PathVariable Long postId
+            @PathVariable Long councilReviewPostId
     ) {
-        CouncilReviewPostDetailResponse post = reviewPostService.getCouncilReviewPostDetail(userId, postId);
+        CouncilReviewPostDetailResponse post = reviewPostService.getCouncilReviewPostDetail(userId, councilReviewPostId);
         return ResponseFactory.success(CouncilReviewSuccessCode.COUNCIL_REVIEW_DETAIL_SUCCESS, post);
     }
 
@@ -82,13 +82,13 @@ public class CouncilReviewPostController {
             description = "리더가 활동 후기 메타 정보를 수정합니다 (제목, 날짜, 장소, 비용, 이미지, 참여자). 리더만 수정 가능합니다. 예산이 재계산됩니다.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    @PatchMapping("/council-review-posts/{postId}")
+    @PatchMapping("/council-review-posts/{councilReviewPostId}")
     public ResponseEntity<SuccessResponse<Void>> updateCouncilReviewPost(
             @AuthenticationPrincipal Long userId,
-            @PathVariable Long postId,
+            @PathVariable Long councilReviewPostId,
             @Valid @RequestBody CouncilReviewPostUpdateRequest request
     ) {
-        reviewPostService.updateCouncilReviewPost(userId, postId, request);
+        reviewPostService.updateCouncilReviewPost(userId, councilReviewPostId, request);
         return ResponseFactory.success(CouncilReviewSuccessCode.COUNCIL_REVIEW_UPDATE_SUCCESS);
     }
 
@@ -97,12 +97,12 @@ public class CouncilReviewPostController {
             description = "리더가 활동 후기 전체를 삭제합니다 (Soft Delete). 리더만 삭제 가능합니다. 모든 릴레이와 참여자 정보가 함께 삭제되고 예산이 복구됩니다.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    @DeleteMapping("/council-review-posts/{postId}")
+    @DeleteMapping("/council-review-posts/{councilReviewPostId}")
     public ResponseEntity<SuccessResponse<Void>> deleteCouncilReviewPost(
             @AuthenticationPrincipal Long userId,
-            @PathVariable Long postId
+            @PathVariable Long councilReviewPostId
     ) {
-        reviewPostService.deleteCouncilReviewPost(userId, postId);
+        reviewPostService.deleteCouncilReviewPost(userId, councilReviewPostId);
         return ResponseFactory.success(CouncilReviewSuccessCode.COUNCIL_REVIEW_DELETE_SUCCESS);
     }
 }

@@ -112,40 +112,35 @@ public class CouncilReviewPostService {
         log.info("활동 후기 상세 조회 - postId: {}, userId: {}", councilReviewPostId, userId);
 
         // 1. 활동 후기 조회
-        CouncilReviewPost post = reviewPostRepository.findByIdWithPostAndCouncil(councilReviewPostId)
+        CouncilReviewPost post = reviewPostRepository.findActiveByIdWithPostAndCouncil(councilReviewPostId)
                 .orElseThrow(() -> new CustomException(CouncilReviewErrorCode.COUNCIL_REVIEW_POST_NOT_FOUND));
 
-        // 2. 삭제된 게시글 체크
-        if (post.isDeleted()) {
-            throw new CustomException(CouncilReviewErrorCode.COUNCIL_REVIEW_POST_DELETED);
-        }
-
-        // 3. 조회수 증가
+        // 2. 조회수 증가
         post.getPost().increaseViewCount();
 
-        // 4. 이미지 URL 목록 조회 (TODO: file_attachment 연동)
+        // 3. 이미지 URL 목록 조회 (TODO: file_attachment 연동)
         List<String> imageUrls = new ArrayList<>();
 
-        // 5. 참여자 목록 조회
+        // 4. 참여자 목록 조회
         List<CouncilReviewParticipant> participants = participantRepository
                 .findByCouncilReviewPostIdWithUser(councilReviewPostId);
         List<CouncilReviewParticipantResponse> participantResponses = participants.stream()
                 .map(CouncilReviewParticipantResponse::from)
                 .collect(Collectors.toList());
 
-        // 6. 릴레이 목록 조회
+        // 5. 릴레이 목록 조회
         List<CouncilReviewRelayResponse> relayResponses = relayService.getRelaysByPostId(councilReviewPostId, userId);
 
-        // 7. 좋아요 수, 댓글 수 조회
+        // 6. 좋아요 수, 댓글 수 조회
         Long likeCount = postLikeRepository.countByPost_PostId(post.getPost().getPostId());
         Long commentCount = commentRepository.countByPost_PostId(post.getPost().getPostId());
 
-        // 8. 현재 사용자의 좋아요 여부 조회
+        // 7. 현재 사용자의 좋아요 여부 조회
         Boolean isLikedByMe = postLikeRepository.existsByUser_UserIdAndPost_PostId(
                 userId, post.getPost().getPostId()
         );
 
-        // 9. 현재 사용자가 리더인지 확인
+        // 8. 현재 사용자가 리더인지 확인
         Boolean isLeader = post.isLeader(userId);
 
         return CouncilReviewPostDetailResponse.of(

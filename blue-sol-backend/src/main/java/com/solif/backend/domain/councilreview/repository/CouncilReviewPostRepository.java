@@ -24,13 +24,21 @@ public interface CouncilReviewPostRepository extends JpaRepository<CouncilReview
             Pageable pageable
     );
 
-    // 활동 후기 상세 조회 (Post, Council Fetch Join)
+    // 삭제되지 않은 게시글 조회 (상세 조회용)
     @Query("SELECT crp FROM CouncilReviewPost crp " +
             "JOIN FETCH crp.post p " +
             "JOIN FETCH p.author " +
             "JOIN FETCH crp.council c " +
             "WHERE crp.councilReviewPostId = :postId " +
             "AND crp.deletedAt IS NULL")
+    Optional<CouncilReviewPost> findActiveByIdWithPostAndCouncil(@Param("postId") Long postId);
+
+    // 삭제 여부 무관 조회 (수정/삭제용)
+    @Query("SELECT crp FROM CouncilReviewPost crp " +
+            "JOIN FETCH crp.post p " +
+            "JOIN FETCH p.author " +
+            "JOIN FETCH crp.council c " +
+            "WHERE crp.councilReviewPostId = :postId")
     Optional<CouncilReviewPost> findByIdWithPostAndCouncil(@Param("postId") Long postId);
 
     // Post ID로 조회

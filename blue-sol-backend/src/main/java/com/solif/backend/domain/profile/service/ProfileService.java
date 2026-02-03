@@ -14,6 +14,7 @@ import com.solif.backend.domain.user.repository.UserRepository;
 import com.solif.backend.global.common.exception.CustomException;
 import com.solif.backend.global.qr.QrCodeService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,7 +25,11 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class ProfileService {
 
-    private static final String S3_BASE_URL = "https://blue-sol-bucket.s3.ap-northeast-2.amazonaws.com/";
+    @Value("${cloud.aws.s3.bucket}")
+    private String bucket;
+
+    @Value("${cloud.aws.region.static}")
+    private String region;
 
     private final UserProfileRepository userProfileRepository;
     private final UserRepository userRepository;
@@ -122,9 +127,9 @@ public class ProfileService {
                 .mainGoals(mainGoals)
                 .solidGoalName(profile.getSolidGoalName())
                 .userCharacter(profile.getUserCharacter())
-                .characterImageUrl(S3_BASE_URL + profile.getUserCharacter())
+                .characterImageUrl(String.format("https://%s.s3.%s.amazonaws.com/%s", bucket, region, profile.getUserCharacter()))
                 .backgroundPattern(profile.getBackgroundPattern())
-                .backgroundImageUrl(S3_BASE_URL + profile.getBackgroundPattern())
+                .backgroundImageUrl(String.format("https://%s.s3.%s.amazonaws.com/%s", bucket, region, profile.getBackgroundPattern()))
                 .qrCodeUrl(profile.getQrImageUrl())   // S3 이미지 URL 반환
                 .interests(interests)
                 .build();

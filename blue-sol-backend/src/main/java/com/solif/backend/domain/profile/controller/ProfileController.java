@@ -65,12 +65,52 @@ public class ProfileController {
     }
 
     @Operation(
-            summary = "배경화면 리스트 조회",
+            summary = "온보딩 배경화면 리스트 조회",
             description = "선택 가능한 카드 배경화면 리스트를 조회합니다."
     )
     @GetMapping("/backgrounds")
     public ResponseEntity<SuccessResponse<List<BackgroundListResponse>>> getBackgrounds() {
         List<BackgroundListResponse> response = profileService.getBackgroundList();
+        return ResponseFactory.success(ProfileSuccessCode.PROFILE_READ_SUCCESS, response);
+    }
+
+    @Operation(
+            summary = "Solid 배경화면 리스트 조회",
+            description = "선택 가능한 카드 배경화면 리스트를 조회합니다."
+    )
+    @GetMapping("/solidbgs")
+    public ResponseEntity<SuccessResponse<List<BackgroundListResponse>>> getSOLBackgrounds() {
+        List<BackgroundListResponse> response = profileService.getSOLBackgroundsList();
+        return ResponseFactory.success(ProfileSuccessCode.PROFILE_READ_SUCCESS, response);
+    }
+
+    @Operation(
+            summary = "Solid Qr 배경화면 리스트 조회",
+            description = "선택 가능한 카드 배경화면 리스트를 조회합니다."
+    )
+    @GetMapping("/solidqrbgs")
+    public ResponseEntity<SuccessResponse<List<BackgroundListResponse>>> getSOLQRBackgrounds() {
+        List<BackgroundListResponse> response = profileService.getSOLQRBackgroundsList();
+        return ResponseFactory.success(ProfileSuccessCode.PROFILE_READ_SUCCESS, response);
+    }
+
+    @Operation(
+            summary = "교류망 프로필 배경화면 리스트 조회",
+            description = "선택 가능한 카드 배경화면 리스트를 조회합니다."
+    )
+    @GetMapping("/profilebgs")
+    public ResponseEntity<SuccessResponse<List<BackgroundListResponse>>> getProfileBackgrounds() {
+        List<BackgroundListResponse> response = profileService.getProfileBackgroundsList();
+        return ResponseFactory.success(ProfileSuccessCode.PROFILE_READ_SUCCESS, response);
+    }
+
+    @Operation(
+            summary = "마이페이지 배경화면 리스트 조회",
+            description = "선택 가능한 카드 배경화면 리스트를 조회합니다."
+    )
+    @GetMapping("/mypagebgs")
+    public ResponseEntity<SuccessResponse<List<BackgroundListResponse>>> getMyPageBackgrounds() {
+        List<BackgroundListResponse> response = profileService.getMyPageBackgroundsList();
         return ResponseFactory.success(ProfileSuccessCode.PROFILE_READ_SUCCESS, response);
     }
 

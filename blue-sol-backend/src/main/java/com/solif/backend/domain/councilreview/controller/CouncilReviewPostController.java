@@ -33,7 +33,7 @@ public class CouncilReviewPostController {
     @Operation(
             summary = "자치회 활동 후기 목록 조회",
             description = "특정 자치회의 활동 후기 목록을 페이징하여 조회합니다. 모든 인증 사용자가 조회 가능합니다.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @GetMapping("/councils/{councilId}/review-posts")
     public ResponseEntity<SuccessResponse<Slice<CouncilReviewPostListResponse>>> getCouncilReviewPosts(
@@ -49,7 +49,7 @@ public class CouncilReviewPostController {
     @Operation(
             summary = "자치회 활동 후기 상세 조회",
             description = "활동 후기 상세 정보 및 모든 릴레이 글을 조회합니다. 조회수가 1 증가합니다. 모든 인증 사용자가 조회 가능합니다.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @GetMapping("/council-review-posts/{councilReviewPostId}")
     public ResponseEntity<SuccessResponse<CouncilReviewPostDetailResponse>> getCouncilReviewPostDetail(
@@ -63,7 +63,7 @@ public class CouncilReviewPostController {
     @Operation(
             summary = "자치회 활동 후기 생성",
             description = "리더가 활동 후기를 생성하고 첫 번째 릴레이 글을 작성합니다. 리더만 생성 가능합니다. 예산이 자동으로 차감됩니다.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @PostMapping("/councils/{councilId}/review-posts")
     public ResponseEntity<SuccessResponse<CouncilReviewPostCreateResponse>> createCouncilReviewPost(
@@ -80,7 +80,7 @@ public class CouncilReviewPostController {
     @Operation(
             summary = "자치회 활동 후기 수정",
             description = "리더가 활동 후기 메타 정보를 수정합니다 (제목, 날짜, 장소, 비용, 이미지, 참여자). 리더만 수정 가능합니다. 예산이 재계산됩니다.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @PatchMapping("/council-review-posts/{councilReviewPostId}")
     public ResponseEntity<SuccessResponse<Void>> updateCouncilReviewPost(
@@ -95,7 +95,7 @@ public class CouncilReviewPostController {
     @Operation(
             summary = "자치회 활동 후기 삭제",
             description = "리더가 활동 후기 전체를 삭제합니다 (Soft Delete). 리더만 삭제 가능합니다. 모든 릴레이와 참여자 정보가 함께 삭제되고 예산이 복구됩니다.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @DeleteMapping("/council-review-posts/{councilReviewPostId}")
     public ResponseEntity<SuccessResponse<Void>> deleteCouncilReviewPost(

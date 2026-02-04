@@ -26,7 +26,7 @@ public class ProfileController {
     @Operation(
             summary = "프로필 생성",
             description = "온보딩 프로필을 생성합니다. QR코드가 자동 생성됩니다.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @PostMapping
     public ResponseEntity<SuccessResponse<ProfileCreateResponse>> createProfile(
@@ -40,7 +40,7 @@ public class ProfileController {
     @Operation(
             summary = "프로필 수정",
             description = "프로필 정보를 수정합니다. 수정할 필드만 전송합니다.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @PatchMapping
     public ResponseEntity<SuccessResponse<ProfileUpdateResponse>> updateProfile(
@@ -54,7 +54,7 @@ public class ProfileController {
     @Operation(
             summary = "프로필 조회",
             description = "사용자의 프로필과 관심사를 조회합니다.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @GetMapping
     public ResponseEntity<SuccessResponse<ProfileResponse>> getProfile(

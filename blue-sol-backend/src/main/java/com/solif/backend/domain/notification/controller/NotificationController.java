@@ -34,7 +34,7 @@ public class NotificationController {
             summary = "SSE 실시간 알림 구독",
             description = "서버와 SSE 연결을 맺어 실시간 알림을 수신합니다. "
                     + "클라이언트는 EventSource 또는 fetch API로 연결합니다.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @GetMapping(value = "/subscribe", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter subscribe(@AuthenticationPrincipal Long userId) {
@@ -46,7 +46,7 @@ public class NotificationController {
             summary = "알림 전체 목록 조회",
             description = "카테고리(공지사항/활동)와 필터(전체/안읽음)로 알림 목록을 조회합니다. "
                     + "활동 탭에서는 서브 카테고리(쪽지/교류/자치회 활동)로 추가 필터링 가능합니다.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @GetMapping
     public ResponseEntity<SuccessResponse<Slice<NotificationListResponse>>> getNotifications(
@@ -71,7 +71,7 @@ public class NotificationController {
             summary = "알림 읽음 처리",
             description = "특정 알림을 터치하여 상세 화면 진입 시 호출합니다. "
                     + "is_read를 true로 변경하고 read_at에 현재 시각을 기록합니다.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @PatchMapping("/{notificationId}/read")
     public ResponseEntity<SuccessResponse<NotificationReadResponse>> markAsRead(
@@ -86,7 +86,7 @@ public class NotificationController {
     @Operation(
             summary = "안읽은 알림 개수 조회",
             description = "현재 사용자의 안읽은 알림 총 개수를 반환합니다.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @GetMapping("/unread-count")
     public ResponseEntity<SuccessResponse<UnreadCountResponse>> getUnreadCount(
@@ -100,7 +100,7 @@ public class NotificationController {
     @Operation(
             summary = "알림 세부 조회",
             description = "알림의 상세 내용을 조회합니다. 이미지 첨부 리스트와 이동 버튼 정보를 포함합니다.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @GetMapping("/{notificationId}")
     public ResponseEntity<SuccessResponse<NotificationDetailResponse>> getNotificationDetail(

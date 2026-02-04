@@ -25,8 +25,8 @@ public class InterestService {
 
     // 유효한 카테고리 목록
     private static final Set<String> VALID_CATEGORIES = Set.of(
-            "봉사활동", "여행", "축구", "농구", "야구",
-            "문화생활", "독서", "스터디", "금융"
+            "맛집", "언어공부", "영화", "게임", "사진",
+            "봉사활동", "여행", "축구", "농구", "야구", "자격증", "예술", "산책", "문화생활", "독서", "스터디", "경제"
     );
 
     @Transactional

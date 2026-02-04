@@ -56,4 +56,25 @@ public class SignupRequest {
 
     @Schema(description = "학교명 (선택사항)", example = "서울대학교")
     private String schoolName;
+
+    @Schema(description = "직업 (졸업생만 필수)", example = "변호사")
+    private String job;
+
+    // 유효성 검증 메서드 추가
+    public void validateByRole() {
+        if (userRole == User.UserRole.GRADUATE) {
+            // 졸업생: 직업 필수
+            if (job == null || job.isBlank()) {
+                throw new IllegalArgumentException("졸업생은 직업 입력이 필수입니다.");
+            }
+        } else {
+            // 장학생: 장학생 번호, 학교 필수
+            if (scholarNumber == null || scholarNumber.isBlank()) {
+                throw new IllegalArgumentException("장학생 번호는 필수입니다.");
+            }
+            if (schoolName == null || schoolName.isBlank()) {
+                throw new IllegalArgumentException("학교명은 필수입니다.");
+            }
+        }
+    }
 }

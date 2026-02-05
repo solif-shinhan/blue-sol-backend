@@ -55,13 +55,16 @@ public class User {
     @Column(name = "user_role", nullable = false)
     private UserRole userRole;
 
+    @Column(name = "job", length = 100)
+    private String job;
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @Builder
     public User(String loginId, String password, String name, String phone, 
-                String email, String scholarNumber, String region, String schoolName, UserRole userRole) {
+                String email, String scholarNumber, String region, String schoolName, UserRole userRole, String job) {
         this.loginId = loginId;
         this.password = password;
         this.name = name;
@@ -71,6 +74,7 @@ public class User {
         this.region = region;
         this.schoolName = schoolName;
         this.userRole = userRole;
+        this.job = job;
     }
 
     public enum UserRole {

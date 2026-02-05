@@ -25,7 +25,7 @@ public class CouncilController {
     @Operation(
             summary = "자치회 목록 조회",
             description = "전체 자치회 목록을 조회합니다. 본인 자치회 정보도 포함됩니다.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @GetMapping
     public ResponseEntity<SuccessResponse<CouncilListResponse>> getCouncils(
@@ -38,7 +38,7 @@ public class CouncilController {
     @Operation(
             summary = "내 자치회 조회",
             description = "현재 로그인한 사용자의 소속 자치회 정보를 조회합니다. (홈 화면 위젯용)",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @GetMapping("/my")
     public ResponseEntity<SuccessResponse<CouncilMyResponse>> getMyCouncil(
@@ -51,7 +51,7 @@ public class CouncilController {
     @Operation(
             summary = "자치회 상세 조회",
             description = "자치회 상세 정보를 조회합니다. 본인 자치회와 다른 자치회의 응답이 다릅니다.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @GetMapping("/{councilId}")
     public ResponseEntity<SuccessResponse<CouncilDetailResponse>> getCouncilDetail(
@@ -65,7 +65,7 @@ public class CouncilController {
     @Operation(
             summary = "자치회 생성",
             description = "새로운 자치회를 생성합니다. 생성자는 자동으로 리더로 등록됩니다.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @PostMapping
     public ResponseEntity<SuccessResponse<CouncilCreateResponse>> createCouncil(
@@ -79,7 +79,7 @@ public class CouncilController {
     @Operation(
             summary = "자치회 수정",
             description = "자치회 정보를 수정합니다. 리더만 수정 가능합니다.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @PatchMapping("/{councilId}")
     public ResponseEntity<SuccessResponse<Void>> updateCouncil(

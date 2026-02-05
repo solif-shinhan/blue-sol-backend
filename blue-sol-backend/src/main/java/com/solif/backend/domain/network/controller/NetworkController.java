@@ -27,7 +27,7 @@ public class NetworkController {
     @Operation(
             summary = "나의 교류망 목록 조회",
             description = "나의 교류망에 추가된 사람들을 조회합니다.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @GetMapping
     public ResponseEntity<SuccessResponse<NetworkListResponse>> getMyNetworks(
@@ -40,7 +40,7 @@ public class NetworkController {
     @Operation(
             summary = "교류망 추가",
             description = "사용자 ID로 교류망에 추가합니다.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @PostMapping
     public ResponseEntity<SuccessResponse<NetworkAddResponse>> addNetwork(
@@ -54,7 +54,7 @@ public class NetworkController {
     @Operation(
             summary = "QR 코드 스캔으로 교류망 추가",
             description = "QR 코드를 스캔하면 상대방을 나의 교류망에 추가하고, 상대방에게 알림을 발송합니다.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @PostMapping("/qr-scan")
     public ResponseEntity<SuccessResponse<NetworkAddResponse>> addNetworkByQrScan(
@@ -68,7 +68,7 @@ public class NetworkController {
     @Operation(
             summary = "상호작용 발송",
             description = "응원하기 또는 경험 나누기를 발송합니다.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @PostMapping("/interactions")
     public ResponseEntity<SuccessResponse<NetworkInteractionResponse>> sendInteraction(
@@ -82,7 +82,7 @@ public class NetworkController {
     @Operation(
             summary = "교류망 추천 조회",
             description = "같은 관심사 기반 추천과 전체 사용자를 조회합니다.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @GetMapping("/recommendations")
     public ResponseEntity<SuccessResponse<NetworkRecommendationResponse>> getRecommendations(
@@ -95,7 +95,7 @@ public class NetworkController {
     @Operation(
             summary = "교류망 검색",
             description = "이름으로 사용자를 검색합니다.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @GetMapping("/search")
     public ResponseEntity<SuccessResponse<NetworkSearchResponse>> searchNetworks(

@@ -28,7 +28,7 @@ public class InterestController {
     @Operation(
             summary = "관심사 등록",
             description = "사용자의 관심사를 등록합니다. 최소 2개 이상 선택해야 합니다.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @PostMapping
     public ResponseEntity<SuccessResponse<InterestResponse>> registerInterests(

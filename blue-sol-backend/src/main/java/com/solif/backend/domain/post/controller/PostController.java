@@ -43,7 +43,7 @@ public class PostController {
     @Operation(
             summary = "게시글 상세 조회",
             description = "게시글 상세 내용을 조회합니다. 조회수가 1 증가합니다.",
-            security = @SecurityRequirement(name = "bearerAuth"))
+            security = @SecurityRequirement(name = "Bearer Authentication"))
     @GetMapping("/{postId}")
     public ResponseEntity<SuccessResponse<PostDetailResponse>> getPostDetail(
             @AuthenticationPrincipal Long userId,
@@ -56,7 +56,7 @@ public class PostController {
     @Operation(
             summary = "게시글 작성",
             description = "새로운 게시글을 작성합니다. 모든 게시판에서 카테고리가 필수입니다. (자치회 활동 후기는 별도 API)",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @PostMapping
     public ResponseEntity<SuccessResponse<PostCreateResponse>> createPost(
@@ -70,7 +70,7 @@ public class PostController {
     @Operation(
             summary = "게시글 수정",
             description = "게시글의 제목과 내용을 수정합니다. 작성자만 수정 가능합니다.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @PatchMapping("/{postId}")
     public ResponseEntity<SuccessResponse<Void>> updatePost(

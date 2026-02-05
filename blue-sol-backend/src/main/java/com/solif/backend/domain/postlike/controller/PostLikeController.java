@@ -23,7 +23,7 @@ public class PostLikeController {
     @Operation(
             summary = "좋아요 추가",
             description = "게시글에 좋아요를 추가합니다.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @PostMapping("/{postId}/like")
     public ResponseEntity<SuccessResponse<Void>> likePost(
@@ -37,7 +37,7 @@ public class PostLikeController {
     @Operation(
             summary = "좋아요 취소",
             description = "게시글 좋아요를 취소합니다.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @DeleteMapping("/{postId}/like")
     public ResponseEntity<SuccessResponse<Void>> unlikePost(

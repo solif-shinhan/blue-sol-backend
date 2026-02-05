@@ -28,7 +28,7 @@ public class OcrController {
     @Operation(
             summary = "영수증 금액 추출",
             description = "파일 ID를 받아 S3에서 영수증 이미지를 다운로드하고 OCR로 금액을 추출합니다.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @PostMapping("/receipts/ocr")
     public ResponseEntity<SuccessResponse<OcrResponse>> extractReceiptAmount(

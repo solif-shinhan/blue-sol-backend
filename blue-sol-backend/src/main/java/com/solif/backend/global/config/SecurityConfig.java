@@ -67,9 +67,7 @@ public class SecurityConfig {
                                 "/swagger-ui/**",                 // Swagger UI
                                 "/v3/api-docs/**",                // API 문서
                                 "/h2-console/**" ,                // H2 콘솔 (개발용)
-                                "/api/test/ocr" ,                 // test ocr
-                                "/api/v1/receipts/ocr"            // 운영용 ocr
-
+                                "/api/test/ocr"                   // test ocr
                         ).permitAll()
                         // 그 외 모든 요청은 인증 필요
                         .anyRequest().authenticated()

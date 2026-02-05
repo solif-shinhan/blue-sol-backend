@@ -31,7 +31,7 @@ public class UserController {
     @Operation(
             summary = "토큰 테스트용 내 정보 조회",
             description = "현재 로그인한 사용자의 정보를 조회합니다.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @GetMapping("/me")
     public ResponseEntity<SuccessResponse<UserMeResponse>> getMyInfo(
@@ -44,7 +44,7 @@ public class UserController {
     @Operation(
             summary = "사용자 검색",
             description = "이름으로 사용자를 검색합니다. 자치회 소속 여부도 함께 반환합니다. (최대 20명)",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @GetMapping("/search")
     public ResponseEntity<SuccessResponse<List<UserSearchResponse>>> searchUsers(

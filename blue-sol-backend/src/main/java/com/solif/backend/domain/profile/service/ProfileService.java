@@ -153,9 +153,53 @@ public class ProfileService {
         }
     }
 
-    //배경화면 리스트 조회
+    //온보딩 배경화면 리스트 조회
     public List<BackgroundListResponse> getBackgroundList() {
+        List<String> fileKeys = s3Service.getFileList(bucket, "backgrounds/");
+        String baseUrl = String.format("https://%s.s3.%s.amazonaws.com/", bucket, region);
+
+        return fileKeys.stream()
+                .filter(this::isImageFile)
+                .map(key -> BackgroundListResponse.of(key, baseUrl + key))
+                .toList();
+    }
+
+    //Solid 배경화면 리스트 조회
+    public List<BackgroundListResponse> getSOLBackgroundsList() {
         List<String> fileKeys = s3Service.getFileList(bucket, "selectbgs/");
+        String baseUrl = String.format("https://%s.s3.%s.amazonaws.com/", bucket, region);
+
+        return fileKeys.stream()
+                .filter(this::isImageFile)
+                .map(key -> BackgroundListResponse.of(key, baseUrl + key))
+                .toList();
+    }
+
+    //Solid Qr 배경화면 리스트 조회
+    public List<BackgroundListResponse> getSOLQRBackgroundsList() {
+        List<String> fileKeys = s3Service.getFileList(bucket, "solidqr_bgs/");
+        String baseUrl = String.format("https://%s.s3.%s.amazonaws.com/", bucket, region);
+
+        return fileKeys.stream()
+                .filter(this::isImageFile)
+                .map(key -> BackgroundListResponse.of(key, baseUrl + key))
+                .toList();
+    }
+
+    //프로필 배경화면 리스트 조회
+    public List<BackgroundListResponse> getProfileBackgroundsList() {
+        List<String> fileKeys = s3Service.getFileList(bucket, "profilebgs/");
+        String baseUrl = String.format("https://%s.s3.%s.amazonaws.com/", bucket, region);
+
+        return fileKeys.stream()
+                .filter(this::isImageFile)
+                .map(key -> BackgroundListResponse.of(key, baseUrl + key))
+                .toList();
+    }
+
+    //마이페이지 배경화면 리스트 조회
+    public List<BackgroundListResponse> getMyPageBackgroundsList() {
+        List<String> fileKeys = s3Service.getFileList(bucket, "mypagebgs/");
         String baseUrl = String.format("https://%s.s3.%s.amazonaws.com/", bucket, region);
 
         return fileKeys.stream()

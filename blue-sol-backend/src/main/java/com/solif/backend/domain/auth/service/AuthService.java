@@ -30,6 +30,9 @@ public class AuthService {
     public SignupResponse signup(SignupRequest request) {
         log.info("회원가입 시도 - loginId: {}", request.getLoginId());
 
+        // 역할별 유효성 검증
+        request.validateByRole();
+
         // 중복 검증
         validateDuplicateUser(request);
 
@@ -46,6 +49,7 @@ public class AuthService {
                 .scholarNumber(request.getScholarNumber())
                 .region(request.getRegion())
                 .schoolName(request.getSchoolName())
+                .job(request.getJob())
                 .userRole(request.getUserRole())
                 .build();
 
@@ -89,7 +93,9 @@ public class AuthService {
         if (userRepository.existsByPhone(request.getPhone())) {
             throw new CustomException(AuthErrorCode.DUPLICATE_PHONE);
         }
-        if (userRepository.existsByScholarNumber(request.getScholarNumber())) {
+        if (request.getUserRole() != User.UserRole.GRADUATE
+                && request.getScholarNumber() != null
+                && userRepository.existsByScholarNumber(request.getScholarNumber())) {
             throw new CustomException(AuthErrorCode.DUPLICATE_SCHOLAR_NUMBER);
         }
     }

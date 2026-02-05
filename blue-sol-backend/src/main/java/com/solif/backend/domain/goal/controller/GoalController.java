@@ -27,7 +27,7 @@ public class GoalController {
     @Operation(
             summary = "첫 번째 목표 조회",
             description = "온보딩에서 작성한 첫 번째 목표를 조회합니다.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @GetMapping("/first")
     public ResponseEntity<SuccessResponse<GoalFirstResponse>> getFirstGoal(
@@ -40,7 +40,7 @@ public class GoalController {
     @Operation(
             summary = "목표 개수 조회",
             description = "작성한 목표 개수를 조회합니다.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @GetMapping("/count")
     public ResponseEntity<SuccessResponse<GoalCountResponse>> getGoalCount(

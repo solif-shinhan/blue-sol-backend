@@ -38,7 +38,7 @@ public class CommentController {
     @Operation(
             summary = "댓글 작성",
             description = "게시글에 댓글을 작성합니다. 익명 여부를 선택할 수 있습니다.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @PostMapping("/posts/{postId}/comments")
     public ResponseEntity<SuccessResponse<CommentResponse>> createComment(
@@ -53,7 +53,7 @@ public class CommentController {
     @Operation(
             summary = "댓글 수정",
             description = "댓글 내용을 수정합니다. 작성자만 수정 가능합니다.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @PatchMapping("/comments/{commentId}")
     public ResponseEntity<SuccessResponse<Void>> updateComment(
@@ -68,7 +68,7 @@ public class CommentController {
     @Operation(
             summary = "댓글 삭제",
             description = "댓글을 삭제합니다. 작성자만 삭제 가능합니다.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @DeleteMapping("/comments/{commentId}")
     public ResponseEntity<SuccessResponse<Void>> deleteComment(

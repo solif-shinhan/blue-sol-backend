@@ -32,7 +32,7 @@ public class CouncilReviewRelayController {
     @Operation(
             summary = "릴레이 작성",
             description = "자치회 멤버가 활동 후기에 릴레이 글을 이어쓰기합니다. 참여자만 작성 가능하며 1인 1회 제한입니다. 질문은 중복 사용할 수 없습니다.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @PostMapping("/council-review-posts/{councilReviewPostId}/relays")
     public ResponseEntity<SuccessResponse<Map<String, Object>>> createRelay(
@@ -47,7 +47,7 @@ public class CouncilReviewRelayController {
     @Operation(
             summary = "릴레이 수정",
             description = "본인이 작성한 릴레이 글을 수정합니다. 작성자만 수정 가능하며 질문은 수정할 수 없습니다.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @PatchMapping("/council-review-relays/{relayId}")
     public ResponseEntity<SuccessResponse<Void>> updateRelay(
@@ -62,7 +62,7 @@ public class CouncilReviewRelayController {
     @Operation(
             summary = "릴레이 삭제",
             description = "본인이 작성한 릴레이 글을 삭제합니다 (Hard Delete). 작성자만 삭제 가능하며 삭제 후 relay_order가 자동으로 재정렬됩니다.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @DeleteMapping("/council-review-relays/{relayId}")
     public ResponseEntity<SuccessResponse<Void>> deleteRelay(
@@ -76,7 +76,7 @@ public class CouncilReviewRelayController {
     @Operation(
             summary = "랜덤 질문 조회",
             description = "활성화된 질문 중 랜덤으로 1개를 조회합니다. 이미 사용된 질문 ID 목록을 제외할 수 있습니다. 작성 시 질문 새로고침 기능에 사용됩니다.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @GetMapping("/council-review-questions/random")
     public ResponseEntity<SuccessResponse<CouncilReviewQuestionResponse>> getRandomQuestion(

@@ -28,7 +28,7 @@ public class MessageController {
     @Operation(
             summary = "쪽지 발송",
             description = "새로운 쪽지를 발송합니다.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @PostMapping
     public ResponseEntity<SuccessResponse<MessageSendResponse>> sendMessage(
@@ -42,7 +42,7 @@ public class MessageController {
     @Operation(
             summary = "받은 쪽지 목록 조회",
             description = "받은 쪽지 목록을 페이징하여 조회합니다.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @GetMapping("/received")
     public ResponseEntity<SuccessResponse<Slice<MessageListResponse>>> getReceivedMessages(
@@ -58,7 +58,7 @@ public class MessageController {
     @Operation(
             summary = "보낸 쪽지 목록 조회",
             description = "보낸 쪽지 목록을 페이징하여 조회합니다.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @GetMapping("/sent")
     public ResponseEntity<SuccessResponse<Slice<MessageListResponse>>> getSentMessages(
@@ -74,7 +74,7 @@ public class MessageController {
     @Operation(
             summary = "쪽지 상세 조회",
             description = "쪽지 상세 내용을 조회합니다. 수신자가 조회 시 읽음 처리됩니다.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @GetMapping("/{messageId}")
     public ResponseEntity<SuccessResponse<MessageDetailResponse>> getMessageDetail(
@@ -88,7 +88,7 @@ public class MessageController {
     @Operation(
             summary = "쪽지 삭제",
             description = "쪽지를 삭제합니다. 발신자/수신자 각각 삭제 가능합니다.",
-            security = @SecurityRequirement(name = "bearerAuth")
+            security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @DeleteMapping("/{messageId}")
     public ResponseEntity<SuccessResponse<Void>> deleteMessage(

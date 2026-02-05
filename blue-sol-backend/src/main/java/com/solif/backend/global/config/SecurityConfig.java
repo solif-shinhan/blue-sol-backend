@@ -66,7 +66,8 @@ public class SecurityConfig {
                                 "/error",                         // Spring Boot 에러 핸들러
                                 "/swagger-ui/**",                 // Swagger UI
                                 "/v3/api-docs/**",                // API 문서
-                                "/h2-console/**"                  // H2 콘솔 (개발용)
+                                "/h2-console/**" ,                // H2 콘솔 (개발용)
+                                "/api/test/ocr"                   // test ocr
                         ).permitAll()
                         // 그 외 모든 요청은 인증 필요
                         .anyRequest().authenticated()

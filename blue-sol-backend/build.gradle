@@ -45,9 +45,17 @@ dependencies {
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3:3.4.0'
 	implementation 'org.springframework.cloud:spring-cloud-starter-aws:2.2.6.RELEASE'
 
+	// Google Cloud Vision API
+	implementation 'com.google.cloud:google-cloud-vision:3.20.0'
+
 	runtimeOnly 'com.h2database:h2'
 }
 
 tasks.named('test') {
 	useJUnitPlatform()
 }
+
+configurations.all { // listenablefuture:1.0을 강제로 배제 + guava 하나로 통일
+	exclude group: "com.google.guava", module: "listenablefuture"
+}
+

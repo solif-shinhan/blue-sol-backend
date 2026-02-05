@@ -71,7 +71,6 @@ public class GoogleVisionClient {
             //    textAnnotations[1~N] = 개별 단어들
             String fullText = imageResponse.getTextAnnotations(0).getDescription();
             log.info("OCR 추출 완료. 텍스트 길이: {} 자", fullText.length());
-            log.debug("추출된 텍스트: {}", fullText);
 
             return fullText;
 

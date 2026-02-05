@@ -54,7 +54,7 @@ public class SignupRequest {
     @Schema(description = "지역 (선택사항)", example = "서울")
     private String region;
 
-    @Schema(description = "학교명 (선택사항)", example = "서울대학교")
+    @Schema(description = "학교명 (장학생 필수)", example = "서울대학교")
     private String schoolName;
 
     @Schema(description = "직업 (졸업생만 필수)", example = "변호사")

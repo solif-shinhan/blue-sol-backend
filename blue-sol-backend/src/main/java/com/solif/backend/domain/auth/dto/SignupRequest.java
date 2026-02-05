@@ -43,7 +43,6 @@ public class SignupRequest {
     @Schema(description = "이메일", example = "user@example.com")
     private String email;
 
-    @NotBlank(message = "학번은 필수입니다.")
     @Schema(description = "학번", example = "20240001")
     private String scholarNumber;
 

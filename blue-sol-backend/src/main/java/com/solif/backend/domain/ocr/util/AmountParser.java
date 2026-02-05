@@ -22,7 +22,8 @@ public class AmountParser {
         List<Long> candidates = extractAllAmounts(ocrText);
 
         if (candidates.isEmpty()) {
-            log.warn("금액을 찾을 수 없습니다. OCR Text: {}", ocrText);
+            log.warn("금액을 찾을 수 없습니다. OCR Text 길이: {}",
+                    ocrText != null ? ocrText.length() : 0);
             return null;
         }
 

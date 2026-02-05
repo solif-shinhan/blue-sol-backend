@@ -43,7 +43,7 @@ dependencies {
 	implementation 'com.google.zxing:core:3.5.4' // QR Code 생성 (ZXing)
 	implementation 'com.google.zxing:javase:3.5.4' // QR Code 생성 (ZXing)
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3:3.4.0'
-	implementation 'org.springframework.cloud:spring-cloud-starter-aws:2.2.6.RELEASE'
+//	implementation 'org.springframework.cloud:spring-cloud-starter-aws:2.2.6.RELEASE'
 
 	// Google Cloud Vision API
 	implementation 'com.google.cloud:google-cloud-vision:3.20.0'

@@ -47,6 +47,8 @@ jobs:
       - name: Build and push Docker image (STG)
         run: |
           docker buildx build \
+            --no-cache \
+            --pull \
             --platform linux/amd64,linux/arm64 \
             -t tony0103/shinhan-backend:stg-latest \
             -t tony0103/shinhan-backend:stg-${{ github.sha }} \
@@ -77,5 +79,5 @@ jobs:
             EOF
 
             docker compose pull backend-stg
-            docker compose up -d backend-stg
+            docker compose up -d --force-recreate backend-stg
             docker image prune -f

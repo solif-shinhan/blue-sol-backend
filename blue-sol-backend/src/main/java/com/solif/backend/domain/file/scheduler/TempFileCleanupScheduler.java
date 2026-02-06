@@ -18,7 +18,7 @@ public class TempFileCleanupScheduler {
     /**
      * 매일 새벽 3시에 만료된 임시 파일 정리
      */
-    @Scheduled(cron = "0 0 3 * * *")
+    @Scheduled(cron = "0 0 3 * * *", zone = "Asia/Seoul")
     public void cleanupExpiredTempFiles() {
         log.info("=== 임시 파일 정리 스케줄러 시작 ===");
 

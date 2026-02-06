@@ -117,6 +117,10 @@ public class FileService {
         int sortOrder = 1;
 
         for (File file : files) {
+            // 파일 상태검증 추가
+            if (!file.isTemp()) {
+                throw new FileException(FILE_ALREADY_CONFIRMED);
+            }
             file.confirm();
 
             FileAttachment attachment = FileAttachment.builder()

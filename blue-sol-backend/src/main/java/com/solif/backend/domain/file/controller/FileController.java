@@ -3,7 +3,8 @@ package com.solif.backend.domain.file.controller;
 import com.solif.backend.domain.file.dto.request.FileAttachRequest;
 import com.solif.backend.domain.file.dto.response.FileAttachmentResponse;
 import com.solif.backend.domain.file.dto.response.FileUploadResponse;
-import com.solif.backend.domain.file.entity.TargetType;
+import com.solif.backend.domain.file.entity.FileFolder;
+import com.solif.backend.domain.file.entity.FileTargetType;
 import com.solif.backend.domain.file.service.FileService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -31,7 +32,7 @@ public class FileController {
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<List<FileUploadResponse>> uploadFiles(
             @RequestParam("files") List<MultipartFile> files,
-            @RequestParam(value = "folder", defaultValue = "uploads") String folder) {
+            @RequestParam("folder") FileFolder folder) {
 
         List<FileUploadResponse> responses = fileService.uploadFiles(files, folder);
         return ResponseEntity.ok(responses);
@@ -70,10 +71,10 @@ public class FileController {
             security = @SecurityRequirement(name = "Bearer Authentication"))
     @GetMapping("/attachments")
     public ResponseEntity<List<FileAttachmentResponse>> getAttachments(
-            @RequestParam TargetType targetType,
+            @RequestParam FileTargetType fileTargetType,
             @RequestParam Long targetId) {
 
-        List<FileAttachmentResponse> responses = fileService.getAttachments(targetType, targetId);
+        List<FileAttachmentResponse> responses = fileService.getAttachments(fileTargetType, targetId);
         return ResponseEntity.ok(responses);
     }
 }

@@ -28,7 +28,7 @@ public class FileAttachment {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "target_type", nullable = false, length = 50)
-    private TargetType targetType;
+    private FileTargetType fileTargetType;
 
     @Column(name = "target_id", nullable = false)
     private Long targetId;
@@ -45,10 +45,10 @@ public class FileAttachment {
     private LocalDateTime createdAt;
 
     @Builder
-    public FileAttachment(File file, TargetType targetType, Long targetId,
+    public FileAttachment(File file, FileTargetType fileTargetType, Long targetId,
                           AttachmentPurpose purpose, Integer sortOrder) {
         this.file = file;
-        this.targetType = targetType;
+        this.fileTargetType = fileTargetType;
         this.targetId = targetId;
         this.purpose = purpose;
         this.sortOrder = sortOrder != null ? sortOrder : 1;

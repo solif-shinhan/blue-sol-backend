@@ -3,8 +3,13 @@ package com.solif.backend.domain.file.service;
 import com.solif.backend.domain.file.dto.request.FileAttachRequest;
 import com.solif.backend.domain.file.dto.response.FileAttachmentResponse;
 import com.solif.backend.domain.file.dto.response.FileUploadResponse;
-import com.solif.backend.domain.file.entity.*;
-import com.solif.backend.domain.file.exception.FileException;
+import com.solif.backend.domain.file.entity.AttachmentPurpose;
+import com.solif.backend.domain.file.entity.File;
+import com.solif.backend.domain.file.entity.FileAttachment;
+import com.solif.backend.domain.file.entity.FileFolder;
+import com.solif.backend.domain.file.entity.FileStatus;
+import com.solif.backend.domain.file.entity.FileTargetType;
+import com.solif.backend.domain.file.code.FileException;
 import com.solif.backend.domain.file.repository.FileAttachmentRepository;
 import com.solif.backend.domain.file.repository.FileRepository;
 import com.solif.backend.global.common.exception.CustomException;
@@ -21,7 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import static com.solif.backend.domain.file.exception.FileException.FileErrorCode.*;
+import static com.solif.backend.domain.file.code.FileException.FileErrorCode.*;
 
 @Slf4j
 @Service
@@ -101,7 +106,7 @@ public class FileService {
      * - FileAttachment 생성
      */
     @Transactional
-    public List<FileAttachmentResponse> confirmFiles(List<Long> fileIds, TargetType targetType,
+    public List<FileAttachmentResponse> confirmFiles(List<Long> fileIds, FileTargetType fileTargetType,
                                                       Long targetId, AttachmentPurpose purpose) {
         if (fileIds == null || fileIds.isEmpty()) {
             return new ArrayList<>();
@@ -125,7 +130,7 @@ public class FileService {
 
             FileAttachment attachment = FileAttachment.builder()
                     .file(file)
-                    .targetType(targetType)
+                    .fileTargetType(fileTargetType)
                     .targetId(targetId)
                     .purpose(purpose)
                     .sortOrder(sortOrder++)
@@ -136,7 +141,7 @@ public class FileService {
         }
 
         log.info("{}개의 파일 확정 완료 - targetType: {}, targetId: {}",
-                files.size(), targetType, targetId);
+                files.size(), fileTargetType, targetId);
         return responses;
     }
 
@@ -177,7 +182,7 @@ public class FileService {
 
         FileAttachment attachment = FileAttachment.builder()
                 .file(file)
-                .targetType(request.getTargetType())
+                .fileTargetType(request.getFileTargetType())
                 .targetId(request.getTargetId())
                 .purpose(request.getPurpose())
                 .sortOrder(request.getSortOrder())
@@ -209,9 +214,9 @@ public class FileService {
     /**
      * 특정 엔티티의 첨부파일 조회
      */
-    public List<FileAttachmentResponse> getAttachments(TargetType targetType, Long targetId) {
+    public List<FileAttachmentResponse> getAttachments(FileTargetType fileTargetType, Long targetId) {
         List<FileAttachment> attachments = fileAttachmentRepository
-                .findByTargetTypeAndTargetIdOrderBySortOrder(targetType, targetId);
+                .findByFileTargetTypeAndTargetIdOrderBySortOrder(fileTargetType, targetId);
 
         return attachments.stream()
                 .map(attachment -> FileAttachmentResponse.from(attachment, region))

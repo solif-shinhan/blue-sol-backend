@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public interface CommentRepository extends JpaRepository<Comment, Long> {
@@ -39,4 +40,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
                         PostCommentCount::getCommentCount
                 ));
     }
+
+    // 사용자가 첫 번째 작성한 댓글
+    Optional<Comment> findFirstByUser_UserIdOrderByCreatedAtAsc(Long userId);
 }

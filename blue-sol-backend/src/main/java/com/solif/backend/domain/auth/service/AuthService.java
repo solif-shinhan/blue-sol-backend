@@ -5,6 +5,7 @@ import com.solif.backend.domain.auth.dto.LoginResponse;
 import com.solif.backend.domain.auth.dto.SignupRequest;
 import com.solif.backend.domain.auth.dto.SignupResponse;
 import com.solif.backend.domain.auth.exception.AuthErrorCode;
+import com.solif.backend.domain.mission.service.MissionService;
 import com.solif.backend.domain.user.entity.User;
 import com.solif.backend.domain.user.repository.UserRepository;
 import com.solif.backend.global.common.exception.CustomException;
@@ -24,6 +25,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final MissionService missionService;
 
     //회원가입
     @Transactional
@@ -54,6 +56,9 @@ public class AuthService {
                 .build();
 
         User savedUser = userRepository.save(user);
+
+        // 미션 초기화 (9개 미션 생성)
+        missionService.initializeUserMissions(savedUser);
         log.info("회원가입 성공 - userId: {}", savedUser.getUserId());
 
         return SignupResponse.of(savedUser.getUserId(), savedUser.getUserRole(), savedUser.getCreatedAt());

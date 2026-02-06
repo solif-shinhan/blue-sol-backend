@@ -6,7 +6,7 @@ import com.solif.backend.domain.file.dto.response.FileUploadResponse;
 import com.solif.backend.domain.file.entity.File;
 import com.solif.backend.domain.file.entity.FileAttachment;
 import com.solif.backend.domain.file.entity.TargetType;
-import com.solif.backend.domain.file.exception.FileException;
+import com.solif.backend.domain.file.code.FileException;
 import com.solif.backend.domain.file.repository.FileAttachmentRepository;
 import com.solif.backend.domain.file.repository.FileRepository;
 import com.solif.backend.global.common.exception.CustomException;
@@ -18,12 +18,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import static com.solif.backend.domain.file.exception.FileException.FileErrorCode.*;
+import static com.solif.backend.domain.file.code.FileException.FileErrorCode.*;
 
 @Slf4j
 @Service

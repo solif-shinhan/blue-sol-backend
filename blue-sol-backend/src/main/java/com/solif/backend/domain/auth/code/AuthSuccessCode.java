@@ -1,4 +1,4 @@
-package com.solif.backend.domain.auth.dto;
+package com.solif.backend.domain.auth.code;
 
 import com.solif.backend.global.common.response.SuccessCode;
 import lombok.Getter;

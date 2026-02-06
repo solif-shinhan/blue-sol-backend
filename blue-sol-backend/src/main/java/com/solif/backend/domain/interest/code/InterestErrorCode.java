@@ -1,4 +1,4 @@
-package com.solif.backend.domain.interest.exception;
+package com.solif.backend.domain.interest.code;
 
 import com.solif.backend.global.common.exception.ErrorCode;
 import lombok.Getter;

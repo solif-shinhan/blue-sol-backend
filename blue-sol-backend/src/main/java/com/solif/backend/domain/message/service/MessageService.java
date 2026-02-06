@@ -3,7 +3,7 @@ package com.solif.backend.domain.message.service;
 import com.solif.backend.domain.notification.entity.NotificationType;
 import com.solif.backend.domain.notification.entity.TargetType;
 import com.solif.backend.domain.notification.event.NotificationEvent;
-import com.solif.backend.domain.auth.exception.AuthErrorCode;
+import com.solif.backend.domain.auth.code.AuthErrorCode;
 import com.solif.backend.domain.message.code.MessageErrorCode;
 import com.solif.backend.domain.message.dto.*;
 import com.solif.backend.domain.message.entity.Message;

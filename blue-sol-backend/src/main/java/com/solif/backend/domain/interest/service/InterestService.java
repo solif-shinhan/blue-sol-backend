@@ -3,7 +3,7 @@ package com.solif.backend.domain.interest.service;
 import com.solif.backend.domain.interest.dto.InterestRequest;
 import com.solif.backend.domain.interest.dto.InterestResponse;
 import com.solif.backend.domain.interest.entity.UserInterest;
-import com.solif.backend.domain.interest.exception.InterestErrorCode;
+import com.solif.backend.domain.interest.code.InterestErrorCode;
 import com.solif.backend.domain.interest.repository.UserInterestRepository;
 import com.solif.backend.domain.user.entity.User;
 import com.solif.backend.domain.user.repository.UserRepository;

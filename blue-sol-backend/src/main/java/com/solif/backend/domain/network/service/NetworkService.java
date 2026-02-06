@@ -10,7 +10,7 @@ import com.solif.backend.domain.interest.repository.UserInterestRepository;
 import com.solif.backend.domain.network.dto.*;
 import com.solif.backend.domain.network.entity.Connection;
 import com.solif.backend.domain.network.entity.ConnectionStatus;
-import com.solif.backend.domain.network.exception.NetworkErrorCode;
+import com.solif.backend.domain.network.code.NetworkErrorCode;
 import com.solif.backend.domain.network.repository.ConnectionRepository;
 import com.solif.backend.domain.notification.entity.NotificationType;
 import com.solif.backend.domain.notification.entity.TargetType;

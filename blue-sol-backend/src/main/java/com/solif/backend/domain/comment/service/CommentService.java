@@ -1,6 +1,6 @@
 package com.solif.backend.domain.comment.service;
 
-import com.solif.backend.domain.auth.exception.AuthErrorCode;
+import com.solif.backend.domain.auth.code.AuthErrorCode;
 import com.solif.backend.domain.comment.code.CommentErrorCode;
 import com.solif.backend.domain.comment.dto.CommentCreateRequest;
 import com.solif.backend.domain.comment.dto.CommentResponse;

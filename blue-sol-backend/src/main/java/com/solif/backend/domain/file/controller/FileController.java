@@ -5,6 +5,8 @@ import com.solif.backend.domain.file.dto.response.FileAttachmentResponse;
 import com.solif.backend.domain.file.dto.response.FileUploadResponse;
 import com.solif.backend.domain.file.entity.TargetType;
 import com.solif.backend.domain.file.service.FileService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -23,9 +25,9 @@ public class FileController {
 
     private final FileService fileService;
 
-    /**
-     * 단일/다중 파일 업로드
-     */
+    @Operation(summary = "파일 업로드",
+            description = "파일을 S3에 업로드합니다. " + "폴더 타입: COUNCIL_REVIEW(자치회), POST(게시판), MENTORING(멘토링)",
+            security = @SecurityRequirement(name = "Bearer Authentication"))
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<List<FileUploadResponse>> uploadFiles(
             @RequestParam("files") List<MultipartFile> files,
@@ -35,9 +37,9 @@ public class FileController {
         return ResponseEntity.ok(responses);
     }
 
-    /**
-     * 파일-엔티티 연결
-     */
+    @Operation(summary = "파일 연결",
+            description = "업로드된 파일을 특정 엔티티와 연결합니다.",
+            security = @SecurityRequirement(name = "Bearer Authentication"))
     @PostMapping("/attachments")
     public ResponseEntity<FileAttachmentResponse> attachFile(
             @Valid @RequestBody FileAttachRequest request) {
@@ -49,6 +51,9 @@ public class FileController {
     /**
      * 파일 연결 해제
      */
+    @Operation(summary = "파일 연결 해제",
+            description = "파일 연결을 해제하고 S3에서 삭제합니다.",
+            security = @SecurityRequirement(name = "Bearer Authentication"))
     @DeleteMapping("/attachments/{fileAttachmentId}")
     public ResponseEntity<Void> detachFile(
             @PathVariable Long fileAttachmentId) {
@@ -60,6 +65,9 @@ public class FileController {
     /**
      * 특정 엔티티의 첨부파일 조회
      */
+    @Operation(summary = "첨부파일 조회",
+            description = "특정 엔티티에 연결된 첨부파일 목록을 조회합니다.",
+            security = @SecurityRequirement(name = "Bearer Authentication"))
     @GetMapping("/attachments")
     public ResponseEntity<List<FileAttachmentResponse>> getAttachments(
             @RequestParam TargetType targetType,

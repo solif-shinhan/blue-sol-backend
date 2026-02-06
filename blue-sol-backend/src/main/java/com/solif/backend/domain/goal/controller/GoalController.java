@@ -2,7 +2,7 @@ package com.solif.backend.domain.goal.controller;
 
 import com.solif.backend.domain.goal.dto.GoalCountResponse;
 import com.solif.backend.domain.goal.dto.GoalFirstResponse;
-import com.solif.backend.domain.goal.dto.GoalSuccessCode;
+import com.solif.backend.domain.goal.code.GoalSuccessCode;
 import com.solif.backend.domain.goal.service.GoalService;
 import com.solif.backend.global.common.response.ResponseFactory;
 import com.solif.backend.global.common.response.SuccessResponse;

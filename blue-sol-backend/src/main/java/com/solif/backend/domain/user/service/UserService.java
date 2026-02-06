@@ -1,6 +1,6 @@
 package com.solif.backend.domain.user.service;
 
-import com.solif.backend.domain.auth.exception.AuthErrorCode;
+import com.solif.backend.domain.auth.code.AuthErrorCode;
 import com.solif.backend.domain.council.entity.CouncilMember;
 import com.solif.backend.domain.council.repository.CouncilMemberRepository;
 import com.solif.backend.domain.user.dto.UserMeResponse;

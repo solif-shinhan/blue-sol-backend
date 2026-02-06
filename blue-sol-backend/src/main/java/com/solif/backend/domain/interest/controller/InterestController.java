@@ -1,9 +1,9 @@
 package com.solif.backend.domain.interest.controller;
 
-import com.solif.backend.domain.auth.exception.AuthErrorCode;
+import com.solif.backend.domain.auth.code.AuthErrorCode;
 import com.solif.backend.domain.interest.dto.InterestRequest;
 import com.solif.backend.domain.interest.dto.InterestResponse;
-import com.solif.backend.domain.interest.dto.InterestSuccessCode;
+import com.solif.backend.domain.interest.code.InterestSuccessCode;
 import com.solif.backend.domain.interest.service.InterestService;
 import com.solif.backend.global.common.exception.CustomException;
 import com.solif.backend.global.common.response.ResponseFactory;

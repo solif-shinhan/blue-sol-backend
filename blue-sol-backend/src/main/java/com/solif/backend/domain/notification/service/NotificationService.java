@@ -1,6 +1,6 @@
 package com.solif.backend.domain.notification.service;
 
-import com.solif.backend.domain.auth.exception.AuthErrorCode;
+import com.solif.backend.domain.auth.code.AuthErrorCode;
 import com.solif.backend.domain.notification.code.NotificationErrorCode;
 import com.solif.backend.domain.notification.dto.*;
 import com.solif.backend.domain.notification.entity.*;

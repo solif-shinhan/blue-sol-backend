@@ -42,7 +42,7 @@ public class User {
     @Column(name = "email", nullable = false, length = 100)
     private String email;
 
-    @Column(name = "scholar_number", nullable = false, length = 50)
+    @Column(name = "scholar_number", length = 50)
     private String scholarNumber;
 
     @Column(name = "region", length = 50)

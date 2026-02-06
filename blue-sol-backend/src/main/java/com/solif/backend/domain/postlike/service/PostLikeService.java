@@ -1,6 +1,6 @@
 package com.solif.backend.domain.postlike.service;
 
-import com.solif.backend.domain.auth.exception.AuthErrorCode;
+import com.solif.backend.domain.auth.code.AuthErrorCode;
 import com.solif.backend.domain.post.code.PostErrorCode;
 import com.solif.backend.domain.post.entity.Post;
 import com.solif.backend.domain.post.repository.PostRepository;

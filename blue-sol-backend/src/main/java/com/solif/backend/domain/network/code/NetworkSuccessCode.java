@@ -1,4 +1,4 @@
-package com.solif.backend.domain.network.dto;
+package com.solif.backend.domain.network.code;
 
 import com.solif.backend.global.common.response.SuccessCode;
 import lombok.Getter;

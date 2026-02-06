@@ -4,7 +4,7 @@ import com.solif.backend.domain.auth.dto.LoginRequest;
 import com.solif.backend.domain.auth.dto.LoginResponse;
 import com.solif.backend.domain.auth.dto.SignupRequest;
 import com.solif.backend.domain.auth.dto.SignupResponse;
-import com.solif.backend.domain.auth.exception.AuthErrorCode;
+import com.solif.backend.domain.auth.code.AuthErrorCode;
 import com.solif.backend.domain.mission.service.MissionService;
 import com.solif.backend.domain.user.entity.User;
 import com.solif.backend.domain.user.repository.UserRepository;

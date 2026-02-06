@@ -13,6 +13,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -152,7 +153,39 @@ public class GlobalExceptionHandler {
         return CommonErrorCode.INTERNAL_SERVER_ERROR;
     }
 
-    // 5. 일반 예외 처리
+    // 5. Enum 타입 변환 실패 예외 처리 (잘못된 @RequestParam 값)
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatchException(
+            MethodArgumentTypeMismatchException e) {
+        
+        String paramName = e.getName();
+        String invalidValue = e.getValue() != null ? e.getValue().toString() : "null";
+        Class<?> requiredType = e.getRequiredType();
+        
+        String message;
+        if (requiredType != null && requiredType.isEnum()) {
+            // Enum 타입인 경우 허용 가능한 값 목록 제공
+            Object[] enumConstants = requiredType.getEnumConstants();
+            String allowedValues = java.util.Arrays.stream(enumConstants)
+                    .map(Object::toString)
+                    .collect(Collectors.joining(", "));
+            message = String.format("'%s' 파라미터의 값 '%s'이(가) 유효하지 않습니다. 허용 값: [%s]",
+                    paramName, invalidValue, allowedValues);
+        } else {
+            message = String.format("'%s' 파라미터의 값 '%s'이(가) 유효하지 않습니다.", 
+                    paramName, invalidValue);
+        }
+        
+        log.warn("MethodArgumentTypeMismatch: param={}, value={}, requiredType={}", 
+                paramName, invalidValue, requiredType);
+        
+        CommonErrorCode errorCode = CommonErrorCode.VALIDATION_ERROR;
+        return ResponseEntity
+                .status(errorCode.getStatus())
+                .body(new ErrorResponse(errorCode.getCode(), message));
+    }
+
+    // 6. 일반 예외 처리
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneralException(Exception e) {
         log.error("Unexpected exception", e);

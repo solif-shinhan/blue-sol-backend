@@ -2,7 +2,7 @@ package com.solif.backend.domain.file.dto.response;
 
 import com.solif.backend.domain.file.entity.AttachmentPurpose;
 import com.solif.backend.domain.file.entity.FileAttachment;
-import com.solif.backend.domain.file.entity.TargetType;
+import com.solif.backend.domain.file.entity.FileTargetType;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -13,7 +13,7 @@ public class FileAttachmentResponse {
     private Long fileId;
     private String originalName;
     private String url;
-    private TargetType targetType;
+    private FileTargetType fileTargetType;
     private Long targetId;
     private AttachmentPurpose purpose;
     private Integer sortOrder;
@@ -24,7 +24,7 @@ public class FileAttachmentResponse {
                 .fileId(attachment.getFile().getFileId())
                 .originalName(attachment.getFile().getOriginalName())
                 .url(attachment.getFile().getUrl(region))
-                .targetType(attachment.getTargetType())
+                .fileTargetType(attachment.getFileTargetType())
                 .targetId(attachment.getTargetId())
                 .purpose(attachment.getPurpose())
                 .sortOrder(attachment.getSortOrder())

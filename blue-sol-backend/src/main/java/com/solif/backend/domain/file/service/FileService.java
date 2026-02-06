@@ -3,9 +3,12 @@ package com.solif.backend.domain.file.service;
 import com.solif.backend.domain.file.dto.request.FileAttachRequest;
 import com.solif.backend.domain.file.dto.response.FileAttachmentResponse;
 import com.solif.backend.domain.file.dto.response.FileUploadResponse;
+import com.solif.backend.domain.file.entity.AttachmentPurpose;
 import com.solif.backend.domain.file.entity.File;
 import com.solif.backend.domain.file.entity.FileAttachment;
-import com.solif.backend.domain.file.entity.TargetType;
+import com.solif.backend.domain.file.entity.FileFolder;
+import com.solif.backend.domain.file.entity.FileStatus;
+import com.solif.backend.domain.file.entity.FileTargetType;
 import com.solif.backend.domain.file.code.FileException;
 import com.solif.backend.domain.file.repository.FileAttachmentRepository;
 import com.solif.backend.domain.file.repository.FileRepository;
@@ -18,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -41,26 +45,28 @@ public class FileService {
     private String region;
 
     /**
-     * 단일/다중 파일 업로드
+     * 파일 업로드
+     * - S3 업로드 후 status=TEMP로 저장
+     * - 글쓰기 완료 시 confirmFiles()로 PERMANENT 변경
      */
     @Transactional
-    public List<FileUploadResponse> uploadFiles(List<MultipartFile> files, String folder) {
+    public List<FileUploadResponse> uploadFiles(List<MultipartFile> files, FileFolder folder) {
         List<FileUploadResponse> responses = new ArrayList<>();
-        List<String> uploadedKeys = new ArrayList<>(); // 2. 원자성 확보를 위한 업로드 목록 추적
+        List<String> uploadedKeys = new ArrayList<>();
+
+        String folderName = folder.getFolderName();
 
         try {
             for (MultipartFile multipartFile : files) {
                 String originalName = multipartFile.getOriginalFilename();
                 String fileName = UUID.randomUUID() + extractExtension(originalName);
                 String contentType = multipartFile.getContentType();
-                String objectKey = folder + "/" + fileName;
+                String objectKey = folderName + "/" + fileName;
 
-                // 1. S3Service에서 이미 CustomException을 던지므로 중복 래핑 없이 호출
-                s3Service.upload(folder, fileName, multipartFile.getBytes(), contentType);
-                uploadedKeys.add(objectKey); // 업로드 성공 시 키 기록
+                s3Service.upload(folderName, fileName, multipartFile.getBytes(), contentType);
+                uploadedKeys.add(objectKey);
 
-                // 3. 로그 보강: 업로드된 파일 정보 기록
-                log.info("S3 업로드 진행 중 - OriginalName: {}, Key: {}", originalName, objectKey);
+                log.info("파일 S3 업로드 - Folder: {}, OriginalName: {}, Key: {}", folderName, originalName, objectKey);
 
                 File file = File.builder()
                         .bucket(bucket)
@@ -68,36 +74,102 @@ public class FileService {
                         .originalName(originalName)
                         .contentType(contentType)
                         .sizeBytes(multipartFile.getSize())
+                        .status(FileStatus.TEMP)
                         .build();
 
                 fileRepository.save(file);
                 responses.add(FileUploadResponse.from(file, region));
             }
 
-            log.info("총 {}개의 파일 업로드 및 DB 저장 완료", responses.size());
+            log.info("총 {}개의 파일 업로드 완료 - Folder: {}, status=TEMP", responses.size(), folderName);
             return responses;
 
         } catch (Exception e) {
-            // 2. 원자성 확보: 실패 시 이미 S3에 올라간 파일들 삭제 (Cleanup)
-            log.error("파일 업로드 과정 중 에러 발생. 이미 업로드된 파일 {}개를 삭제합니다.", uploadedKeys.size());
+            log.error("파일 업로드 실패. 롤백 중... 삭제할 파일: {}개", uploadedKeys.size());
             for (String key : uploadedKeys) {
                 try {
                     s3Service.delete(key);
                 } catch (Exception ignore) {
-                    log.warn("Cleanup 중 파일 삭제 실패 - Key: {}", key);
+                    log.warn("Cleanup 실패 - Key: {}", key);
                 }
             }
 
-            // 1. 예외 일관성 해결: 명시적 형변환으로 에러 해결
-            if (e instanceof FileException) {
-                throw (FileException) e;
-            }
-            if (e instanceof CustomException) {
-                throw (CustomException) e;
-            }
-
+            if (e instanceof FileException) throw (FileException) e;
+            if (e instanceof CustomException) throw (CustomException) e;
             throw new FileException(FILE_UPLOAD_FAILED);
         }
+    }
+
+    /**
+     * 파일 확정 (글쓰기 API 내부에서 호출)
+     * - TEMP → PERMANENT 상태 변경
+     * - FileAttachment 생성
+     */
+    @Transactional
+    public List<FileAttachmentResponse> confirmFiles(List<Long> fileIds, FileTargetType fileTargetType,
+                                                      Long targetId, AttachmentPurpose purpose) {
+        if (fileIds == null || fileIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<File> files = fileRepository.findAllByFileIdIn(fileIds);
+
+        if (files.size() != fileIds.size()) {
+            throw new FileException(FILE_NOT_FOUND);
+        }
+
+        List<FileAttachmentResponse> responses = new ArrayList<>();
+        int sortOrder = 1;
+
+        for (File file : files) {
+            // 파일 상태검증 추가
+            if (!file.isTemp()) {
+                throw new FileException(FILE_ALREADY_CONFIRMED);
+            }
+            file.confirm();
+
+            FileAttachment attachment = FileAttachment.builder()
+                    .file(file)
+                    .fileTargetType(fileTargetType)
+                    .targetId(targetId)
+                    .purpose(purpose)
+                    .sortOrder(sortOrder++)
+                    .build();
+
+            fileAttachmentRepository.save(attachment);
+            responses.add(FileAttachmentResponse.from(attachment, region));
+        }
+
+        log.info("{}개의 파일 확정 완료 - targetType: {}, targetId: {}",
+                files.size(), fileTargetType, targetId);
+        return responses;
+    }
+
+    /**
+     * 만료된 임시 파일 삭제 (스케줄러용)
+     * - 모든 폴더의 TEMP 파일을 일괄 삭제
+     */
+    @Transactional
+    public int cleanupExpiredTempFiles(int hoursToExpire) {
+        LocalDateTime expiredTime = LocalDateTime.now().minusHours(hoursToExpire);
+        List<File> expiredFiles = fileRepository.findExpiredTempFiles(FileStatus.TEMP, expiredTime);
+
+        int deletedCount = 0;
+        for (File file : expiredFiles) {
+            try {
+                s3Service.delete(file.getObjectKey());
+                fileRepository.delete(file);
+                deletedCount++;
+                log.info("만료된 임시 파일 삭제 - fileId: {}, key: {}",
+                        file.getFileId(), file.getObjectKey());
+            } catch (Exception e) {
+                log.error("임시 파일 삭제 실패 - fileId: {}, error: {}",
+                        file.getFileId(), e.getMessage());
+            }
+        }
+
+        log.info("임시 파일 정리 완료 - 삭제: {}개 / 대상: {}개", deletedCount, expiredFiles.size());
+        return deletedCount;
     }
 
     /**
@@ -110,7 +182,7 @@ public class FileService {
 
         FileAttachment attachment = FileAttachment.builder()
                 .file(file)
-                .targetType(request.getTargetType())
+                .fileTargetType(request.getFileTargetType())
                 .targetId(request.getTargetId())
                 .purpose(request.getPurpose())
                 .sortOrder(request.getSortOrder())
@@ -126,18 +198,15 @@ public class FileService {
      */
     @Transactional
     public void detachFile(Long fileAttachmentId) {
-        // 1. 첨부 정보 조회
         FileAttachment attachment = fileAttachmentRepository.findById(fileAttachmentId)
                 .orElseThrow(() -> new FileException(FILE_ATTACHMENT_NOT_FOUND));
 
         File file = attachment.getFile();
-        String objectKey = file.getObjectKey(); // S3 삭제에 필요한 Key
+        String objectKey = file.getObjectKey();
 
-        // 2. DB 레코드 삭제 (연결 정보 및 파일 정보)
         fileAttachmentRepository.delete(attachment);
         fileRepository.delete(file);
 
-        // 3. S3 실제 파일 삭제 (DB 삭제 성공 후 수행)
         s3Service.delete(objectKey);
         log.info("파일 삭제 완료 - ID: {}, S3 Key: {}", file.getFileId(), objectKey);
     }
@@ -145,9 +214,9 @@ public class FileService {
     /**
      * 특정 엔티티의 첨부파일 조회
      */
-    public List<FileAttachmentResponse> getAttachments(TargetType targetType, Long targetId) {
+    public List<FileAttachmentResponse> getAttachments(FileTargetType fileTargetType, Long targetId) {
         List<FileAttachment> attachments = fileAttachmentRepository
-                .findByTargetTypeAndTargetIdOrderBySortOrder(targetType, targetId);
+                .findByFileTargetTypeAndTargetIdOrderBySortOrder(fileTargetType, targetId);
 
         return attachments.stream()
                 .map(attachment -> FileAttachmentResponse.from(attachment, region))

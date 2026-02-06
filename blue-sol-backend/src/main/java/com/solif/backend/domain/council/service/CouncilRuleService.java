@@ -1,6 +1,6 @@
 package com.solif.backend.domain.council.service;
 
-import com.solif.backend.domain.auth.exception.AuthErrorCode;
+import com.solif.backend.domain.auth.code.AuthErrorCode;
 import com.solif.backend.domain.council.code.CouncilErrorCode;
 import com.solif.backend.domain.council.dto.AddRuleResponse;
 import com.solif.backend.domain.council.dto.RuleListResponse;

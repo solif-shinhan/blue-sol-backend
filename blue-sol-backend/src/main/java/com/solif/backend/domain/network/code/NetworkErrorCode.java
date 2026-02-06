@@ -1,4 +1,4 @@
-package com.solif.backend.domain.network.exception;
+package com.solif.backend.domain.network.code;
 
 import com.solif.backend.global.common.exception.ErrorCode;
 import lombok.Getter;

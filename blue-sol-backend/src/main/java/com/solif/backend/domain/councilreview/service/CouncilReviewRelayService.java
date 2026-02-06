@@ -1,6 +1,6 @@
 package com.solif.backend.domain.councilreview.service;
 
-import com.solif.backend.domain.auth.exception.AuthErrorCode;
+import com.solif.backend.domain.auth.code.AuthErrorCode;
 import com.solif.backend.domain.councilreview.code.CouncilReviewErrorCode;
 import com.solif.backend.domain.councilreview.dto.request.CouncilReviewRelayCreateRequest;
 import com.solif.backend.domain.councilreview.dto.request.CouncilReviewRelayUpdateRequest;

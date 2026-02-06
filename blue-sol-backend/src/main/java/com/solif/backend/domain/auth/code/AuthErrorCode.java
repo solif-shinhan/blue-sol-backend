@@ -1,4 +1,4 @@
-package com.solif.backend.domain.auth.exception;
+package com.solif.backend.domain.auth.code;
 
 import com.solif.backend.global.common.exception.ErrorCode;
 import lombok.Getter;

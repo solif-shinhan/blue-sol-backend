@@ -1,7 +1,7 @@
 package com.solif.backend.domain.ocr.service;
 
 import com.solif.backend.domain.file.entity.File;
-import com.solif.backend.domain.file.exception.FileException;
+import com.solif.backend.domain.file.code.FileException;
 import com.solif.backend.domain.file.repository.FileRepository;
 import com.solif.backend.domain.ocr.code.OcrErrorCode;
 import com.solif.backend.domain.ocr.dto.response.OcrResponse;
@@ -21,7 +21,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import java.io.IOException;
 import java.util.List;
 
-import static com.solif.backend.domain.file.exception.FileException.FileErrorCode.FILE_NOT_FOUND;
+import static com.solif.backend.domain.file.code.FileException.FileErrorCode.FILE_NOT_FOUND;
 
 @Slf4j
 @Service

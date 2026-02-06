@@ -1,6 +1,6 @@
 package com.solif.backend.global.common.exception;
 
-import com.solif.backend.domain.auth.exception.AuthErrorCode;
+import com.solif.backend.domain.auth.code.AuthErrorCode;
 import com.solif.backend.global.common.exception.code.CommonErrorCode;
 import com.solif.backend.global.common.response.ErrorResponse;
 import jakarta.validation.ConstraintViolation;

@@ -2,7 +2,7 @@ package com.solif.backend.domain.user.controller;
 
 import com.solif.backend.domain.user.dto.UserMeResponse;
 import com.solif.backend.domain.user.dto.UserSearchResponse;
-import com.solif.backend.domain.user.dto.UserSuccessCode;
+import com.solif.backend.domain.user.code.UserSuccessCode;
 import com.solif.backend.domain.user.service.UserService;
 import com.solif.backend.global.common.response.ResponseFactory;
 import com.solif.backend.global.common.response.SuccessResponse;

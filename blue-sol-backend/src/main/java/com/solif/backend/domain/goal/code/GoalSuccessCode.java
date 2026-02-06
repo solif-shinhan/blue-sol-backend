@@ -1,4 +1,4 @@
-package com.solif.backend.domain.interest.dto;
+package com.solif.backend.domain.goal.code;
 
 import com.solif.backend.global.common.response.SuccessCode;
 import lombok.Getter;
@@ -7,9 +7,10 @@ import org.springframework.http.HttpStatus;
 
 @Getter
 @RequiredArgsConstructor
-public enum InterestSuccessCode implements SuccessCode {
+public enum GoalSuccessCode implements SuccessCode {
 
-    INTEREST_REGISTER_SUCCESS(HttpStatus.OK, "INTEREST_S001", "관심사 등록에 성공했습니다.");
+    GOAL_FIRST_READ_SUCCESS(HttpStatus.OK, "GOAL_001", "첫 번째 목표 조회에 성공했습니다."),
+    GOAL_COUNT_READ_SUCCESS(HttpStatus.OK, "GOAL_002", "목표 개수 조회에 성공했습니다.");
 
     private final HttpStatus status;
     private final String code;

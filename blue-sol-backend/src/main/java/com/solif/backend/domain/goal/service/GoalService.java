@@ -5,7 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.solif.backend.domain.goal.dto.GoalCountResponse;
 import com.solif.backend.domain.goal.dto.GoalFirstResponse;
-import com.solif.backend.domain.goal.exception.GoalErrorCode;
+import com.solif.backend.domain.goal.code.GoalErrorCode;
 import com.solif.backend.domain.profile.entity.UserProfile;
 import com.solif.backend.domain.profile.repository.UserProfileRepository;
 import com.solif.backend.global.common.exception.CustomException;

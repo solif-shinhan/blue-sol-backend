@@ -1,6 +1,6 @@
 package com.solif.backend.global.jwt;
 
-import com.solif.backend.domain.auth.exception.AuthErrorCode;
+import com.solif.backend.domain.auth.code.AuthErrorCode;
 import com.solif.backend.global.common.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

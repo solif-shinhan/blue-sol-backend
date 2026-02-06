@@ -1,4 +1,4 @@
-package com.solif.backend.domain.file.exception;
+package com.solif.backend.domain.file.code;
 
 import lombok.Getter;
 

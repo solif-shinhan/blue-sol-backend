@@ -36,5 +36,13 @@ public interface UserMissionRepository extends JpaRepository<UserMission, Long> 
             @Param("status") MissionStatus status
     );
 
-    List<UserMission> findByUserAndMission_MissionCategory(User user, MissionCategory category);
+    @Query("SELECT um FROM UserMission um " +
+            "JOIN FETCH um.mission m " +
+            "WHERE um.user = :user " +
+            "AND m.missionCategory = :category " +
+            "ORDER BY m.sequenceOrder ASC")
+    List<UserMission> findByUserAndMission_MissionCategory(
+            @Param("user") User user,
+            @Param("category") MissionCategory category
+    );
 }

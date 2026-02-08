@@ -21,6 +21,7 @@ import com.solif.backend.domain.user.entity.User;
 import com.solif.backend.domain.user.repository.UserRepository;
 import com.solif.backend.global.common.exception.CustomException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +33,17 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class NetworkService {
+
+    @Value("${cloud.aws.s3.bucket}")
+    private String bucket;
+
+    @Value("${cloud.aws.region.static}")
+    private String region;
+
+    private String buildS3Url(String key) {
+        if (key == null || key.isBlank()) return null;
+        return String.format("https://%s.s3.%s.amazonaws.com/%s", bucket, region, key);
+    }
 
     private final ConnectionRepository connectionRepository;
     private final NotificationService notificationService;
@@ -275,8 +287,10 @@ public class NetworkService {
                     return NetworkSearchResponse.SearchedUser.builder()
                             .userId(u.getUserId())
                             .userName(u.getName())
-                            .character(profile != null ? profile.getUserCharacter() : null)
+                            .userCharacter(profile != null ? profile.getUserCharacter() : null)
+                            .characterImageUrl(buildS3Url(profile != null ? profile.getUserCharacter() : null))
                             .backgroundPattern(profile != null ? profile.getBackgroundPattern() : null)
+                            .backgroundImageUrl(buildS3Url(profile != null ? profile.getBackgroundPattern() : null))
                             .solidGoalName(profile != null ? profile.getSolidGoalName() : null)
                             .interests(interests)
                             .isConnected(isConnected)
@@ -395,8 +409,10 @@ public class NetworkService {
                     return NetworkRecommendationResponse.RecommendedUser.builder()
                             .userId(u.getUserId())
                             .userName(u.getName())
-                            .character(profile != null ? profile.getUserCharacter() : null)
+                            .userCharacter(profile != null ? profile.getUserCharacter() : null)
+                            .characterImageUrl(buildS3Url(profile != null ? profile.getUserCharacter() : null))
                             .backgroundPattern(profile != null ? profile.getBackgroundPattern() : null)
+                            .backgroundImageUrl(buildS3Url(profile != null ? profile.getBackgroundPattern() : null))
                             .solidGoalName(profile != null ? profile.getSolidGoalName() : null)
                             .interests(interests)
                             .isInCouncil(membership != null)
@@ -427,8 +443,10 @@ public class NetworkService {
                     return NetworkRecommendationResponse.RecommendedUser.builder()
                             .userId(u.getUserId())
                             .userName(u.getName())
-                            .character(profile != null ? profile.getUserCharacter() : null)
+                            .userCharacter(profile != null ? profile.getUserCharacter() : null)
+                            .characterImageUrl(buildS3Url(profile != null ? profile.getUserCharacter() : null))
                             .backgroundPattern(profile != null ? profile.getBackgroundPattern() : null)
+                            .backgroundImageUrl(buildS3Url(profile != null ? profile.getBackgroundPattern() : null))
                             .solidGoalName(profile != null ? profile.getSolidGoalName() : null)
                             .interests(interests)
                             .isInCouncil(membership != null)

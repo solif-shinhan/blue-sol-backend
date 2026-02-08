@@ -39,10 +39,16 @@ public class NetworkRecommendationResponse {
         private String userName;
 
         @Schema(description = "캐릭터")
-        private String character;
+        private String userCharacter;
+
+        @Schema(description = "캐릭터 이미지 URL")
+        private String characterImageUrl;
 
         @Schema(description = "배경 패턴")
         private String backgroundPattern;
+
+        @Schema(description = "배경 이미지 URL")
+        private String backgroundImageUrl;
 
         @Schema(description = "SOLID 목표 이름")
         private String solidGoalName;

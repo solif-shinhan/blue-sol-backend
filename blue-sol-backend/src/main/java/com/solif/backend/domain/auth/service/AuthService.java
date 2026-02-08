@@ -58,7 +58,12 @@ public class AuthService {
         User savedUser = userRepository.save(user);
 
         // 미션 초기화 (9개 미션 생성)
-        missionService.initializeUserMissions(savedUser);
+        try {
+            missionService.initializeUserMissions(savedUser);
+        } catch (Exception e) {
+            log.warn("미션 초기화 실패 - userId: {}, error: {}", savedUser.getUserId(), e.getMessage());
+        }
+
         log.info("회원가입 성공 - userId: {}", savedUser.getUserId());
 
         return SignupResponse.of(savedUser.getUserId(), savedUser.getUserRole(), savedUser.getCreatedAt());

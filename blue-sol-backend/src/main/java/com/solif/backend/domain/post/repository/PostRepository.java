@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Optional;
+
 public interface PostRepository extends JpaRepository<Post, Long> {
 
     // 게시판별 목록 조회 (Author fetch join 없음 - 익명용)
@@ -49,4 +51,11 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             @Param("postCategory") PostCategory postCategory,
             Pageable pageable
     );
+
+    // 사용자가 첫 번째 작성한 게시글 (삭제되지 않은 것만)
+    @Query("SELECT p FROM Post p " +
+            "WHERE p.author.userId = :authorUserId " +
+            "AND p.deletedAt IS NULL " +
+            "ORDER BY p.createdAt ASC")
+    Optional<Post> findFirstByAuthor_UserIdOrderByCreatedAtAsc(@Param("authorUserId") Long authorUserId);
 }

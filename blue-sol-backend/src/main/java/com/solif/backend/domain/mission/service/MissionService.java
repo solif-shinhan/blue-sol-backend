@@ -112,7 +112,8 @@ public class MissionService {
         userPineconeRepository.save(pinecone);
 
         // 솔방울 추억 생성 (완료된 미션 3개의 추억 저장)
-        List<UserMission> completedMissions = userMissionRepository.findByUserAndMission_MissionCategory(user, category)
+        List<UserMission> completedMissions = userMissionRepository
+                .findByUserAndMission_MissionCategory(user, category)
                 .stream()
                 .filter(UserMission::isCompleted)
                 .limit(3)
@@ -186,9 +187,7 @@ public class MissionService {
         User user = findUserById(userId);
 
         // 해당 조건 타입의 미션 찾기
-        Mission mission = missionRepository.findAll().stream()
-                .filter(m -> m.getConditionType() == conditionType)
-                .findFirst()
+        Mission mission = missionRepository.findByConditionType(conditionType)
                 .orElse(null);
 
         if (mission == null) {

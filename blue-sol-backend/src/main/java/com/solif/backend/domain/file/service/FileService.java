@@ -107,7 +107,7 @@ public class FileService {
      */
     @Transactional
     public List<FileAttachmentResponse> confirmFiles(List<Long> fileIds, FileTargetType fileTargetType,
-                                                      Long targetId, AttachmentPurpose purpose) {
+                                                     Long targetId, AttachmentPurpose purpose) {
         if (fileIds == null || fileIds.isEmpty()) {
             return new ArrayList<>();
         }
@@ -122,11 +122,10 @@ public class FileService {
         int sortOrder = 1;
 
         for (File file : files) {
-            // 파일 상태검증 추가
-            if (!file.isTemp()) {
-                throw new FileException(FILE_ALREADY_CONFIRMED);
+            // TEMP 파일만 PERMANENT로 변경 (이미 PERMANENT면 스킵)
+            if (file.isTemp()) {
+                file.confirm();
             }
-            file.confirm();
 
             FileAttachment attachment = FileAttachment.builder()
                     .file(file)

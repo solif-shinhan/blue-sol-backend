@@ -161,6 +161,10 @@ public class MissionService {
 
             if (hasMemoryDetail) {
                 memoryDetail = buildMemoryDetail(memory);
+                // null인 경우 hasMemoryDetail을 false로 변경
+                if (memoryDetail == null) {
+                    hasMemoryDetail = false;
+                }
             }
 
             completedMissions.add(
@@ -552,39 +556,39 @@ public class MissionService {
         return switch (memory.getSourceType()) {
             case MESSAGE -> {
                 Message message = messageRepository.findById(memory.getSourceId()).orElse(null);
-                if (message != null) {
-                    yield PineconeMemoryResponse.MemoryDetail.builder()
-                            .memoryType("MESSAGE")
-                            .memoryContent(message.getMessageTitle())
-                            .relatedUserName(message.getReceiver().getName())
-                            .createdAt(message.getCreatedAt().toString())
-                            .build();
+                if (message == null) {
+                    yield null;
                 }
-                yield null;
+                yield PineconeMemoryResponse.MemoryDetail.builder()
+                        .memoryType("MESSAGE")
+                        .memoryContent(message.getMessageTitle())
+                        .relatedUserName(message.getReceiver().getName())
+                        .createdAt(message.getCreatedAt().toString())
+                        .build();
             }
             case POST -> {
                 Post post = postRepository.findById(memory.getSourceId()).orElse(null);
-                if (post != null) {
-                    yield PineconeMemoryResponse.MemoryDetail.builder()
-                            .memoryType("POST")
-                            .memoryContent(post.getPostTitle())
-                            .relatedUserName(null)
-                            .createdAt(post.getCreatedAt().toString())
-                            .build();
+                if (post == null) {
+                    yield null;
                 }
-                yield null;
+                yield PineconeMemoryResponse.MemoryDetail.builder()
+                        .memoryType("POST")
+                        .memoryContent(post.getPostTitle())
+                        .relatedUserName(null)
+                        .createdAt(post.getCreatedAt().toString())
+                        .build();
             }
             case COMMENT -> {
                 Comment comment = commentRepository.findById(memory.getSourceId()).orElse(null);
-                if (comment != null) {
-                    yield PineconeMemoryResponse.MemoryDetail.builder()
-                            .memoryType("COMMENT")
-                            .memoryContent(comment.getCommentContent())
-                            .relatedUserName(comment.getPost().getAuthor().getName())
-                            .createdAt(comment.getCreatedAt().toString())
-                            .build();
+                if (comment == null) {
+                    yield null;
                 }
-                yield null;
+                yield PineconeMemoryResponse.MemoryDetail.builder()
+                        .memoryType("COMMENT")
+                        .memoryContent(comment.getCommentContent())
+                        .relatedUserName(comment.getPost().getAuthor().getName())
+                        .createdAt(comment.getCreatedAt().toString())
+                        .build();
             }
             case MENTORING -> {
                 // TODO: 멘토링 도메인 구현 후 추가

@@ -137,7 +137,8 @@ public class PostService {
                         .stream()
                         .collect(Collectors.toMap(
                                 FileAttachment::getTargetId,
-                                attachment -> attachment.getFile().getUrl(region)
+                                attachment -> attachment.getFile().getUrl(region),
+                                (existing, replacement) -> existing  // 중복 키 처리
                         ));
             }
         } else {
@@ -153,7 +154,8 @@ public class PostService {
                         .stream()
                         .collect(Collectors.toMap(
                                 FileAttachment::getTargetId,
-                                attachment -> attachment.getFile().getUrl(region)
+                                attachment -> attachment.getFile().getUrl(region),
+                                (existing, replacement) -> existing  // 중복 키 처리
                         ));
             }
         }
@@ -312,29 +314,29 @@ public class PostService {
                     .filter(fileId -> !request.getFileIds().contains(fileId))
                     .toList();
 
-            // 4. 삭제할 파일은 완전 삭제 (File + S3)
+            // 4. 새로 추가할 파일 ID (요청에는 있지만 기존에는 없는 TEMP 파일)
+            List<Long> fileIdsToAdd = request.getFileIds().stream()
+                    .filter(fileId -> !existingFileIds.contains(fileId))
+                    .toList();
+
+            // 5. 삭제할 파일은 완전 삭제 (File + S3)
             for (FileAttachment attachment : existingAttachments) {
                 if (fileIdsToDelete.contains(attachment.getFile().getFileId())) {
                     fileService.detachFile(attachment.getFileAttachmentId());
                 }
             }
 
-            // 5. 유지할 파일의 Attachment만 삭제 (File은 유지)
-            for (FileAttachment attachment : existingAttachments) {
-                if (!fileIdsToDelete.contains(attachment.getFile().getFileId())) {
-                    fileAttachmentRepository.delete(attachment);
-                }
-            }
-
-            // 6. 새 파일 확정 (TEMP + PERMANENT 모두 처리)
-            if (!request.getFileIds().isEmpty()) {
+            // 6. 새 파일만 확정 (TEMP → PERMANENT)
+            if (!fileIdsToAdd.isEmpty()) {
                 fileService.confirmFiles(
-                        request.getFileIds(),
+                        fileIdsToAdd,
                         FileTargetType.POST,
                         postId,
                         AttachmentPurpose.POST_ATTACHMENT
                 );
             }
+
+            // 유지되는 PERMANENT 파일은 Attachment 그대로 유지
         }
         // fileIds가 null이면 파일 변경 없음 (기존 파일 유지)
 

@@ -112,7 +112,8 @@ public class CouncilReviewPostService {
                 .stream()
                 .collect(Collectors.toMap(
                         FileAttachment::getTargetId,
-                        attachment -> attachment.getFile().getUrl(region)
+                        attachment -> attachment.getFile().getUrl(region),
+                        (existing, replacement) -> existing  // 중복 키 처리
                 ));
 
         // DTO 변환
@@ -322,7 +323,7 @@ public class CouncilReviewPostService {
 
         // 8. 일반 이미지 파일 처리
         if (request.getFileIds() != null) {
-            // 기존 일반 이미지 삭제
+            // 기존 일반 이미지 조회
             List<FileAttachment> existingImages = fileAttachmentRepository
                     .findByFileTargetTypeAndTargetId(
                             FileTargetType.COUNCIL_POST,
@@ -337,34 +338,34 @@ public class CouncilReviewPostService {
                     .map(attachment -> attachment.getFile().getFileId())
                     .toList();
 
-            // 삭제할 파일 ID
+            // 삭제할 파일 ID (기존에는 있지만 요청에는 없는 파일)
             List<Long> fileIdsToDelete = existingFileIds.stream()
                     .filter(fileId -> !request.getFileIds().contains(fileId))
                     .toList();
 
-            // 삭제 대상 파일 완전 삭제
+            // 새로 추가할 파일 ID (요청에는 있지만 기존에는 없는 TEMP 파일)
+            List<Long> fileIdsToAdd = request.getFileIds().stream()
+                    .filter(fileId -> !existingFileIds.contains(fileId))
+                    .toList();
+
+            // 삭제 대상 파일 완전 삭제 (File + S3)
             for (FileAttachment attachment : existingImages) {
                 if (fileIdsToDelete.contains(attachment.getFile().getFileId())) {
                     fileService.detachFile(attachment.getFileAttachmentId());
                 }
             }
 
-            // 유지할 파일의 Attachment만 삭제
-            for (FileAttachment attachment : existingImages) {
-                if (!fileIdsToDelete.contains(attachment.getFile().getFileId())) {
-                    fileAttachmentRepository.delete(attachment);
-                }
-            }
-
-            // 새 파일 확정
-            if (!request.getFileIds().isEmpty()) {
+            // 새 파일만 확정 (TEMP → PERMANENT)
+            if (!fileIdsToAdd.isEmpty()) {
                 fileService.confirmFiles(
-                        request.getFileIds(),
+                        fileIdsToAdd,
                         FileTargetType.COUNCIL_POST,
                         councilReviewPostId,
                         AttachmentPurpose.POST_ATTACHMENT
                 );
             }
+
+            // 유지되는 PERMANENT 파일은 Attachment 그대로 유지
         }
 
         // 9. 영수증 파일 처리

@@ -1,6 +1,7 @@
 package com.solif.backend.domain.file.code;
 
 import lombok.Getter;
+import org.springframework.http.HttpStatus;
 
 @Getter
 public class FileException extends RuntimeException {
@@ -18,7 +19,8 @@ public class FileException extends RuntimeException {
         FILE_UPLOAD_FAILED("파일 업로드에 실패했습니다"),
         FILE_DELETE_FAILED("파일 삭제에 실패했습니다"),
         INVALID_FILE_TYPE("지원하지 않는 파일 형식입니다"),
-        FILE_SIZE_EXCEEDED("파일 크기가 제한을 초과했습니다");
+        FILE_SIZE_EXCEEDED("파일 크기가 제한을 초과했습니다"),
+        FILE_ALREADY_CONFIRMED("이미 확정된 파일입니다.");
 
         private final String message;
 

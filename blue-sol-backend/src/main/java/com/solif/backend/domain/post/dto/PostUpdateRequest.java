@@ -6,6 +6,8 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Getter
 @NoArgsConstructor
 @Schema(description = "게시글 수정 요청")
@@ -19,4 +21,7 @@ public class PostUpdateRequest {
     @NotBlank(message = "내용은 필수입니다.")
     @Schema(description = "게시글 내용")
     private String postContent;
+
+    @Schema(description = "첨부 파일 ID 목록 (null=변경없음, []=전체삭제, [1,2,3]=교체)", nullable = true)
+    private List<Long> fileIds;
 }

@@ -21,6 +21,11 @@ import com.solif.backend.domain.councilreview.entity.CouncilReviewRelay;
 import com.solif.backend.domain.councilreview.repository.CouncilReviewParticipantRepository;
 import com.solif.backend.domain.councilreview.repository.CouncilReviewPostRepository;
 import com.solif.backend.domain.councilreview.repository.CouncilReviewRelayRepository;
+import com.solif.backend.domain.file.entity.AttachmentPurpose;
+import com.solif.backend.domain.file.entity.FileAttachment;
+import com.solif.backend.domain.file.entity.FileTargetType;
+import com.solif.backend.domain.file.repository.FileAttachmentRepository;
+import com.solif.backend.domain.file.service.FileService;
 import com.solif.backend.domain.post.entity.Post;
 import com.solif.backend.domain.post.repository.PostRepository;
 import com.solif.backend.domain.postlike.repository.PostLikeRepository;
@@ -29,6 +34,7 @@ import com.solif.backend.domain.user.repository.UserRepository;
 import com.solif.backend.global.common.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
@@ -55,6 +61,11 @@ public class CouncilReviewPostService {
     private final UserRepository userRepository;
     private final CommentRepository commentRepository;
     private final PostLikeRepository postLikeRepository;
+    private final FileService fileService;
+    private final FileAttachmentRepository fileAttachmentRepository;
+
+    @Value("${cloud.aws.region.static}")
+    private String region;
 
     // 자치회별 활동 후기 목록 조회
     public Slice<CouncilReviewPostListResponse> getCouncilReviewPosts(Long councilId, Pageable pageable) {
@@ -90,6 +101,21 @@ public class CouncilReviewPostService {
         Map<Long, Long> likeCounts = postLikeRepository.countByPostIds(postIds);
         Map<Long, Long> commentCounts = commentRepository.countByPostIdsAsMap(postIds);
 
+        // N+1 해결: 대표 이미지를 배치로 조회
+        Map<Long, String> thumbnailUrlMap = fileAttachmentRepository
+                .findByFileTargetTypeAndTargetIdInAndSortOrderAndPurpose(
+                        FileTargetType.COUNCIL_POST,
+                        councilReviewPostIds,
+                        1,
+                        AttachmentPurpose.POST_ATTACHMENT
+                )
+                .stream()
+                .collect(Collectors.toMap(
+                        FileAttachment::getTargetId,
+                        attachment -> attachment.getFile().getUrl(region),
+                        (existing, replacement) -> existing  // 중복 키 처리
+                ));
+
         // DTO 변환
         return posts.map(post -> {
             Long participantCount = participantCounts.getOrDefault(post.getCouncilReviewPostId(), 0L);
@@ -97,8 +123,8 @@ public class CouncilReviewPostService {
             Long likeCount = likeCounts.getOrDefault(post.getPost().getPostId(), 0L);
             Long commentCount = commentCounts.getOrDefault(post.getPost().getPostId(), 0L);
 
-            // TODO: 첫 번째 이미지 URL (file_attachment 연동 후 구현)
-            String thumbnailImageUrl = null;
+            // 대표 이미지 조회 (Map에서 O(1) 조회)
+            String thumbnailImageUrl = thumbnailUrlMap.get(post.getCouncilReviewPostId());
 
             return CouncilReviewPostListResponse.from(
                     post, participantCount, relayCount, likeCount, commentCount, thumbnailImageUrl
@@ -118,8 +144,17 @@ public class CouncilReviewPostService {
         // 2. 조회수 증가
         post.getPost().increaseViewCount();
 
-        // 3. 이미지 URL 목록 조회 (TODO: file_attachment 연동)
-        List<String> imageUrls = new ArrayList<>();
+        // 3. 이미지 URL 목록 조회
+        List<FileAttachment> attachments = fileAttachmentRepository
+                .findByFileTargetTypeAndTargetIdOrderBySortOrder(
+                        FileTargetType.COUNCIL_POST,
+                        councilReviewPostId
+                );
+
+        List<String> imageUrls = attachments.stream()
+                .filter(attachment -> attachment.getPurpose() == AttachmentPurpose.POST_ATTACHMENT)
+                .map(attachment -> attachment.getFile().getUrl(region))
+                .toList();
 
         // 4. 참여자 목록 조회
         List<CouncilReviewParticipant> participants = participantRepository
@@ -215,7 +250,26 @@ public class CouncilReviewPostService {
         // 11. 예산 차감
         council.decreaseBudget(request.getTotalCost());
 
-        // 12. TODO: 이미지 첨부 (file_attachment 연동)
+        // 12. 이미지 첨부
+        // 파일 확정 (일반 이미지)
+        if (request.getFileIds() != null && !request.getFileIds().isEmpty()) {
+            fileService.confirmFiles(
+                    request.getFileIds(),
+                    FileTargetType.COUNCIL_POST,
+                    savedReviewPost.getCouncilReviewPostId(),
+                    AttachmentPurpose.POST_ATTACHMENT
+            );
+        }
+
+        // 파일 확정 (영수증)
+        if (request.getReceiptFileId() != null) {
+            fileService.confirmFiles(
+                    List.of(request.getReceiptFileId()),
+                    FileTargetType.COUNCIL_POST,
+                    savedReviewPost.getCouncilReviewPostId(),
+                    AttachmentPurpose.RECEIPT
+            );
+        }
 
         log.info("활동 후기 생성 완료 - reviewPostId: {}, postId: {}",
                 savedReviewPost.getCouncilReviewPostId(), savedPost.getPostId());
@@ -267,7 +321,77 @@ public class CouncilReviewPostService {
         // 7. 참여자 업데이트
         updateParticipants(reviewPost, request.getParticipantUserIds());
 
-        // 8. TODO: 이미지 업데이트 (file_attachment 연동)
+        // 8. 일반 이미지 파일 처리
+        if (request.getFileIds() != null) {
+            // 기존 일반 이미지 조회
+            List<FileAttachment> existingImages = fileAttachmentRepository
+                    .findByFileTargetTypeAndTargetId(
+                            FileTargetType.COUNCIL_POST,
+                            councilReviewPostId
+                    )
+                    .stream()
+                    .filter(attachment -> attachment.getPurpose() == AttachmentPurpose.POST_ATTACHMENT)
+                    .toList();
+
+            // 기존 파일 ID 목록
+            List<Long> existingFileIds = existingImages.stream()
+                    .map(attachment -> attachment.getFile().getFileId())
+                    .toList();
+
+            // 삭제할 파일 ID (기존에는 있지만 요청에는 없는 파일)
+            List<Long> fileIdsToDelete = existingFileIds.stream()
+                    .filter(fileId -> !request.getFileIds().contains(fileId))
+                    .toList();
+
+            // 새로 추가할 파일 ID (요청에는 있지만 기존에는 없는 TEMP 파일)
+            List<Long> fileIdsToAdd = request.getFileIds().stream()
+                    .filter(fileId -> !existingFileIds.contains(fileId))
+                    .toList();
+
+            // 삭제 대상 파일 완전 삭제 (File + S3)
+            for (FileAttachment attachment : existingImages) {
+                if (fileIdsToDelete.contains(attachment.getFile().getFileId())) {
+                    fileService.detachFile(attachment.getFileAttachmentId());
+                }
+            }
+
+            // 새 파일만 확정 (TEMP → PERMANENT)
+            if (!fileIdsToAdd.isEmpty()) {
+                fileService.confirmFiles(
+                        fileIdsToAdd,
+                        FileTargetType.COUNCIL_POST,
+                        councilReviewPostId,
+                        AttachmentPurpose.POST_ATTACHMENT
+                );
+            }
+
+            // 유지되는 PERMANENT 파일은 Attachment 그대로 유지
+        }
+
+        // 9. 영수증 파일 처리
+        if (request.getReceiptFileId() != null) {
+            // 기존 영수증 삭제
+            List<FileAttachment> existingReceipts = fileAttachmentRepository
+                    .findByFileTargetTypeAndTargetId(
+                            FileTargetType.COUNCIL_POST,
+                            councilReviewPostId
+                    )
+                    .stream()
+                    .filter(attachment -> attachment.getPurpose() == AttachmentPurpose.RECEIPT)
+                    .toList();
+
+            for (FileAttachment attachment : existingReceipts) {
+                fileService.detachFile(attachment.getFileAttachmentId());
+            }
+
+            // 새 영수증 확정
+            fileService.confirmFiles(
+                    List.of(request.getReceiptFileId()),
+                    FileTargetType.COUNCIL_POST,
+                    councilReviewPostId,
+                    AttachmentPurpose.RECEIPT
+            );
+        }
 
         log.info("활동 후기 수정 완료 - postId: {}", councilReviewPostId);
     }

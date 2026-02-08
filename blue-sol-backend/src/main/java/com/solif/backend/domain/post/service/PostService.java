@@ -8,6 +8,11 @@ import com.solif.backend.domain.comment.dto.PostCommentCount;
 import com.solif.backend.domain.comment.repository.CommentRepository;
 import com.solif.backend.domain.councilreview.entity.CouncilReviewPost;
 import com.solif.backend.domain.councilreview.repository.CouncilReviewPostRepository;
+import com.solif.backend.domain.file.entity.AttachmentPurpose;
+import com.solif.backend.domain.file.entity.FileAttachment;
+import com.solif.backend.domain.file.entity.FileTargetType;
+import com.solif.backend.domain.file.repository.FileAttachmentRepository;
+import com.solif.backend.domain.file.service.FileService;
 import com.solif.backend.domain.post.dto.*;
 import com.solif.backend.domain.post.entity.Post;
 import com.solif.backend.domain.post.entity.PostCategory;
@@ -19,13 +24,16 @@ import com.solif.backend.domain.user.repository.UserRepository;
 import com.solif.backend.global.common.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -40,6 +48,11 @@ public class PostService {
     private final UserRepository userRepository;
     private final PostLikeRepository postLikeRepository;
     private final CouncilReviewPostRepository councilReviewPostRepository;
+    private final FileService fileService;
+    private final FileAttachmentRepository fileAttachmentRepository;
+
+    @Value("${cloud.aws.region.static}")
+    private String region;
 
     // 게시글 목록 조회
     public Slice<PostListResponse> getPosts(Long boardId, PostCategory category, Pageable pageable) {
@@ -101,9 +114,58 @@ public class PostService {
                         PostCommentCount::getCommentCount
                 ));
 
+        // N+1 해결: 대표 이미지를 배치로 조회
+        Map<Long, String> thumbnailUrlMap = new HashMap<>();
+
+        if (boardId == 1L) {
+            // 자치회 활동 후기: councilReviewPostId 수집
+            List<Long> councilReviewPostIds = posts.getContent().stream()
+                    .map(Post::getPostId)
+                    .map(postId -> councilReviewPostRepository.findByPostId(postId).orElse(null))
+                    .filter(Objects::nonNull)
+                    .map(CouncilReviewPost::getCouncilReviewPostId)
+                    .toList();
+
+            if (!councilReviewPostIds.isEmpty()) {
+                thumbnailUrlMap = fileAttachmentRepository
+                        .findByFileTargetTypeAndTargetIdInAndSortOrderAndPurpose(
+                                FileTargetType.COUNCIL_POST,
+                                councilReviewPostIds,
+                                1,
+                                AttachmentPurpose.POST_ATTACHMENT
+                        )
+                        .stream()
+                        .collect(Collectors.toMap(
+                                FileAttachment::getTargetId,
+                                attachment -> attachment.getFile().getUrl(region),
+                                (existing, replacement) -> existing  // 중복 키 처리
+                        ));
+            }
+        } else {
+            // 통합 게시글: postId 수집
+            if (!postIds.isEmpty()) {
+                thumbnailUrlMap = fileAttachmentRepository
+                        .findByFileTargetTypeAndTargetIdInAndSortOrderAndPurpose(
+                                FileTargetType.POST,
+                                postIds,
+                                1,
+                                AttachmentPurpose.POST_ATTACHMENT
+                        )
+                        .stream()
+                        .collect(Collectors.toMap(
+                                FileAttachment::getTargetId,
+                                attachment -> attachment.getFile().getUrl(region),
+                                (existing, replacement) -> existing  // 중복 키 처리
+                        ));
+            }
+        }
+
+        // 최종 thumbnailUrlMap 변수를 람다에서 사용하기 위해 final로 선언
+        final Map<Long, String> finalThumbnailUrlMap = thumbnailUrlMap;
+
         // Post -> PostListResponse 변환
         return posts.map(post -> {
-            Long commentCount = commentRepository.countByPost_PostId(post.getPostId());
+            Long commentCount = commentCounts.getOrDefault(post.getPostId(), 0L);
 
             // 자치회 활동 후기인 경우 추가 정보 조회
             String councilName = null;
@@ -116,9 +178,11 @@ public class PostService {
 
                 if (reviewPost != null) {
                     councilName = reviewPost.getCouncil().getCouncilName();
-                    // TODO: 첫 번째 이미지 조회 (file_attachment 연동 후)
-                    thumbnailImageUrl = null;
+                    thumbnailImageUrl = finalThumbnailUrlMap.get(reviewPost.getCouncilReviewPostId());
                 }
+            } else {
+                // Map에서 조회 (O(1))
+                thumbnailImageUrl = finalThumbnailUrlMap.get(post.getPostId());
             }
 
             return PostListResponse.from(post, commentCount, isAnonymous, councilName, thumbnailImageUrl);
@@ -154,7 +218,15 @@ public class PostService {
         // 현재 사용자의 좋아요 여부 조회
         Boolean isLikedByUser = postLikeRepository.existsByUser_UserIdAndPost_PostId(userId, postId);
 
-        return PostDetailResponse.from(post, commentCount, likeCount, isLikedByUser, isAnonymous);
+        // 첨부 이미지 조회
+        List<FileAttachment> attachments = fileAttachmentRepository
+                .findByFileTargetTypeAndTargetIdOrderBySortOrder(FileTargetType.POST, postId);
+
+        List<String> imageUrls = attachments.stream()
+                .map(attachment -> attachment.getFile().getUrl(region))
+                .toList();
+
+        return PostDetailResponse.from(post, commentCount, likeCount, isLikedByUser, isAnonymous, imageUrls);
     }
 
     // 게시글 작성
@@ -184,6 +256,16 @@ public class PostService {
 
         // 저장
         Post savedPost = postRepository.save(post);
+
+        // 파일 확정 (fileIds가 있으면)
+        if (request.getFileIds() != null && !request.getFileIds().isEmpty()) {
+            fileService.confirmFiles(
+                    request.getFileIds(),
+                    FileTargetType.POST,
+                    savedPost.getPostId(),
+                    AttachmentPurpose.POST_ATTACHMENT
+            );
+        }
 
         // TODO: mentoringRequestId 처리 (나중에 멘토링 도메인 구현 시)
         // if (request.getMentoringRequestId() != null) {
@@ -215,6 +297,50 @@ public class PostService {
 
         // 게시글 수정
         post.updatePost(request.getPostTitle(), request.getPostContent());
+
+        // 파일 처리 (fileIds가 null이 아닐 때만)
+        if (request.getFileIds() != null) {
+            // 1. 기존 FileAttachment 조회
+            List<FileAttachment> existingAttachments = fileAttachmentRepository
+                    .findByFileTargetTypeAndTargetId(FileTargetType.POST, postId);
+
+            // 2. 기존 파일 ID 목록
+            List<Long> existingFileIds = existingAttachments.stream()
+                    .map(attachment -> attachment.getFile().getFileId())
+                    .toList();
+
+            // 3. 삭제할 파일 ID (기존에는 있지만 요청에는 없는 파일)
+            List<Long> fileIdsToDelete = existingFileIds.stream()
+                    .filter(fileId -> !request.getFileIds().contains(fileId))
+                    .toList();
+
+            // 4. 새로 추가할 파일 ID (요청에는 있지만 기존에는 없는 TEMP 파일)
+            List<Long> fileIdsToAdd = request.getFileIds().stream()
+                    .filter(fileId -> !existingFileIds.contains(fileId))
+                    .toList();
+
+            // 5. 삭제할 파일은 완전 삭제 (File + S3)
+            for (FileAttachment attachment : existingAttachments) {
+                if (fileIdsToDelete.contains(attachment.getFile().getFileId())) {
+                    fileService.detachFile(attachment.getFileAttachmentId());
+                }
+            }
+
+            // 6. 새 파일만 확정 (TEMP → PERMANENT)
+            if (!fileIdsToAdd.isEmpty()) {
+                fileService.confirmFiles(
+                        fileIdsToAdd,
+                        FileTargetType.POST,
+                        postId,
+                        AttachmentPurpose.POST_ATTACHMENT
+                );
+            }
+
+            // 유지되는 PERMANENT 파일은 Attachment 그대로 유지
+        }
+        // fileIds가 null이면 파일 변경 없음 (기존 파일 유지)
+
+        log.info("게시글 수정 완료 - postId: {}", postId);
     }
 
     // 게시글 삭제 (Soft Delete)

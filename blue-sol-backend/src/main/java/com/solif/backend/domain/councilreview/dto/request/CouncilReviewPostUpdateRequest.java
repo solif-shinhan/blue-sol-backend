@@ -36,6 +36,10 @@ public class CouncilReviewPostUpdateRequest {
     @Schema(description = "참여자 사용자 ID 목록", example = "[1, 2, 3, 4, 5, 6, 7]")
     private List<Long> participantUserIds;
 
-    @Schema(description = "이미지 파일 ID 목록 (선택)", example = "[10, 11, 12, 13]")
-    private List<Long> imageFileIds;
+    @Schema(description = "일반 이미지 파일 ID 목록 (null=변경없음)", nullable = true)
+    private List<Long> fileIds;
+
+    @NotNull(message = "영수증은 필수입니다.")
+    @Schema(description = "영수증 파일 ID (null=변경없음)")
+    private Long receiptFileId;
 }

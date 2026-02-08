@@ -39,7 +39,6 @@ public class CouncilReviewPostUpdateRequest {
     @Schema(description = "일반 이미지 파일 ID 목록 (null=변경없음)", nullable = true)
     private List<Long> fileIds;
 
-    @NotNull(message = "영수증은 필수입니다.")
-    @Schema(description = "영수증 파일 ID (null=변경없음)")
+    @Schema(description = "영수증 파일 ID (null=변경없음)", nullable = true)
     private Long receiptFileId;
 }

@@ -30,7 +30,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
@@ -390,17 +389,18 @@ public class MissionService {
     // 미션 완료 조건 체크
     private boolean checkMissionCondition(UserMission userMission, Mission mission, User user, Long sourceId) {
         MissionConditionType conditionType = mission.getConditionType();
+        int targetCount = getTargetCountFromConditionValue(mission.getConditionValue());
 
         return switch (conditionType) {
             case PROFILE_VIEW -> {
-                // 프로필 조회 5회
+                // 프로필 조회 N회
                 userMission.incrementProgress();
-                yield userMission.getProgressCount() >= 5;
+                yield userMission.getProgressCount() >= targetCount;
             }
             case CONNECTION_ACTION -> {
-                // 응원/경험나누기 3회
+                // 응원/경험나누기 N회
                 userMission.incrementProgress();
-                yield userMission.getProgressCount() >= 3;
+                yield userMission.getProgressCount() >= targetCount;
             }
             case MESSAGE -> {
                 // 첫 쪽지 발송 (1회만)
@@ -416,9 +416,9 @@ public class MissionService {
                 yield checkMessageThreadCondition(user);
             }
             case POST_VIEW -> {
-                // 재단 소식 확인 (1회)
+                // 재단 소식 확인 (N회)
                 userMission.incrementProgress();
-                yield userMission.getProgressCount() >= 1;
+                yield userMission.getProgressCount() >= targetCount;
             }
             case POST_CREATE, COMMENT_CREATE, MENTORING_COMPLETE -> {
                 // 단순 1회 완료

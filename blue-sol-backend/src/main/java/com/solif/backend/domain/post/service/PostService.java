@@ -130,10 +130,11 @@ public class PostService {
 
                     // 자치회 후기의 대표 이미지 조회 (COUNCIL_POST)
                     thumbnailImageUrl = fileAttachmentRepository
-                            .findByFileTargetTypeAndTargetIdAndSortOrder(
+                            .findByFileTargetTypeAndTargetIdAndSortOrderAndPurpose(
                                     FileTargetType.COUNCIL_POST,
                                     reviewPost.getCouncilReviewPostId(),
-                                    1
+                                    1,
+                                    AttachmentPurpose.POST_ATTACHMENT
                             )
                             .map(attachment -> attachment.getFile().getUrl(region))
                             .orElse(null);
@@ -141,10 +142,11 @@ public class PostService {
             } else {
                 // 통합 게시글의 대표 이미지 조회 (POST)
                 thumbnailImageUrl = fileAttachmentRepository
-                        .findByFileTargetTypeAndTargetIdAndSortOrder(
+                        .findByFileTargetTypeAndTargetIdAndSortOrderAndPurpose(
                                 FileTargetType.POST,
                                 post.getPostId(),
-                                1
+                                1,
+                                AttachmentPurpose.POST_ATTACHMENT
                         )
                         .map(attachment -> attachment.getFile().getUrl(region))
                         .orElse(null);

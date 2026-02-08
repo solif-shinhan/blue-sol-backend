@@ -1,5 +1,6 @@
 package com.solif.backend.domain.mission.service;
 
+import com.solif.backend.domain.auth.code.AuthErrorCode;
 import com.solif.backend.domain.comment.entity.Comment;
 import com.solif.backend.domain.comment.repository.CommentRepository;
 import com.solif.backend.domain.message.entity.Message;
@@ -259,7 +260,7 @@ public class MissionService {
 
     private User findUserById(Long userId) {
         return userRepository.findById(userId)
-                .orElseThrow(() -> new CustomException(MissionErrorCode.USER_MISSION_NOT_FOUND));
+                .orElseThrow(() -> new CustomException(AuthErrorCode.USER_NOT_FOUND));
     }
 
     // 현재 시즌 키 계산 (2026-H1, 2026-H2)

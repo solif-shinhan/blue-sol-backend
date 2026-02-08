@@ -34,5 +34,14 @@ public interface FileAttachmentRepository extends JpaRepository<FileAttachment, 
             AttachmentPurpose purpose
     );
 
+    // 여러 대상의 대표 이미지를 한 번에 조회 (배치 쿼리)
+    @EntityGraph(attributePaths = {"file"})
+    List<FileAttachment> findByFileTargetTypeAndTargetIdInAndSortOrderAndPurpose(
+            FileTargetType fileTargetType,
+            List<Long> targetIds,
+            Integer sortOrder,
+            AttachmentPurpose purpose
+    );
+
     boolean existsByFileFileId(Long fileId);
 }

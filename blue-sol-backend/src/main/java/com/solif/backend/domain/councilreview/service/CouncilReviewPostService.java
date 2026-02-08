@@ -101,6 +101,20 @@ public class CouncilReviewPostService {
         Map<Long, Long> likeCounts = postLikeRepository.countByPostIds(postIds);
         Map<Long, Long> commentCounts = commentRepository.countByPostIdsAsMap(postIds);
 
+        // N+1 해결: 대표 이미지를 배치로 조회
+        Map<Long, String> thumbnailUrlMap = fileAttachmentRepository
+                .findByFileTargetTypeAndTargetIdInAndSortOrderAndPurpose(
+                        FileTargetType.COUNCIL_POST,
+                        councilReviewPostIds,
+                        1,
+                        AttachmentPurpose.POST_ATTACHMENT
+                )
+                .stream()
+                .collect(Collectors.toMap(
+                        FileAttachment::getTargetId,
+                        attachment -> attachment.getFile().getUrl(region)
+                ));
+
         // DTO 변환
         return posts.map(post -> {
             Long participantCount = participantCounts.getOrDefault(post.getCouncilReviewPostId(), 0L);
@@ -108,16 +122,8 @@ public class CouncilReviewPostService {
             Long likeCount = likeCounts.getOrDefault(post.getPost().getPostId(), 0L);
             Long commentCount = commentCounts.getOrDefault(post.getPost().getPostId(), 0L);
 
-            // 대표 이미지 조회 (sortOrder=1, POST_ATTACHMENT만)
-            String thumbnailImageUrl = fileAttachmentRepository
-                    .findByFileTargetTypeAndTargetIdAndSortOrderAndPurpose(
-                            FileTargetType.COUNCIL_POST,
-                            post.getCouncilReviewPostId(),
-                            1,
-                            AttachmentPurpose.POST_ATTACHMENT
-                    )
-                    .map(attachment -> attachment.getFile().getUrl(region))
-                    .orElse(null);
+            // 대표 이미지 조회 (Map에서 O(1) 조회)
+            String thumbnailImageUrl = thumbnailUrlMap.get(post.getCouncilReviewPostId());
 
             return CouncilReviewPostListResponse.from(
                     post, participantCount, relayCount, likeCount, commentCount, thumbnailImageUrl

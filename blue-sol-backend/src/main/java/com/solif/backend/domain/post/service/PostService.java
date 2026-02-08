@@ -30,8 +30,10 @@ import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -112,6 +114,53 @@ public class PostService {
                         PostCommentCount::getCommentCount
                 ));
 
+        // N+1 해결: 대표 이미지를 배치로 조회
+        Map<Long, String> thumbnailUrlMap = new HashMap<>();
+
+        if (boardId == 1L) {
+            // 자치회 활동 후기: councilReviewPostId 수집
+            List<Long> councilReviewPostIds = posts.getContent().stream()
+                    .map(Post::getPostId)
+                    .map(postId -> councilReviewPostRepository.findByPostId(postId).orElse(null))
+                    .filter(Objects::nonNull)
+                    .map(CouncilReviewPost::getCouncilReviewPostId)
+                    .toList();
+
+            if (!councilReviewPostIds.isEmpty()) {
+                thumbnailUrlMap = fileAttachmentRepository
+                        .findByFileTargetTypeAndTargetIdInAndSortOrderAndPurpose(
+                                FileTargetType.COUNCIL_POST,
+                                councilReviewPostIds,
+                                1,
+                                AttachmentPurpose.POST_ATTACHMENT
+                        )
+                        .stream()
+                        .collect(Collectors.toMap(
+                                FileAttachment::getTargetId,
+                                attachment -> attachment.getFile().getUrl(region)
+                        ));
+            }
+        } else {
+            // 통합 게시글: postId 수집
+            if (!postIds.isEmpty()) {
+                thumbnailUrlMap = fileAttachmentRepository
+                        .findByFileTargetTypeAndTargetIdInAndSortOrderAndPurpose(
+                                FileTargetType.POST,
+                                postIds,
+                                1,
+                                AttachmentPurpose.POST_ATTACHMENT
+                        )
+                        .stream()
+                        .collect(Collectors.toMap(
+                                FileAttachment::getTargetId,
+                                attachment -> attachment.getFile().getUrl(region)
+                        ));
+            }
+        }
+
+        // 최종 thumbnailUrlMap 변수를 람다에서 사용하기 위해 final로 선언
+        final Map<Long, String> finalThumbnailUrlMap = thumbnailUrlMap;
+
         // Post -> PostListResponse 변환
         return posts.map(post -> {
             Long commentCount = commentCounts.getOrDefault(post.getPostId(), 0L);
@@ -127,29 +176,11 @@ public class PostService {
 
                 if (reviewPost != null) {
                     councilName = reviewPost.getCouncil().getCouncilName();
-
-                    // 자치회 후기의 대표 이미지 조회 (COUNCIL_POST)
-                    thumbnailImageUrl = fileAttachmentRepository
-                            .findByFileTargetTypeAndTargetIdAndSortOrderAndPurpose(
-                                    FileTargetType.COUNCIL_POST,
-                                    reviewPost.getCouncilReviewPostId(),
-                                    1,
-                                    AttachmentPurpose.POST_ATTACHMENT
-                            )
-                            .map(attachment -> attachment.getFile().getUrl(region))
-                            .orElse(null);
+                    thumbnailImageUrl = finalThumbnailUrlMap.get(reviewPost.getCouncilReviewPostId());
                 }
             } else {
-                // 통합 게시글의 대표 이미지 조회 (POST)
-                thumbnailImageUrl = fileAttachmentRepository
-                        .findByFileTargetTypeAndTargetIdAndSortOrderAndPurpose(
-                                FileTargetType.POST,
-                                post.getPostId(),
-                                1,
-                                AttachmentPurpose.POST_ATTACHMENT
-                        )
-                        .map(attachment -> attachment.getFile().getUrl(region))
-                        .orElse(null);
+                // Map에서 조회 (O(1))
+                thumbnailImageUrl = finalThumbnailUrlMap.get(post.getPostId());
             }
 
             return PostListResponse.from(post, commentCount, isAnonymous, councilName, thumbnailImageUrl);

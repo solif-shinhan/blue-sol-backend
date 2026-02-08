@@ -33,14 +33,20 @@ public class PineconeMemory {
     @Column(name = "source_id", nullable = false)
     private Long sourceId;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "condition_type", nullable = false, length = 50)
+    private MissionConditionType conditionType;
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @Builder
-    public PineconeMemory(UserPinecone userPinecone, PineconeSourceType sourceType, Long sourceId) {
+    public PineconeMemory(UserPinecone userPinecone, PineconeSourceType sourceType,
+                          Long sourceId, MissionConditionType conditionType) {
         this.userPinecone = userPinecone;
         this.sourceType = sourceType;
         this.sourceId = sourceId;
+        this.conditionType = conditionType;
     }
 }

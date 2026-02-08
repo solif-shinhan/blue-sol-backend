@@ -153,7 +153,7 @@ public class MissionService {
         List<PineconeMemoryResponse.CompletedMission> completedMissions = new ArrayList<>();
 
         for (PineconeMemory memory : memories) {
-            MissionConditionType conditionType = getMissionConditionTypeFromMemory(memory);
+            MissionConditionType conditionType = memory.getConditionType();
             String missionTitle = getMissionTitleByConditionType(conditionType);
 
             boolean hasMemoryDetail = hasMemoryDetail(memory.getSourceType());
@@ -487,6 +487,7 @@ public class MissionService {
                     .userPinecone(pinecone)
                     .sourceType(sourceType)
                     .sourceId(sourceId)
+                    .conditionType(conditionType)
                     .build();
             pineconeMemoryRepository.save(memory);
         }
@@ -613,14 +614,14 @@ public class MissionService {
     }
 
     // Memory에서 ConditionType 추출
-    private MissionConditionType getMissionConditionTypeFromMemory(PineconeMemory memory) {
-        return switch (memory.getSourceType()) {
-            case MESSAGE -> MissionConditionType.MESSAGE;
-            case POST -> MissionConditionType.POST_CREATE;
-            case COMMENT -> MissionConditionType.COMMENT_CREATE;
-            case MENTORING -> MissionConditionType.MENTORING_COMPLETE;
-        };
-    }
+//    private MissionConditionType getMissionConditionTypeFromMemory(PineconeMemory memory) {
+//        return switch (memory.getSourceType()) {
+//            case MESSAGE -> MissionConditionType.MESSAGE;
+//            case POST -> MissionConditionType.POST_CREATE;
+//            case COMMENT -> MissionConditionType.COMMENT_CREATE;
+//            case MENTORING -> MissionConditionType.MENTORING_COMPLETE;
+//        };
+//    }
 
     // 회원가입 완료 후 미션 초기화
     @Transactional

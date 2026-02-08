@@ -8,6 +8,8 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Getter
 @NoArgsConstructor
 @Schema(description = "게시글 작성 요청")
@@ -32,4 +34,7 @@ public class PostCreateRequest {
 
     @Schema(description = "멘토링 요청 ID (멘토링 후기 작성 시)", nullable = true)
     private Long mentoringRequestId;
+
+    @Schema(description = "첨부 파일 ID 목록", nullable = true)
+    private List<Long> fileIds;
 }

@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Builder
@@ -27,6 +28,9 @@ public class PostDetailResponse {
 
     @Schema(description = "게시글 내용")
     private String postContent;
+
+    @Schema(description = "첨부 이미지 URL 목록")
+    private List<String> imageUrls;
 
     @Schema(description = "작성자 ID (익명일 경우 null)", example = "1", nullable = true)
     private Long authorId;
@@ -52,13 +56,16 @@ public class PostDetailResponse {
     @Schema(description = "수정 일시", example = "2026-01-28T15:00:00", nullable = true)
     private LocalDateTime updatedAt;
 
-    public static PostDetailResponse from(Post post, Long commentCount, Long likeCount, Boolean isLikedByUser, boolean isAnonymous) {
+    public static PostDetailResponse from(Post post, Long commentCount, Long likeCount,
+                                          Boolean isLikedByUser, boolean isAnonymous,
+                                          List<String> imageUrls) {
         return PostDetailResponse.builder()
                 .postId(post.getPostId())
                 .boardId(post.getBoard().getBoardId())
                 .postCategory(post.getPostCategory())
                 .postTitle(post.getPostTitle())
                 .postContent(post.getPostContent())
+                .imageUrls(imageUrls)
                 .authorId(isAnonymous ? null : post.getAuthor().getUserId())
                 .authorName(isAnonymous ? "익명" : post.getAuthor().getName())
                 .viewCount(post.getViewCount())
@@ -68,5 +75,11 @@ public class PostDetailResponse {
                 .createdAt(post.getCreatedAt())
                 .updatedAt(post.getUpdatedAt())
                 .build();
+    }
+
+    // 기존 호환성을 위한 오버로드 메서드
+    public static PostDetailResponse from(Post post, Long commentCount, Long likeCount,
+                                          Boolean isLikedByUser, boolean isAnonymous) {
+        return from(post, commentCount, likeCount, isLikedByUser, isAnonymous, List.of());
     }
 }

@@ -52,6 +52,9 @@ public class MentoringHomeResponse {
 
             @Schema(description = "관심사 목록")
             private List<String> interests;
+
+            @Schema(description = "상태 (PENDING: 대기중, COMPLETED: 양방향 완료)", example = "PENDING")
+            private String status;
         }
     }
 

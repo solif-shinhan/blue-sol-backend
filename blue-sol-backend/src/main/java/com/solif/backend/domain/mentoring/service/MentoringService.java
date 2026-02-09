@@ -60,30 +60,10 @@ public class MentoringService {
 
         List<Mentor> mentors = mentorRepository.findByIsActiveTrueOrderByCreatedAtDesc();
 
-        // N+1 방지: 배치로 프로필 이미지 조회
-        List<Long> mentorIds = mentors.stream()
-                .map(Mentor::getMentorId)
-                .collect(Collectors.toList());
-
-        // 기존 메서드 사용: findByFileTargetTypeAndTargetIdInAndSortOrderAndPurpose
-        Map<Long, String> profileImageMap = mentorIds.isEmpty() ? Map.of() :
-                fileAttachmentRepository.findByFileTargetTypeAndTargetIdInAndSortOrderAndPurpose(
-                                FileTargetType.MENTOR_PROFILE,
-                                mentorIds,
-                                1,
-                                AttachmentPurpose.PROFILE_IMAGE
-                        )
-                        .stream()
-                        .collect(Collectors.toMap(
-                                FileAttachment::getTargetId,
-                                attachment -> attachment.getFile().getUrl(region),
-                                (existing, replacement) -> existing
-                        ));
-
         return mentors.stream()
                 .map(mentor -> MentorListResponse.from(
                         mentor,
-                        profileImageMap.get(mentor.getMentorId())
+                        mentor.getProfileImageFile()
                 ))
                 .collect(Collectors.toList());
     }
@@ -141,19 +121,8 @@ public class MentoringService {
             throw new CustomException(MentoringErrorCode.UNAUTHORIZED_REQUEST_ACCESS);
         }
 
-        // 멘토 프로필 이미지 조회
-        String mentorProfileImageUrl = null;
-        Optional<FileAttachment> profileImage = fileAttachmentRepository
-                .findByFileTargetTypeAndTargetIdAndSortOrderAndPurpose(
-                        FileTargetType.MENTOR_PROFILE,
-                        request.getMentor().getMentorId(),
-                        1,
-                        AttachmentPurpose.PROFILE_IMAGE
-                );
-
-        if (profileImage.isPresent()) {
-            mentorProfileImageUrl = profileImage.get().getFile().getUrl(region);
-        }
+        // Mentor Entity에서 직접 profileImageFile 가져오기
+        String mentorProfileImageUrl = request.getMentor().getProfileImageFile();
 
         return MentoringRequestDetailResponse.from(request, mentorProfileImageUrl);
     }
@@ -180,40 +149,20 @@ public class MentoringService {
         List<Mentor> jobMentors = mentorRepository.findByIsActiveTrueAndMentorCategoryOrderByCreatedAtDesc(MentorCategory.JOB);
         List<Mentor> lifeMentors = mentorRepository.findByIsActiveTrueAndMentorCategoryOrderByCreatedAtDesc(MentorCategory.LIFE);
 
-        // 프로필 이미지 배치 조회
-        List<Long> allMentorIds = allMentors.stream()
-                .map(Mentor::getMentorId)
-                .collect(Collectors.toList());
-
-        Map<Long, String> profileImageMap = allMentorIds.isEmpty() ? Map.of() :
-                fileAttachmentRepository.findByFileTargetTypeAndTargetIdInAndSortOrderAndPurpose(
-                                FileTargetType.MENTOR_PROFILE,
-                                allMentorIds,
-                                1,
-                                AttachmentPurpose.PROFILE_IMAGE
-                        )
-                        .stream()
-                        .collect(Collectors.toMap(
-                                FileAttachment::getTargetId,
-                                attachment -> attachment.getFile().getUrl(region),
-                                (existing, replacement) -> existing
-                        ));
-
-        // DTO 변환
         List<MentorListResponse> allMentorResponses = allMentors.stream()
-                .map(mentor -> MentorListResponse.from(mentor, profileImageMap.get(mentor.getMentorId())))
+                .map(mentor -> MentorListResponse.from(mentor, mentor.getProfileImageFile()))
                 .collect(Collectors.toList());
 
         List<MentorListResponse> studyMentorResponses = studyMentors.stream()
-                .map(mentor -> MentorListResponse.from(mentor, profileImageMap.get(mentor.getMentorId())))
+                .map(mentor -> MentorListResponse.from(mentor, mentor.getProfileImageFile()))
                 .collect(Collectors.toList());
 
         List<MentorListResponse> jobMentorResponses = jobMentors.stream()
-                .map(mentor -> MentorListResponse.from(mentor, profileImageMap.get(mentor.getMentorId())))
+                .map(mentor -> MentorListResponse.from(mentor, mentor.getProfileImageFile()))
                 .collect(Collectors.toList());
 
         List<MentorListResponse> lifeMentorResponses = lifeMentors.stream()
-                .map(mentor -> MentorListResponse.from(mentor, profileImageMap.get(mentor.getMentorId())))
+                .map(mentor -> MentorListResponse.from(mentor, mentor.getProfileImageFile()))
                 .collect(Collectors.toList());
 
         // 2. 선후배 멘토링 - 응원하기 (통합 메서드 사용)

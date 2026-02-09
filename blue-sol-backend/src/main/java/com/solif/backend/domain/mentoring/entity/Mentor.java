@@ -1,6 +1,5 @@
 package com.solif.backend.domain.mentoring.entity;
 
-import com.solif.backend.domain.file.entity.File;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -32,9 +31,8 @@ public class Mentor {
     @Column(name = "mentor_intro", nullable = false, columnDefinition = "TEXT")
     private String mentorIntro;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "profile_image_file_id")
-    private File profileImageFile;
+    @JoinColumn(name = "profile_image_file")
+    private String profileImageFile;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "mentor_category", nullable = false, length = 50)
@@ -50,7 +48,7 @@ public class Mentor {
 
     @Builder
     public Mentor(String mentorTitle, String mentorName, String mentorIntro,
-                  File profileImageFile, MentorCategory mentorCategory, Boolean isActive) {
+                  String profileImageFile, MentorCategory mentorCategory, Boolean isActive) {
         this.mentorTitle = mentorTitle;
         this.mentorName = mentorName;
         this.mentorIntro = mentorIntro;

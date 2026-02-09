@@ -390,7 +390,7 @@ public class MentoringService {
 
         // 학교명 또는 직업 (GRADUATE 이상이면 직업)
         String schoolOrJob;
-        if (user.getUserRole() == User.UserRole.GRADUATE) {
+        if (user.getUserRole() == User.UserRole.GRADUATE || user.getUserRole() == User.UserRole.MASTER) {
             schoolOrJob = user.getJob();
         } else {
             schoolOrJob = user.getSchoolName();

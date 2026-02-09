@@ -267,7 +267,10 @@ public class PostService {
         Post savedPost = postRepository.save(post);
 
         // 게시판별 타입 테이블 생성
-        if (request.getBoardId() == 2L) {
+        if (request.getBoardId() == 1L) {
+            // 자치회 활동 후기는 CouncilReviewPostController 사용
+            throw new CustomException(PostErrorCode.INVALID_BOARD);
+        } else if (request.getBoardId() == 2L) {
             // 멘토링 후기
             MentoringPost mentoringPost = MentoringPost.builder()
                     .post(savedPost)
@@ -391,28 +394,28 @@ public class PostService {
 
         // 게시판별 타입 테이블 Soft Delete
         Long boardId = post.getBoard().getBoardId();
-        if (boardId == 2L) {
+        if (boardId == 1L) {
+            // 자치회 활동 후기는 CouncilReviewPostController 사용
+            throw new CustomException(PostErrorCode.INVALID_BOARD);
+        } else if (boardId == 2L) {
             // 멘토링 후기
             MentoringPost mentoringPost = mentoringPostRepository.findByPostId(postId)
                     .orElseThrow(() -> new CustomException(PostErrorCode.POST_NOT_FOUND));
-            mentoringPost.softDelete();
+            mentoringPost.softDelete();  // 내부에서 post.softDelete() 호출됨
             log.info("멘토링 후기 삭제 - mentoringPostId: {}", mentoringPost.getMentoringPostId());
         } else if (boardId == 3L) {
             // 고민상담
             CounselingPost counselingPost = counselingPostRepository.findByPostId(postId)
                     .orElseThrow(() -> new CustomException(PostErrorCode.POST_NOT_FOUND));
-            counselingPost.softDelete();
+            counselingPost.softDelete();  // 내부에서 post.softDelete() 호출됨
             log.info("고민상담 삭제 - counselingPostId: {}", counselingPost.getCounselingPostId());
         } else if (boardId == 4L) {
             // 재단소식
             NoticePost noticePost = noticePostRepository.findByPostId(postId)
                     .orElseThrow(() -> new CustomException(PostErrorCode.POST_NOT_FOUND));
-            noticePost.softDelete();
+            noticePost.softDelete();  // 내부에서 post.softDelete() 호출됨
             log.info("재단소식 삭제 - noticePostId: {}", noticePost.getNoticePostId());
         }
-
-        // Soft Delete (이미 타입별 테이블에서 post.softDelete() 호출했지만, 명시적으로 한 번 더)
-        post.softDelete();
     }
 
     // 게시판별 카테고리 검증

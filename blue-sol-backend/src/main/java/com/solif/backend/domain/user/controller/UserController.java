@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-@Tag(name = "사용자", description = "테스트용 사용자 정보 API")
+@Tag(name = "사용자", description = "사용자 정보 API")
 @RestController
 @RequestMapping("/api/v1/users")
 @RequiredArgsConstructor

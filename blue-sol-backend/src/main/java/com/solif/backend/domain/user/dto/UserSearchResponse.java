@@ -29,7 +29,21 @@ public class UserSearchResponse {
     @Schema(description = "소속 자치회 이름", example = "제주최강산한이들")
     private String councilName;
 
-    public static UserSearchResponse from(User user, CouncilMember membership) {
+    @Schema(description = "캐릭터")
+    private String userCharacter;
+
+    @Schema(description = "캐릭터 이미지 URL")
+    private String characterImageUrl;
+
+    @Schema(description = "배경 패턴")
+    private String backgroundPattern;
+
+    @Schema(description = "배경 이미지 URL")
+    private String backgroundImageUrl;
+
+    public static UserSearchResponse from(User user, CouncilMember membership,
+                                          String userCharacter, String characterImageUrl,
+                                          String backgroundPattern, String backgroundImageUrl) {
         return UserSearchResponse.builder()
                 .userId(user.getUserId())
                 .name(user.getName())
@@ -37,6 +51,10 @@ public class UserSearchResponse {
                 .schoolName(user.getSchoolName())
                 .isInCouncil(membership != null)
                 .councilName(membership != null ? membership.getCouncil().getCouncilName() : null)
+                .userCharacter(userCharacter)
+                .characterImageUrl(characterImageUrl)
+                .backgroundPattern(backgroundPattern)
+                .backgroundImageUrl(backgroundImageUrl)
                 .build();
     }
 }

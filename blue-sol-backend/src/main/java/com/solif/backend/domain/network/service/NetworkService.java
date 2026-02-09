@@ -407,15 +407,15 @@ public class NetworkService {
     }
 
     private String determineButtonType(User me, User target) {
-        // 내가 상대보다 윗 역할이면 CHEER(응원하기)
-        // 동일 역할이거나 아랫 역할이면 HELP(경험나누기)
+        // Down & Peer (내 레벨 >= 상대 레벨): 나보다 후배이거나 동급생 → HELP(도와줄게/멘토링 연결)
+        // Up (내 레벨 < 상대 레벨): 나보다 선배 → CHEER(응원하기/단순 리액션)
         int myLevel = getRoleLevel(me.getUserRole());
         int targetLevel = getRoleLevel(target.getUserRole());
 
-        if (myLevel > targetLevel) {
-            return "CHEER";
+        if (myLevel >= targetLevel) {
+            return "HELP";
         }
-        return "HELP";
+        return "CHEER";
     }
 
     private int getRoleLevel(User.UserRole role) {

@@ -13,6 +13,7 @@ import com.solif.backend.domain.mentoring.dto.*;
 import com.solif.backend.domain.mentoring.entity.*;
 import com.solif.backend.domain.mentoring.repository.MentorRepository;
 import com.solif.backend.domain.mentoring.repository.MentoringCardRepository;
+import com.solif.backend.domain.mentoring.repository.MentoringInteractionRepository;
 import com.solif.backend.domain.mentoring.repository.MentoringRequestRepository;
 import com.solif.backend.domain.post.entity.Post;
 import com.solif.backend.domain.post.repository.PostRepository;
@@ -30,9 +31,7 @@ import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -50,6 +49,7 @@ public class MentoringService {
     private final FileAttachmentRepository fileAttachmentRepository;
     private final MentoringCardRepository mentoringCardRepository;
     private final FileService fileService;
+    private final MentoringInteractionRepository mentoringInteractionRepository;
 
     @Value("${cloud.aws.region.static}")
     private String region;
@@ -212,17 +212,13 @@ public class MentoringService {
                 .map(mentor -> MentorListResponse.from(mentor, profileImageMap.get(mentor.getMentorId())))
                 .collect(Collectors.toList());
 
-        // 2. 선후배 멘토링 - 응원하기 (나보다 선배)
-        List<User> seniors = getSeniors(currentUser);
+        // 2. 선후배 멘토링 - 응원하기 (내가 선배에게 응원)
         MentoringHomeResponse.SeniorJuniorMentoringResponse cheerList =
-                buildSeniorJuniorResponse(seniors);
+                buildCheerList(currentUser);
 
-        // 3. 선후배 멘토링 - 경험나누기 (나와 같거나 후배)
-        // TODO: 선후배 멘토링 리스트 표시 추가 조건 구현 필요
-        // 팀원(장난영)과 논의 후 적용
-        List<User> juniorsAndSame = getJuniorsAndSame(currentUser);
+        // 3. 선후배 멘토링 - 경험나누기 (내가 후배에게 경험 나누기)
         MentoringHomeResponse.SeniorJuniorMentoringResponse helpList =
-                buildSeniorJuniorResponse(juniorsAndSame);
+                buildHelpList(currentUser);
 
         // 4. 멘토링 후기 목록 (boardId=2, 최대 4개)
         Pageable topReviews = PageRequest.of(0, 4);
@@ -399,6 +395,122 @@ public class MentoringService {
 
         return MentoringHomeResponse.SeniorJuniorMentoringResponse.builder()
                 .users(userCards)
+                .build();
+    }
+
+    // 응원하기 리스트 생성
+    private MentoringHomeResponse.SeniorJuniorMentoringResponse buildCheerList(User currentUser) {
+        // MASTER(관리자)는 응원하기 대상 없음
+        if (currentUser.getUserRole() == User.UserRole.MASTER) {
+            return MentoringHomeResponse.SeniorJuniorMentoringResponse.builder()
+                    .users(List.of())
+                    .build();
+        }
+
+        List<MentoringHomeResponse.SeniorJuniorMentoringResponse.UserCardResponse> userCards = new ArrayList<>();
+
+        // 1) 내가 받은 응원 중 아직 내가 보내지 않은 사람들 (대기중)
+        List<MentoringInteraction> pendingInteractions = mentoringInteractionRepository
+                .findPendingReceivedInteractions(currentUser.getUserId(), MentoringInteractionType.CHEER);
+
+        for (MentoringInteraction interaction : pendingInteractions) {
+            User sender = interaction.getSender();
+            userCards.add(buildUserCard(sender, "PENDING"));
+        }
+
+        // 2) 양방향 완료된 응원 (서로 보낸 사람들)
+        List<MentoringInteraction> completedInteractions = mentoringInteractionRepository
+                .findCompletedInteractions(currentUser.getUserId(), MentoringInteractionType.CHEER);
+
+        // 중복 제거를 위해 Set 사용
+        Set<Long> addedUserIds = userCards.stream()
+                .map(MentoringHomeResponse.SeniorJuniorMentoringResponse.UserCardResponse::getUserId)
+                .collect(Collectors.toSet());
+
+        for (MentoringInteraction interaction : completedInteractions) {
+            User otherUser = interaction.getSender().getUserId().equals(currentUser.getUserId())
+                    ? interaction.getReceiver()
+                    : interaction.getSender();
+
+            if (!addedUserIds.contains(otherUser.getUserId())) {
+                userCards.add(buildUserCard(otherUser, "COMPLETED"));
+                addedUserIds.add(otherUser.getUserId());
+            }
+        }
+
+        // 최대 10명으로 제한
+        List<MentoringHomeResponse.SeniorJuniorMentoringResponse.UserCardResponse> limitedCards =
+                userCards.stream().limit(10).collect(Collectors.toList());
+
+        return MentoringHomeResponse.SeniorJuniorMentoringResponse.builder()
+                .users(limitedCards)
+                .build();
+    }
+
+    // 경험나누기 리스트 생성
+    private MentoringHomeResponse.SeniorJuniorMentoringResponse buildHelpList(User currentUser) {
+        // MASTER(관리자)는 경험나누기 대상 없음
+        if (currentUser.getUserRole() == User.UserRole.MASTER) {
+            return MentoringHomeResponse.SeniorJuniorMentoringResponse.builder()
+                    .users(List.of())
+                    .build();
+        }
+
+        List<MentoringHomeResponse.SeniorJuniorMentoringResponse.UserCardResponse> userCards = new ArrayList<>();
+
+        // 1) 내가 받은 경험나누기 중 아직 내가 보내지 않은 사람들 (대기중)
+        List<MentoringInteraction> pendingInteractions = mentoringInteractionRepository
+                .findPendingReceivedInteractions(currentUser.getUserId(), MentoringInteractionType.HELP);
+
+        for (MentoringInteraction interaction : pendingInteractions) {
+            User sender = interaction.getSender();
+            userCards.add(buildUserCard(sender, "PENDING"));
+        }
+
+        // 2) 양방향 완료된 경험나누기 (서로 보낸 사람들)
+        List<MentoringInteraction> completedInteractions = mentoringInteractionRepository
+                .findCompletedInteractions(currentUser.getUserId(), MentoringInteractionType.HELP);
+
+        // 중복 제거를 위해 Set 사용
+        Set<Long> addedUserIds = userCards.stream()
+                .map(MentoringHomeResponse.SeniorJuniorMentoringResponse.UserCardResponse::getUserId)
+                .collect(Collectors.toSet());
+
+        for (MentoringInteraction interaction : completedInteractions) {
+            User otherUser = interaction.getSender().getUserId().equals(currentUser.getUserId())
+                    ? interaction.getReceiver()
+                    : interaction.getSender();
+
+            if (!addedUserIds.contains(otherUser.getUserId())) {
+                userCards.add(buildUserCard(otherUser, "COMPLETED"));
+                addedUserIds.add(otherUser.getUserId());
+            }
+        }
+
+        // 최대 10명으로 제한
+        List<MentoringHomeResponse.SeniorJuniorMentoringResponse.UserCardResponse> limitedCards =
+                userCards.stream().limit(10).collect(Collectors.toList());
+
+        return MentoringHomeResponse.SeniorJuniorMentoringResponse.builder()
+                .users(limitedCards)
+                .build();
+    }
+
+    // UserCard 생성 헬퍼 메서드
+    private MentoringHomeResponse.SeniorJuniorMentoringResponse.UserCardResponse buildUserCard(User user, String status) {
+        UserProfile profile = userProfileRepository.findByUser_UserId(user.getUserId()).orElse(null);
+        List<String> interests = userInterestRepository.findAllByUser_UserId(user.getUserId()).stream()
+                .map(UserInterest::getCategoryName)
+                .collect(Collectors.toList());
+
+        return MentoringHomeResponse.SeniorJuniorMentoringResponse.UserCardResponse.builder()
+                .userId(user.getUserId())
+                .userName(user.getName())
+                .character(profile != null ? profile.getUserCharacter() : null)
+                .backgroundPattern(profile != null ? profile.getBackgroundPattern() : null)
+                .solidGoalName(profile != null ? profile.getSolidGoalName() : null)
+                .interests(interests)
+                .status(status) // "PENDING" 또는 "COMPLETED"
                 .build();
     }
 }

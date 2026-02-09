@@ -36,6 +36,11 @@ public class Mentor {
     @JoinColumn(name = "profile_image_file_id")
     private File profileImageFile;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "mentor_category", nullable = false, length = 50)
+    private MentorCategory mentorCategory;
+
+
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
@@ -45,11 +50,12 @@ public class Mentor {
 
     @Builder
     public Mentor(String mentorTitle, String mentorName, String mentorIntro,
-                  File profileImageFile, Boolean isActive) {
+                  File profileImageFile, MentorCategory mentorCategory, Boolean isActive) {
         this.mentorTitle = mentorTitle;
         this.mentorName = mentorName;
         this.mentorIntro = mentorIntro;
         this.profileImageFile = profileImageFile;
+        this.mentorCategory = mentorCategory;
         this.isActive = isActive != null ? isActive : true;
     }
 }

@@ -51,16 +51,31 @@ public class MentoringHomeResponse {
             private String userName;
 
             @Schema(description = "캐릭터", example = "character_1")
-            private String character;
+            private String userCharacter;
+
+            @Schema(description = "캐릭터 이미지 URL")
+            private String characterImageUrl;
 
             @Schema(description = "배경 패턴", example = "pattern_1")
             private String backgroundPattern;
+
+            @Schema(description = "배경 이미지 URL")
+            private String backgroundImageUrl;
 
             @Schema(description = "단단한 목표 이름", example = "취업 준비")
             private String solidGoalName;
 
             @Schema(description = "관심사 목록")
             private List<String> interests;
+
+            @Schema(description = "주요 목표 목록")
+            private List<String> mainGoals;
+
+            @Schema(description = "학교명 또는 직업", example = "서울 행운고등학교")
+            private String schoolName;
+
+            @Schema(description = "가입 연도", example = "2024")
+            private Integer joinYear;
 
             @Schema(description = "상태 (PENDING: 대기중, COMPLETED: 양방향 완료)", example = "PENDING")
             private String status;

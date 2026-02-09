@@ -216,13 +216,13 @@ public class MentoringService {
                 .map(mentor -> MentorListResponse.from(mentor, profileImageMap.get(mentor.getMentorId())))
                 .collect(Collectors.toList());
 
-        // 2. 선후배 멘토링 - 응원하기 (내가 선배에게 응원)
+        // 2. 선후배 멘토링 - 응원하기 (통합 메서드 사용)
         MentoringHomeResponse.SeniorJuniorMentoringResponse cheerList =
-                buildCheerList(currentUser);
+                buildInteractionList(currentUser, MentoringInteractionType.CHEER);
 
-        // 3. 선후배 멘토링 - 경험나누기 (내가 후배에게 경험 나누기)
+        // 3. 선후배 멘토링 - 경험나누기 (통합 메서드 사용)
         MentoringHomeResponse.SeniorJuniorMentoringResponse helpList =
-                buildHelpList(currentUser);
+                buildInteractionList(currentUser, MentoringInteractionType.HELP);
 
         // 4. 멘토링 후기 목록 (boardId=2, 최대 4개)
         Pageable topReviews = PageRequest.of(0, 4);
@@ -321,9 +321,12 @@ public class MentoringService {
 
     // === Helper Methods ===
 
-    // 응원하기 리스트 생성
-    private MentoringHomeResponse.SeniorJuniorMentoringResponse buildCheerList(User currentUser) {
-        // MASTER(관리자)는 응원하기 대상 없음
+    // 통합: buildCheerList + buildHelpList → buildInteractionList
+    private MentoringHomeResponse.SeniorJuniorMentoringResponse buildInteractionList(
+            User currentUser,
+            MentoringInteractionType type) {
+
+        // MASTER(관리자)는 상호작용 대상 없음
         if (currentUser.getUserRole() == User.UserRole.MASTER) {
             return MentoringHomeResponse.SeniorJuniorMentoringResponse.builder()
                     .users(List.of())
@@ -332,20 +335,59 @@ public class MentoringService {
 
         List<MentoringHomeResponse.SeniorJuniorMentoringResponse.UserCardResponse> userCards = new ArrayList<>();
 
-        // 1) 내가 받은 응원 중 아직 내가 보내지 않은 사람들 (대기중)
+        // 1) 내가 받은 상호작용 중 아직 내가 보내지 않은 사람들 (대기중)
         List<MentoringInteraction> pendingInteractions = mentoringInteractionRepository
-                .findPendingReceivedInteractions(currentUser.getUserId(), MentoringInteractionType.CHEER);
+                .findPendingReceivedInteractions(currentUser.getUserId(), type);
+
+        // 2) 양방향 완료된 상호작용 (서로 보낸 사람들)
+        List<MentoringInteraction> completedInteractions = mentoringInteractionRepository
+                .findCompletedInteractions(currentUser.getUserId(), type);
+
+        // 모든 대상 사용자 ID 수집
+        Set<Long> allUserIds = new HashSet<>();
 
         for (MentoringInteraction interaction : pendingInteractions) {
-            User sender = interaction.getSender();
-            userCards.add(buildUserCard(sender, "PENDING"));
+            allUserIds.add(interaction.getSender().getUserId());
         }
 
-        // 2) 양방향 완료된 응원 (서로 보낸 사람들)
-        List<MentoringInteraction> completedInteractions = mentoringInteractionRepository
-                .findCompletedInteractions(currentUser.getUserId(), MentoringInteractionType.CHEER);
+        for (MentoringInteraction interaction : completedInteractions) {
+            User otherUser = interaction.getSender().getUserId().equals(currentUser.getUserId())
+                    ? interaction.getReceiver()
+                    : interaction.getSender();
+            allUserIds.add(otherUser.getUserId());
+        }
 
-        // 중복 제거를 위해 Set 사용
+        // 최대 10명으로 제한
+        List<Long> limitedUserIds = allUserIds.stream().limit(10).collect(Collectors.toList());
+
+        if (limitedUserIds.isEmpty()) {
+            return MentoringHomeResponse.SeniorJuniorMentoringResponse.builder()
+                    .users(List.of())
+                    .build();
+        }
+
+        // 배치 조회 (N+1 방지)
+        Map<Long, UserProfile> profileMap = userProfileRepository.findByUser_UserIdIn(limitedUserIds).stream()
+                .collect(Collectors.toMap(
+                        profile -> profile.getUser().getUserId(),
+                        profile -> profile
+                ));
+
+        Map<Long, List<String>> interestMap = userInterestRepository.findAllByUser_UserIdIn(limitedUserIds).stream()
+                .collect(Collectors.groupingBy(
+                        interest -> interest.getUser().getUserId(),
+                        Collectors.mapping(UserInterest::getCategoryName, Collectors.toList())
+                ));
+
+        // pending 처리
+        for (MentoringInteraction interaction : pendingInteractions) {
+            User sender = interaction.getSender();
+            if (limitedUserIds.contains(sender.getUserId())) {
+                userCards.add(buildUserCardFromCache(sender, "PENDING", profileMap, interestMap));
+            }
+        }
+
+        // completed 처리
         Set<Long> addedUserIds = userCards.stream()
                 .map(MentoringHomeResponse.SeniorJuniorMentoringResponse.UserCardResponse::getUserId)
                 .collect(Collectors.toSet());
@@ -355,76 +397,26 @@ public class MentoringService {
                     ? interaction.getReceiver()
                     : interaction.getSender();
 
-            if (!addedUserIds.contains(otherUser.getUserId())) {
-                userCards.add(buildUserCard(otherUser, "COMPLETED"));
+            if (limitedUserIds.contains(otherUser.getUserId()) && !addedUserIds.contains(otherUser.getUserId())) {
+                userCards.add(buildUserCardFromCache(otherUser, "COMPLETED", profileMap, interestMap));
                 addedUserIds.add(otherUser.getUserId());
             }
         }
 
-        // 최대 10명으로 제한
-        List<MentoringHomeResponse.SeniorJuniorMentoringResponse.UserCardResponse> limitedCards =
-                userCards.stream().limit(10).collect(Collectors.toList());
-
         return MentoringHomeResponse.SeniorJuniorMentoringResponse.builder()
-                .users(limitedCards)
-                .build();
-    }
-
-    // 경험나누기 리스트 생성
-    private MentoringHomeResponse.SeniorJuniorMentoringResponse buildHelpList(User currentUser) {
-        // MASTER(관리자)는 경험나누기 대상 없음
-        if (currentUser.getUserRole() == User.UserRole.MASTER) {
-            return MentoringHomeResponse.SeniorJuniorMentoringResponse.builder()
-                    .users(List.of())
-                    .build();
-        }
-
-        List<MentoringHomeResponse.SeniorJuniorMentoringResponse.UserCardResponse> userCards = new ArrayList<>();
-
-        // 1) 내가 받은 경험나누기 중 아직 내가 보내지 않은 사람들 (대기중)
-        List<MentoringInteraction> pendingInteractions = mentoringInteractionRepository
-                .findPendingReceivedInteractions(currentUser.getUserId(), MentoringInteractionType.HELP);
-
-        for (MentoringInteraction interaction : pendingInteractions) {
-            User sender = interaction.getSender();
-            userCards.add(buildUserCard(sender, "PENDING"));
-        }
-
-        // 2) 양방향 완료된 경험나누기 (서로 보낸 사람들)
-        List<MentoringInteraction> completedInteractions = mentoringInteractionRepository
-                .findCompletedInteractions(currentUser.getUserId(), MentoringInteractionType.HELP);
-
-        // 중복 제거를 위해 Set 사용
-        Set<Long> addedUserIds = userCards.stream()
-                .map(MentoringHomeResponse.SeniorJuniorMentoringResponse.UserCardResponse::getUserId)
-                .collect(Collectors.toSet());
-
-        for (MentoringInteraction interaction : completedInteractions) {
-            User otherUser = interaction.getSender().getUserId().equals(currentUser.getUserId())
-                    ? interaction.getReceiver()
-                    : interaction.getSender();
-
-            if (!addedUserIds.contains(otherUser.getUserId())) {
-                userCards.add(buildUserCard(otherUser, "COMPLETED"));
-                addedUserIds.add(otherUser.getUserId());
-            }
-        }
-
-        // 최대 10명으로 제한
-        List<MentoringHomeResponse.SeniorJuniorMentoringResponse.UserCardResponse> limitedCards =
-                userCards.stream().limit(10).collect(Collectors.toList());
-
-        return MentoringHomeResponse.SeniorJuniorMentoringResponse.builder()
-                .users(limitedCards)
+                .users(userCards)
                 .build();
     }
 
     // UserCard 생성 헬퍼 메서드
-    private MentoringHomeResponse.SeniorJuniorMentoringResponse.UserCardResponse buildUserCard(User user, String status) {
-        UserProfile profile = userProfileRepository.findByUser_UserId(user.getUserId()).orElse(null);
-        List<String> interests = userInterestRepository.findAllByUser_UserId(user.getUserId()).stream()
-                .map(UserInterest::getCategoryName)
-                .collect(Collectors.toList());
+    private MentoringHomeResponse.SeniorJuniorMentoringResponse.UserCardResponse buildUserCardFromCache(
+            User user,
+            String status,
+            Map<Long, UserProfile> profileMap,
+            Map<Long, List<String>> interestMap) {
+
+        UserProfile profile = profileMap.get(user.getUserId());
+        List<String> interests = interestMap.getOrDefault(user.getUserId(), List.of());
 
         return MentoringHomeResponse.SeniorJuniorMentoringResponse.UserCardResponse.builder()
                 .userId(user.getUserId())
@@ -433,7 +425,7 @@ public class MentoringService {
                 .backgroundPattern(profile != null ? profile.getBackgroundPattern() : null)
                 .solidGoalName(profile != null ? profile.getSolidGoalName() : null)
                 .interests(interests)
-                .status(status) // "PENDING" 또는 "COMPLETED"
+                .status(status)
                 .build();
     }
 }

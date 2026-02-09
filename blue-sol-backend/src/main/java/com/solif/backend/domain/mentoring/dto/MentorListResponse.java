@@ -22,6 +22,9 @@ public class MentorListResponse {
     @Schema(description = "멘토 소개", example = "안녕하세요. 저는 한국대학교에 재학중인 신석균입니다. 대학생활의 시작...")
     private String mentorIntro;
 
+    @Schema(description = "멘토 카테고리", example = "STUDY")
+    private String mentorCategory;
+
     @Schema(description = "프로필 이미지 URL", nullable = true)
     private String profileImageUrl;
 
@@ -31,6 +34,7 @@ public class MentorListResponse {
                 .mentorTitle(mentor.getMentorTitle())
                 .mentorName(mentor.getMentorName())
                 .mentorIntro(mentor.getMentorIntro())
+                .mentorCategory(mentor.getMentorCategory().name())
                 .profileImageUrl(profileImageUrl)
                 .build();
     }

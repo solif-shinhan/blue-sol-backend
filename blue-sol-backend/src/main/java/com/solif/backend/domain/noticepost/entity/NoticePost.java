@@ -53,4 +53,8 @@ public class NoticePost {
     public boolean isDeleted() {
         return this.deletedAt != null;
     }
+
+    public boolean isAuthor(Long userId) {
+        return this.post.isAuthor(userId);
+    }
 }

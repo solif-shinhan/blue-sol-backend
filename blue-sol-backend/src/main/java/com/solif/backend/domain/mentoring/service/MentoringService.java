@@ -289,6 +289,11 @@ public class MentoringService {
             throw new CustomException(MentoringErrorCode.UNAUTHORIZED_CARD_ACCESS);
         }
 
+        // 읽음 처리
+        if (!card.getIsRead()) {
+            card.markAsRead();
+        }
+
         // 첨부 파일 URL 조회
         List<FileAttachment> attachments = fileAttachmentRepository
                 .findByFileTargetTypeAndTargetIdOrderBySortOrder(FileTargetType.MENTORING_CARD, cardId);

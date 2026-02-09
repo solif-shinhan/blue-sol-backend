@@ -5,5 +5,7 @@ public enum FileTargetType {
     COUNCIL_POST,      // 자치회 활동 후기
     USER_PROFILE,
     PINECONE_MEMORY,
-    MESSAGE            // 쪽지 첨부파일
+    MESSAGE,           // 쪽지 첨부파일
+    MENTOR_PROFILE,    // 전문가 멘토 프로필 이미지
+    MENTORING_CARD     // 멘토링 엽서 첨부파일
 }

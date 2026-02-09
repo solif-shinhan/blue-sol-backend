@@ -17,7 +17,7 @@ public enum NetworkErrorCode implements ErrorCode {
     INVALID_QR_CODE(HttpStatus.BAD_REQUEST, "NETWORK_006", "유효하지 않은 QR 코드입니다."),
     INVALID_INTERACTION_TYPE(HttpStatus.BAD_REQUEST, "NETWORK_007", "유효하지 않은 상호작용 타입입니다."),
     INTERACTION_NOT_ALLOWED(HttpStatus.FORBIDDEN, "NETWORK_008", "해당 상호작용을 보낼 수 없습니다."),
-    INTERACTION_ALREADY_SENT(HttpStatus.CONFLICT, "NETWORK_008", "이미 상호작용을 보냈습니다.");
+    INTERACTION_ALREADY_SENT(HttpStatus.CONFLICT, "NETWORK_009", "이미 상호작용을 보냈습니다.");
 
     private final HttpStatus status;
     private final String code;

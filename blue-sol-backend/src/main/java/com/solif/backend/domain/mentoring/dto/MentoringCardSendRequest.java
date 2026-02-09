@@ -1,5 +1,7 @@
 package com.solif.backend.domain.mentoring.dto;
 
+import com.solif.backend.domain.mentoring.entity.MentoringCategory;
+import com.solif.backend.domain.mentoring.entity.MentoringMethod;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -21,11 +23,11 @@ public class MentoringCardSendRequest {
 
     @NotNull(message = "카테고리는 필수입니다.")
     @Schema(description = "멘토링 카테고리 (STUDY/JOB/ADMISSION/ETC)", example = "JOB")
-    private String category;
+    private MentoringCategory category;
 
     @NotNull(message = "멘토링 방식은 필수입니다.")
     @Schema(description = "멘토링 방식 (MESSAGE/VIDEO/PHONE/OFFLINE)", example = "VIDEO")
-    private String method;
+    private MentoringMethod method;
 
     @NotBlank(message = "내용은 필수입니다.")
     @Schema(description = "엽서 내용", example = "안녕하세요. 저는 한국대학교에 재학중인 학생입니다...")

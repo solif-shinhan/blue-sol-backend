@@ -296,7 +296,7 @@ public class MentoringService {
     }
 
     // 멘토링 엽서 상세 조회
-    @Transactional
+    @Transactional(readOnly = true)
     public MentoringCardDetailResponse getCardDetail(Long userId, Long cardId) {
         log.info("멘토링 엽서 상세 조회 - userId: {}, cardId: {}", userId, cardId);
 
@@ -306,11 +306,6 @@ public class MentoringService {
         // 권한 확인 (본인만 조회 가능)
         if (!card.isSender(userId)) {
             throw new CustomException(MentoringErrorCode.UNAUTHORIZED_CARD_ACCESS);
-        }
-
-        // 읽음 처리
-        if (!card.getIsRead()) {
-            card.markAsRead();
         }
 
         // 첨부 파일 URL 조회

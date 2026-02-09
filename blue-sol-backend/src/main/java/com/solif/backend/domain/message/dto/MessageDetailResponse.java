@@ -22,7 +22,7 @@ public class MessageDetailResponse {
     @Schema(description = "보낸 사람 이름", example = "박민수")
     private String senderName;
 
-    @Schema(description = "받는 사람 ID", example = "2")
+    @Schema(description = "받는 사람 ID", example = "3")
     private Long receiverId;
 
     @Schema(description = "받는 사람 이름", example = "박민수")

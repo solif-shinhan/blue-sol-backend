@@ -260,7 +260,7 @@ public class MentoringService {
                     request.getFileIds(),
                     FileTargetType.MENTORING_CARD,
                     savedCard.getMentoringCardId(),
-                    AttachmentPurpose.POST_ATTACHMENT
+                    AttachmentPurpose.MENTORING_CARD_ATTACHMENT
             );
         }
 

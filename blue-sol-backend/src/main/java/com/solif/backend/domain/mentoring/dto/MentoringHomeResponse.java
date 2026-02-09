@@ -11,8 +11,17 @@ import java.util.List;
 @Schema(description = "멘토링 홈 응답")
 public class MentoringHomeResponse {
 
-    @Schema(description = "전문가 멘토 목록 (최대 4개)")
-    private List<MentorListResponse> mentors;
+    @Schema(description = "전체 전문가 멘토 목록")
+    private List<MentorListResponse> allMentors;
+
+    @Schema(description = "학업고민 멘토 목록")
+    private List<MentorListResponse> studyMentors;
+
+    @Schema(description = "취업고민 멘토 목록")
+    private List<MentorListResponse> jobMentors;
+
+    @Schema(description = "인생의 멘토 목록")
+    private List<MentorListResponse> lifeMentors;
 
     @Schema(description = "선후배 멘토링 사용자 목록 (응원하기)")
     private SeniorJuniorMentoringResponse cheerList;

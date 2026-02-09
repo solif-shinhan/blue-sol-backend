@@ -44,9 +44,9 @@ public class MentoringCardDetailResponse {
     private LocalDateTime createdAt;
 
     @Schema(description = "첨부 파일 URL 목록", nullable = true)
-    private List<String> fileUrls;
+    private List<String> imageUrls;
 
-    public static MentoringCardDetailResponse from(MentoringCard card, List<String> fileUrls) {
+    public static MentoringCardDetailResponse from(MentoringCard card, List<String> imageUrls) {
         return MentoringCardDetailResponse.builder()
                 .mentoringCardId(card.getMentoringCardId())
                 .senderId(card.getSender().getUserId())
@@ -58,7 +58,7 @@ public class MentoringCardDetailResponse {
                 .isRead(card.getIsRead())
                 .readAt(card.getReadAt())
                 .createdAt(card.getCreatedAt())
-                .fileUrls(fileUrls)
+                .imageUrls(imageUrls)
                 .build();
     }
 }

@@ -142,11 +142,11 @@ public class MessageService {
         List<FileAttachment> attachments = fileAttachmentRepository
                 .findByFileTargetTypeAndTargetIdOrderBySortOrder(FileTargetType.MESSAGE, messageId);
 
-        List<String> fileUrls = attachments.stream()
+        List<String> imageUrls = attachments.stream()
                 .map(attachment -> attachment.getFile().getUrl(region))
                 .toList();
 
-        return MessageDetailResponse.from(message, fileUrls);
+        return MessageDetailResponse.from(message, imageUrls);
     }
 
     // 쪽지 삭제

@@ -317,86 +317,14 @@ public class MentoringService {
         List<FileAttachment> attachments = fileAttachmentRepository
                 .findByFileTargetTypeAndTargetIdOrderBySortOrder(FileTargetType.MENTORING_CARD, cardId);
 
-        List<String> fileUrls = attachments.stream()
+        List<String> imageUrls = attachments.stream()
                 .map(attachment -> attachment.getFile().getUrl(region))
                 .toList();
 
-        return MentoringCardDetailResponse.from(card, fileUrls);
+        return MentoringCardDetailResponse.from(card, imageUrls);
     }
 
     // === Helper Methods ===
-
-    private List<User> getSeniors(User currentUser) {
-        User.UserRole currentRole = currentUser.getUserRole();
-
-        // 나보다 높은 레벨 찾기
-        return switch (currentRole) {
-            case JUNIOR -> userRepository.findAll().stream()
-                    .filter(u -> u.getUserRole() == User.UserRole.SENIOR ||
-                            u.getUserRole() == User.UserRole.GRADUATE ||
-                            u.getUserRole() == User.UserRole.MASTER)
-                    .collect(Collectors.toList());
-            case SENIOR -> userRepository.findAll().stream()
-                    .filter(u -> u.getUserRole() == User.UserRole.GRADUATE ||
-                            u.getUserRole() == User.UserRole.MASTER)
-                    .collect(Collectors.toList());
-            case GRADUATE -> userRepository.findAll().stream()
-                    .filter(u -> u.getUserRole() == User.UserRole.MASTER)
-                    .collect(Collectors.toList());
-            case MASTER -> List.of(); // 최고 레벨
-        };
-    }
-
-    private List<User> getJuniorsAndSame(User currentUser) {
-        User.UserRole currentRole = currentUser.getUserRole();
-
-        // 나와 같거나 낮은 레벨 찾기
-        return switch (currentRole) {
-            case JUNIOR -> userRepository.findAll().stream()
-                    .filter(u -> u.getUserRole() == User.UserRole.JUNIOR)
-                    .filter(u -> !u.getUserId().equals(currentUser.getUserId())) // 본인 제외
-                    .collect(Collectors.toList());
-            case SENIOR -> userRepository.findAll().stream()
-                    .filter(u -> u.getUserRole() == User.UserRole.JUNIOR ||
-                            u.getUserRole() == User.UserRole.SENIOR)
-                    .filter(u -> !u.getUserId().equals(currentUser.getUserId()))
-                    .collect(Collectors.toList());
-            case GRADUATE -> userRepository.findAll().stream()
-                    .filter(u -> u.getUserRole() == User.UserRole.JUNIOR ||
-                            u.getUserRole() == User.UserRole.SENIOR ||
-                            u.getUserRole() == User.UserRole.GRADUATE)
-                    .filter(u -> !u.getUserId().equals(currentUser.getUserId()))
-                    .collect(Collectors.toList());
-            case MASTER -> userRepository.findAll().stream()
-                    .filter(u -> !u.getUserId().equals(currentUser.getUserId()))
-                    .collect(Collectors.toList());
-        };
-    }
-
-    private MentoringHomeResponse.SeniorJuniorMentoringResponse buildSeniorJuniorResponse(List<User> users) {
-        List<MentoringHomeResponse.SeniorJuniorMentoringResponse.UserCardResponse> userCards = users.stream()
-                .limit(10) // 최대 10명
-                .map(user -> {
-                    UserProfile profile = userProfileRepository.findByUser_UserId(user.getUserId()).orElse(null);
-                    List<String> interests = userInterestRepository.findAllByUser_UserId(user.getUserId()).stream()
-                            .map(UserInterest::getCategoryName)
-                            .collect(Collectors.toList());
-
-                    return MentoringHomeResponse.SeniorJuniorMentoringResponse.UserCardResponse.builder()
-                            .userId(user.getUserId())
-                            .userName(user.getName())
-                            .character(profile != null ? profile.getUserCharacter() : null)
-                            .backgroundPattern(profile != null ? profile.getBackgroundPattern() : null)
-                            .solidGoalName(profile != null ? profile.getSolidGoalName() : null)
-                            .interests(interests)
-                            .build();
-                })
-                .collect(Collectors.toList());
-
-        return MentoringHomeResponse.SeniorJuniorMentoringResponse.builder()
-                .users(userCards)
-                .build();
-    }
 
     // 응원하기 리스트 생성
     private MentoringHomeResponse.SeniorJuniorMentoringResponse buildCheerList(User currentUser) {

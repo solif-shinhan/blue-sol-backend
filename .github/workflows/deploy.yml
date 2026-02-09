@@ -30,7 +30,7 @@ jobs:
         working-directory: blue-sol-backend
         run: |
           mkdir -p secrets
-          echo "${{ secrets.GCP_VISION_CREDENTIALS }}" > secrets/gcp-vision.json
+          printf "%s" "${{ secrets.GCP_VISION_CREDENTIALS_B64 }}" | base64 -d > secrets/gcp-vision.json
 
       - name: Login to DockerHub
         uses: docker/login-action@v3

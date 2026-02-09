@@ -174,18 +174,21 @@ public class MentoringService {
         User currentUser = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(AuthErrorCode.USER_NOT_FOUND));
 
-        // 1. 전문가 멘토 목록 (최대 4개)
-        List<Mentor> mentors = mentorRepository.findByIsActiveTrueOrderByCreatedAtDesc();
-        List<Mentor> topMentors = mentors.stream().limit(4).collect(Collectors.toList());
+        // 1. 전문가 멘토 목록 조회 (카테고리별)
+        List<Mentor> allMentors = mentorRepository.findByIsActiveTrueOrderByCreatedAtDesc();
+        List<Mentor> studyMentors = mentorRepository.findByIsActiveTrueAndMentorCategoryOrderByCreatedAtDesc(MentorCategory.STUDY);
+        List<Mentor> jobMentors = mentorRepository.findByIsActiveTrueAndMentorCategoryOrderByCreatedAtDesc(MentorCategory.JOB);
+        List<Mentor> lifeMentors = mentorRepository.findByIsActiveTrueAndMentorCategoryOrderByCreatedAtDesc(MentorCategory.LIFE);
 
-        List<Long> mentorIds = topMentors.stream()
+        // 프로필 이미지 배치 조회
+        List<Long> allMentorIds = allMentors.stream()
                 .map(Mentor::getMentorId)
                 .collect(Collectors.toList());
 
-        Map<Long, String> profileImageMap = mentorIds.isEmpty() ? Map.of() :
+        Map<Long, String> profileImageMap = allMentorIds.isEmpty() ? Map.of() :
                 fileAttachmentRepository.findByFileTargetTypeAndTargetIdInAndSortOrderAndPurpose(
                                 FileTargetType.MENTOR_PROFILE,
-                                mentorIds,
+                                allMentorIds,
                                 1,
                                 AttachmentPurpose.PROFILE_IMAGE
                         )
@@ -196,7 +199,20 @@ public class MentoringService {
                                 (existing, replacement) -> existing
                         ));
 
-        List<MentorListResponse> mentorResponses = topMentors.stream()
+        // DTO 변환
+        List<MentorListResponse> allMentorResponses = allMentors.stream()
+                .map(mentor -> MentorListResponse.from(mentor, profileImageMap.get(mentor.getMentorId())))
+                .collect(Collectors.toList());
+
+        List<MentorListResponse> studyMentorResponses = studyMentors.stream()
+                .map(mentor -> MentorListResponse.from(mentor, profileImageMap.get(mentor.getMentorId())))
+                .collect(Collectors.toList());
+
+        List<MentorListResponse> jobMentorResponses = jobMentors.stream()
+                .map(mentor -> MentorListResponse.from(mentor, profileImageMap.get(mentor.getMentorId())))
+                .collect(Collectors.toList());
+
+        List<MentorListResponse> lifeMentorResponses = lifeMentors.stream()
                 .map(mentor -> MentorListResponse.from(mentor, profileImageMap.get(mentor.getMentorId())))
                 .collect(Collectors.toList());
 
@@ -223,7 +239,10 @@ public class MentoringService {
                 .collect(Collectors.toList());
 
         return MentoringHomeResponse.builder()
-                .mentors(mentorResponses)
+                .allMentors(allMentorResponses)
+                .studyMentors(studyMentorResponses)
+                .jobMentors(jobMentorResponses)
+                .lifeMentors(lifeMentorResponses)
                 .cheerList(cheerList)
                 .helpList(helpList)
                 .reviews(reviewResponses)

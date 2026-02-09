@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -63,7 +64,7 @@ public class MentoringController {
     public ResponseEntity<SuccessResponse<Slice<MentoringRequestListResponse>>> getSentRequests(
             @AuthenticationPrincipal Long userId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(defaultValue = "20") @Max(100) int size
     ) {
         Pageable pageable = PageRequest.of(page, size);
         Slice<MentoringRequestListResponse> response = mentoringService.getSentRequests(userId, pageable);
@@ -93,7 +94,7 @@ public class MentoringController {
     public ResponseEntity<SuccessResponse<Slice<MentoringRequestListResponse>>> getReceivedRequests(
             @AuthenticationPrincipal Long userId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(defaultValue = "20") @Max(100) int size
     ) {
         Pageable pageable = PageRequest.of(page, size);
         Slice<MentoringRequestListResponse> response = mentoringService.getReceivedRequests(userId, pageable);
@@ -136,7 +137,7 @@ public class MentoringController {
     public ResponseEntity<SuccessResponse<Slice<MentoringCardListResponse>>> getSentCards(
             @AuthenticationPrincipal Long userId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(defaultValue = "20") @Max(100) int size
     ) {
         Pageable pageable = PageRequest.of(page, size);
         Slice<MentoringCardListResponse> response = mentoringService.getSentCards(userId, pageable);

@@ -86,6 +86,9 @@ public class NetworkListResponse {
         @Schema(description = "소속 자치회 이름", example = "제주최강산한이들")
         private String councilName;
 
+        @Schema(description = "지역", example = "서울")
+        private String region;
+
         @Schema(description = "학교 이름 (장학생) 또는 직업 (졸업생)", example = "서울 행운고등학교")
         private String schoolName;
 

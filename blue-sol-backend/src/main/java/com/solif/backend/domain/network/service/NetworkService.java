@@ -130,6 +130,7 @@ public class NetworkService {
                             .buttonType(buttonType)
                             .isInCouncil(membership != null)
                             .councilName(membership != null ? membership.getCouncil().getCouncilName() : null)
+                            .region(other.getRegion())
                             .schoolName(getSchoolOrJob(other))
                             .joinYear(getJoinYear(other))
                             .build();

@@ -60,12 +60,6 @@ public class MentoringRequestDetailResponse {
     @Schema(description = "답변 일시", nullable = true)
     private LocalDateTime repliedAt;
 
-    @Schema(description = "후기 작성 여부", example = "false")
-    private Boolean hasReview;
-
-    @Schema(description = "후기 게시글 ID", nullable = true)
-    private Long reviewPostId;
-
     public static MentoringRequestDetailResponse from(MentoringRequest request, String mentorProfileImageUrl) {
         return MentoringRequestDetailResponse.builder()
                 .mentoringRequestId(request.getMentoringRequestId())
@@ -84,8 +78,6 @@ public class MentoringRequestDetailResponse {
                 .createdAt(request.getCreatedAt())
                 .updatedAt(request.getUpdatedAt())
                 .repliedAt(request.getRepliedAt())
-                .hasReview(request.getReviewPost() != null)
-                .reviewPostId(request.getReviewPost() != null ? request.getReviewPost().getPostId() : null)
                 .build();
     }
 }

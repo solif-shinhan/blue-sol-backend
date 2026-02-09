@@ -1,6 +1,5 @@
 package com.solif.backend.domain.mentoring.entity;
 
-import com.solif.backend.domain.post.entity.Post;
 import com.solif.backend.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -32,10 +31,6 @@ public class MentoringRequest {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "mentee_user_id", nullable = false)
     private User menteeUser;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "review_post_id")
-    private Post reviewPost;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "category", nullable = false, length = 50)
@@ -82,10 +77,6 @@ public class MentoringRequest {
     // 비즈니스 로직
     public void updateStatus(MentoringRequestStatus newStatus) {
         this.status = newStatus;
-    }
-
-    public void linkReviewPost(Post reviewPost) {
-        this.reviewPost = reviewPost;
     }
 
     // 관리자 답변 작성

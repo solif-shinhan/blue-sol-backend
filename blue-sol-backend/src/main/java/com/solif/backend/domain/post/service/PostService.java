@@ -1,5 +1,11 @@
 package com.solif.backend.domain.post.service;
 
+import com.solif.backend.domain.mentoringpost.entity.MentoringPost;
+import com.solif.backend.domain.mentoringpost.repository.MentoringPostRepository;
+import com.solif.backend.domain.counselingpost.entity.CounselingPost;
+import com.solif.backend.domain.counselingpost.repository.CounselingPostRepository;
+import com.solif.backend.domain.noticepost.entity.NoticePost;
+import com.solif.backend.domain.noticepost.repository.NoticePostRepository;
 import com.solif.backend.domain.auth.code.AuthErrorCode;
 import com.solif.backend.domain.board.code.BoardErrorCode;
 import com.solif.backend.domain.board.entity.Board;
@@ -50,6 +56,9 @@ public class PostService {
     private final CouncilReviewPostRepository councilReviewPostRepository;
     private final FileService fileService;
     private final FileAttachmentRepository fileAttachmentRepository;
+    private final MentoringPostRepository mentoringPostRepository;
+    private final CounselingPostRepository counselingPostRepository;
+    private final NoticePostRepository noticePostRepository;
 
     @Value("${cloud.aws.region.static}")
     private String region;
@@ -257,6 +266,33 @@ public class PostService {
         // 저장
         Post savedPost = postRepository.save(post);
 
+        // 게시판별 타입 테이블 생성
+        if (request.getBoardId() == 1L) {
+            // 자치회 활동 후기는 CouncilReviewPostController 사용
+            throw new CustomException(PostErrorCode.INVALID_BOARD);
+        } else if (request.getBoardId() == 2L) {
+            // 멘토링 후기
+            MentoringPost mentoringPost = MentoringPost.builder()
+                    .post(savedPost)
+                    .build();
+            mentoringPostRepository.save(mentoringPost);
+            log.info("멘토링 후기 생성 - mentoringPostId: {}", mentoringPost.getMentoringPostId());
+        } else if (request.getBoardId() == 3L) {
+            // 고민상담
+            CounselingPost counselingPost = CounselingPost.builder()
+                    .post(savedPost)
+                    .build();
+            counselingPostRepository.save(counselingPost);
+            log.info("고민상담 생성 - counselingPostId: {}", counselingPost.getCounselingPostId());
+        } else if (request.getBoardId() == 4L) {
+            // 재단소식
+            NoticePost noticePost = NoticePost.builder()
+                    .post(savedPost)
+                    .build();
+            noticePostRepository.save(noticePost);
+            log.info("재단소식 생성 - noticePostId: {}", noticePost.getNoticePostId());
+        }
+
         // 파일 확정 (fileIds가 있으면)
         if (request.getFileIds() != null && !request.getFileIds().isEmpty()) {
             fileService.confirmFiles(
@@ -266,12 +302,6 @@ public class PostService {
                     AttachmentPurpose.POST_ATTACHMENT
             );
         }
-
-        // TODO: mentoringRequestId 처리 (나중에 멘토링 도메인 구현 시)
-        // if (request.getMentoringRequestId() != null) {
-        //     mentoringRequestRepository.updateReviewPostId(
-        //         request.getMentoringRequestId(), savedPost.getPostId());
-        // }
 
         return PostCreateResponse.from(savedPost);
     }
@@ -362,8 +392,30 @@ public class PostService {
             throw new CustomException(PostErrorCode.UNAUTHORIZED_POST_ACCESS);
         }
 
-        // Soft Delete
-        post.softDelete();
+        // 게시판별 타입 테이블 Soft Delete
+        Long boardId = post.getBoard().getBoardId();
+        if (boardId == 1L) {
+            // 자치회 활동 후기는 CouncilReviewPostController 사용
+            throw new CustomException(PostErrorCode.INVALID_BOARD);
+        } else if (boardId == 2L) {
+            // 멘토링 후기
+            MentoringPost mentoringPost = mentoringPostRepository.findByPostId(postId)
+                    .orElseThrow(() -> new CustomException(PostErrorCode.POST_NOT_FOUND));
+            mentoringPost.softDelete();  // 내부에서 post.softDelete() 호출됨
+            log.info("멘토링 후기 삭제 - mentoringPostId: {}", mentoringPost.getMentoringPostId());
+        } else if (boardId == 3L) {
+            // 고민상담
+            CounselingPost counselingPost = counselingPostRepository.findByPostId(postId)
+                    .orElseThrow(() -> new CustomException(PostErrorCode.POST_NOT_FOUND));
+            counselingPost.softDelete();  // 내부에서 post.softDelete() 호출됨
+            log.info("고민상담 삭제 - counselingPostId: {}", counselingPost.getCounselingPostId());
+        } else if (boardId == 4L) {
+            // 재단소식
+            NoticePost noticePost = noticePostRepository.findByPostId(postId)
+                    .orElseThrow(() -> new CustomException(PostErrorCode.POST_NOT_FOUND));
+            noticePost.softDelete();  // 내부에서 post.softDelete() 호출됨
+            log.info("재단소식 삭제 - noticePostId: {}", noticePost.getNoticePostId());
+        }
     }
 
     // 게시판별 카테고리 검증

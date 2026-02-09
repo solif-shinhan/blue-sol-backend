@@ -30,7 +30,6 @@ public interface MentoringRequestRepository extends JpaRepository<MentoringReque
     @Query("SELECT mr FROM MentoringRequest mr " +
             "JOIN FETCH mr.mentor m " +
             "JOIN FETCH mr.menteeUser " +
-            "LEFT JOIN FETCH mr.reviewPost " +
             "WHERE mr.mentoringRequestId = :requestId")
     Optional<MentoringRequest> findByIdWithDetails(@Param("requestId") Long requestId);
 }

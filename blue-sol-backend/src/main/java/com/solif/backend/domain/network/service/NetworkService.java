@@ -71,6 +71,14 @@ public class NetworkService {
     private final ObjectMapper objectMapper;
     private final MentoringInteractionRepository mentoringInteractionRepository;
 
+    // Connection에서 상대방 가져오기 (내가 register면 target을, 내가 target이면 register를 반환)
+    private User getOtherUser(Connection conn, User me) {
+        if (conn.getRegister().getUserId().equals(me.getUserId())) {
+            return conn.getTarget();
+        }
+        return conn.getRegister();
+    }
+
     // 나의 교류망 목록 조회
     public NetworkListResponse getMyNetworks(Long userId) {
         User user = findUserById(userId);
@@ -83,51 +91,51 @@ public class NetworkService {
 
         List<NetworkListResponse.FriendSummary> addedFriends = connections.stream()
                 .map(conn -> {
-                    User target = conn.getTarget();
-                    UserProfile profile = findProfileByUser(target);
+                    User other = getOtherUser(conn, user);
+                    UserProfile profile = userProfileRepository.findByUser_UserId(other.getUserId()).orElse(null);
                     return NetworkListResponse.FriendSummary.builder()
-                            .userId(target.getUserId())
-                            .userName(target.getName())
-                            .userCharacter(profile.getUserCharacter())
-                            .characterImageUrl(buildS3Url(profile.getUserCharacter()))
-                            .backgroundPattern(profile.getBackgroundPattern())
-                            .backgroundImageUrl(buildS3Url(profile.getBackgroundPattern()))
+                            .userId(other.getUserId())
+                            .userName(other.getName())
+                            .userCharacter(profile != null ? profile.getUserCharacter() : null)
+                            .characterImageUrl(buildS3Url(profile != null ? profile.getUserCharacter() : null))
+                            .backgroundPattern(profile != null ? profile.getBackgroundPattern() : null)
+                            .backgroundImageUrl(buildS3Url(profile != null ? profile.getBackgroundPattern() : null))
                             .build();
                 })
                 .collect(Collectors.toList());
 
         // 자치회 정보 배치 조회 (N+1 방지)
         List<Long> targetUserIds = connections.stream()
-                .map(conn -> conn.getTarget().getUserId())
+                .map(conn -> getOtherUser(conn, user).getUserId())
                 .collect(Collectors.toList());
         Map<Long, CouncilMember> membershipMap = getCouncilMembershipMap(targetUserIds);
 
         List<NetworkListResponse.NetworkCard> networkCards = connections.stream()
                 .map(conn -> {
-                    User target = conn.getTarget();
-                    UserProfile profile = findProfileByUser(target);
-                    List<String> interests = getInterestsByUser(target);
-                    List<String> mainGoals = convertJsonToList(profile.getMainGoal());
-                    String buttonType = determineButtonType(user, target);
+                    User other = getOtherUser(conn, user);
+                    UserProfile profile = userProfileRepository.findByUser_UserId(other.getUserId()).orElse(null);
+                    List<String> interests = getInterestsByUser(other);
+                    List<String> mainGoals = convertJsonToList(profile != null ? profile.getMainGoal() : null);
+                    String buttonType = determineButtonType(user, other);
 
                     // 자치회 정보 추가
-                    CouncilMember membership = membershipMap.get(target.getUserId());
+                    CouncilMember membership = membershipMap.get(other.getUserId());
 
                     return NetworkListResponse.NetworkCard.builder()
-                            .userId(target.getUserId())
-                            .userName(target.getName())
-                            .userCharacter(profile.getUserCharacter())
-                            .characterImageUrl(buildS3Url(profile.getUserCharacter()))
-                            .backgroundPattern(profile.getBackgroundPattern())
-                            .backgroundImageUrl(buildS3Url(profile.getBackgroundPattern()))
-                            .solidGoalName(profile.getSolidGoalName())
+                            .userId(other.getUserId())
+                            .userName(other.getName())
+                            .userCharacter(profile != null ? profile.getUserCharacter() : null)
+                            .characterImageUrl(buildS3Url(profile != null ? profile.getUserCharacter() : null))
+                            .backgroundPattern(profile != null ? profile.getBackgroundPattern() : null)
+                            .backgroundImageUrl(buildS3Url(profile != null ? profile.getBackgroundPattern() : null))
+                            .solidGoalName(profile != null ? profile.getSolidGoalName() : null)
                             .mainGoals(mainGoals)
                             .interests(interests)
                             .buttonType(buttonType)
                             .isInCouncil(membership != null)
                             .councilName(membership != null ? membership.getCouncil().getCouncilName() : null)
-                            .schoolName(getSchoolOrJob(target))
-                            .joinYear(getJoinYear(target))
+                            .schoolName(getSchoolOrJob(other))
+                            .joinYear(getJoinYear(other))
                             .build();
                 })
                 .collect(Collectors.toList());

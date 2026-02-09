@@ -3,6 +3,7 @@ package com.solif.backend.domain.mentoring.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -14,6 +15,7 @@ import java.util.List;
 public class MentoringCardSendRequest {
 
     @NotBlank(message = "제목은 필수입니다.")
+    @Size(max = 255, message = "제목은 255자 이하여야 합니다.")
     @Schema(description = "엽서 제목", example = "금융권 IB 직무 멘토를 찾고 싶습니다")
     private String cardTitle;
 

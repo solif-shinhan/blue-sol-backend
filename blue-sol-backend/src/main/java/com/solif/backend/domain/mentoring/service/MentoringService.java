@@ -1,6 +1,8 @@
 package com.solif.backend.domain.mentoring.service;
 
 import com.solif.backend.domain.auth.code.AuthErrorCode;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.solif.backend.domain.file.entity.AttachmentPurpose;
 import com.solif.backend.domain.file.entity.FileAttachment;
 import com.solif.backend.domain.file.entity.FileTargetType;
@@ -50,9 +52,18 @@ public class MentoringService {
     private final MentoringCardRepository mentoringCardRepository;
     private final FileService fileService;
     private final MentoringInteractionRepository mentoringInteractionRepository;
+    private final ObjectMapper objectMapper;
 
     @Value("${cloud.aws.region.static}")
     private String region;
+
+    @Value("${cloud.aws.s3.bucket}")
+    private String bucket;
+
+    private String buildS3Url(String key) {
+        if (key == null || key.isBlank()) return null;
+        return String.format("https://%s.s3.%s.amazonaws.com/%s", bucket, region, key);
+    }
 
     // 전문가 멘토 목록 조회
     public List<MentorListResponse> getMentors() {
@@ -376,15 +387,42 @@ public class MentoringService {
 
         UserProfile profile = profileMap.get(user.getUserId());
         List<String> interests = interestMap.getOrDefault(user.getUserId(), List.of());
+        List<String> mainGoals = convertJsonToList(profile != null ? profile.getMainGoal() : null);
+
+        // 학교명 또는 직업 (GRADUATE 이상이면 직업)
+        String schoolOrJob;
+        if (user.getUserRole() == User.UserRole.GRADUATE || user.getUserRole() == User.UserRole.MASTER) {
+            schoolOrJob = user.getJob();
+        } else {
+            schoolOrJob = user.getSchoolName();
+        }
+
+        Integer joinYear = user.getCreatedAt() != null ? user.getCreatedAt().getYear() : null;
 
         return MentoringHomeResponse.SeniorJuniorMentoringResponse.UserCardResponse.builder()
                 .userId(user.getUserId())
                 .userName(user.getName())
-                .character(profile != null ? profile.getUserCharacter() : null)
+                .userCharacter(profile != null ? profile.getUserCharacter() : null)
+                .characterImageUrl(buildS3Url(profile != null ? profile.getUserCharacter() : null))
                 .backgroundPattern(profile != null ? profile.getBackgroundPattern() : null)
+                .backgroundImageUrl(buildS3Url(profile != null ? profile.getBackgroundPattern() : null))
                 .solidGoalName(profile != null ? profile.getSolidGoalName() : null)
                 .interests(interests)
+                .mainGoals(mainGoals)
+                .schoolName(schoolOrJob)
+                .joinYear(joinYear)
                 .status(status)
                 .build();
+    }
+
+    // JSON 문자열을 List로 변환
+    private List<String> convertJsonToList(String json) {
+        if (json == null || json.isBlank()) return List.of();
+        try {
+            return objectMapper.readValue(json, new TypeReference<List<String>>() {});
+        } catch (Exception e) {
+            log.warn("mainGoal JSON 파싱 실패: {}", json, e);
+            return List.of();
+        }
     }
 }

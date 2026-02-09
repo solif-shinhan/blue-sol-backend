@@ -102,20 +102,8 @@ public class MentoringService {
                 .orElseThrow(() -> new CustomException(MentoringErrorCode.MENTOR_NOT_FOUND));
 
         // Enum 변환
-        MentoringCategory category;
-        MentoringMethod method;
-
-        try {
-            category = MentoringCategory.valueOf(request.getCategory().toUpperCase());
-        } catch (IllegalArgumentException e) {
-            throw new CustomException(MentoringErrorCode.INVALID_CATEGORY);
-        }
-
-        try {
-            method = MentoringMethod.valueOf(request.getMethod().toUpperCase());
-        } catch (IllegalArgumentException e) {
-            throw new CustomException(MentoringErrorCode.INVALID_METHOD);
-        }
+        MentoringCategory category = request.getCategory();
+        MentoringMethod method = request.getMethod();
 
         // 멘토링 신청 생성
         MentoringRequest mentoringRequest = MentoringRequest.builder()
@@ -252,20 +240,8 @@ public class MentoringService {
                 .orElseThrow(() -> new CustomException(AuthErrorCode.USER_NOT_FOUND));
 
         // Enum 변환
-        MentoringCategory category;
-        MentoringMethod method;
-
-        try {
-            category = MentoringCategory.valueOf(request.getCategory().toUpperCase());
-        } catch (IllegalArgumentException e) {
-            throw new CustomException(MentoringErrorCode.INVALID_CATEGORY);
-        }
-
-        try {
-            method = MentoringMethod.valueOf(request.getMethod().toUpperCase());
-        } catch (IllegalArgumentException e) {
-            throw new CustomException(MentoringErrorCode.INVALID_METHOD);
-        }
+        MentoringCategory category = request.getCategory();
+        MentoringMethod method = request.getMethod();
 
         // 멘토링 엽서 생성
         MentoringCard card = MentoringCard.builder()

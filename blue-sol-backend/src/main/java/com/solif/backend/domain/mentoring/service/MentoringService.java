@@ -140,7 +140,37 @@ public class MentoringService {
         return requests.map(MentoringRequestListResponse::from);
     }
 
-    // 받은 신청서 목록 조회 (답변이 있는 것만)
+    // 멘토링 신청서 상세 조회
+    public MentoringRequestDetailResponse getRequestDetail(Long userId, Long requestId) {
+        log.info("멘토링 신청서 상세 조회 - userId: {}, requestId: {}", userId, requestId);
+
+        // 신청서 조회
+        MentoringRequest request = mentoringRequestRepository.findByIdWithDetails(requestId)
+                .orElseThrow(() -> new CustomException(MentoringErrorCode.MENTORING_REQUEST_NOT_FOUND));
+
+        // 권한 확인 (신청자 본인만 조회 가능)
+        if (!request.isMentee(userId)) {
+            throw new CustomException(MentoringErrorCode.UNAUTHORIZED_REQUEST_ACCESS);
+        }
+
+        // 멘토 프로필 이미지 조회
+        String mentorProfileImageUrl = null;
+        Optional<FileAttachment> profileImage = fileAttachmentRepository
+                .findByFileTargetTypeAndTargetIdAndSortOrderAndPurpose(
+                        FileTargetType.MENTOR_PROFILE,
+                        request.getMentor().getMentorId(),
+                        1,
+                        AttachmentPurpose.PROFILE_IMAGE
+                );
+
+        if (profileImage.isPresent()) {
+            mentorProfileImageUrl = profileImage.get().getFile().getUrl(region);
+        }
+
+        return MentoringRequestDetailResponse.from(request, mentorProfileImageUrl);
+    }
+
+    // 내가 받은 답변 목록 조회
     public Slice<MentoringRequestListResponse> getReceivedRequests(Long userId, Pageable pageable) {
         log.info("받은 신청서 목록 조회 - userId: {}", userId);
 
@@ -296,36 +326,6 @@ public class MentoringService {
                 .toList();
 
         return MentoringCardDetailResponse.from(card, fileUrls);
-    }
-
-    // 멘토링 신청서 상세 조회
-    public MentoringRequestDetailResponse getRequestDetail(Long userId, Long requestId) {
-        log.info("멘토링 신청서 상세 조회 - userId: {}, requestId: {}", userId, requestId);
-
-        // 신청서 조회
-        MentoringRequest request = mentoringRequestRepository.findByIdWithDetails(requestId)
-                .orElseThrow(() -> new CustomException(MentoringErrorCode.MENTORING_REQUEST_NOT_FOUND));
-
-        // 권한 확인 (신청자 본인만 조회 가능)
-        if (!request.isMentee(userId)) {
-            throw new CustomException(MentoringErrorCode.UNAUTHORIZED_REQUEST_ACCESS);
-        }
-
-        // 멘토 프로필 이미지 조회
-        String mentorProfileImageUrl = null;
-        Optional<FileAttachment> profileImage = fileAttachmentRepository
-                .findByFileTargetTypeAndTargetIdAndSortOrderAndPurpose(
-                        FileTargetType.MENTOR_PROFILE,
-                        request.getMentor().getMentorId(),
-                        1,
-                        AttachmentPurpose.PROFILE_IMAGE
-                );
-
-        if (profileImage.isPresent()) {
-            mentorProfileImageUrl = profileImage.get().getFile().getUrl(region);
-        }
-
-        return MentoringRequestDetailResponse.from(request, mentorProfileImageUrl);
     }
 
     // === Helper Methods ===

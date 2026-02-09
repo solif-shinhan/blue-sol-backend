@@ -71,7 +71,21 @@ public class MentoringController {
     }
 
     @Operation(
-            summary = "받은 신청서 목록 조회",
+            summary = "멘토링 신청서 상세 조회",
+            description = "멘토링 신청서의 상세 내용을 조회합니다. 신청자 본인만 조회 가능합니다.",
+            security = @SecurityRequirement(name = "Bearer Authentication")
+    )
+    @GetMapping("/requests/{requestId}")
+    public ResponseEntity<SuccessResponse<MentoringRequestDetailResponse>> getRequestDetail(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable Long requestId
+    ) {
+        MentoringRequestDetailResponse response = mentoringService.getRequestDetail(userId, requestId);
+        return ResponseFactory.success(MentoringSuccessCode.MENTORING_REQUEST_DETAIL_SUCCESS, response);
+    }
+
+    @Operation(
+            summary = "내가 받은 답변 목록 조회",
             description = "내가 보낸 멘토링 신청서 중 관리자가 답변을 작성한 신청서 목록을 조회합니다.",
             security = @SecurityRequirement(name = "Bearer Authentication")
     )
@@ -141,19 +155,5 @@ public class MentoringController {
     ) {
         MentoringCardDetailResponse response = mentoringService.getCardDetail(userId, cardId);
         return ResponseFactory.success(MentoringSuccessCode.MENTORING_CARD_DETAIL_SUCCESS, response);
-    }
-
-    @Operation(
-            summary = "멘토링 신청서 상세 조회",
-            description = "멘토링 신청서의 상세 내용을 조회합니다. 신청자 본인만 조회 가능합니다.",
-            security = @SecurityRequirement(name = "Bearer Authentication")
-    )
-    @GetMapping("/requests/{requestId}")
-    public ResponseEntity<SuccessResponse<MentoringRequestDetailResponse>> getRequestDetail(
-            @AuthenticationPrincipal Long userId,
-            @PathVariable Long requestId
-    ) {
-        MentoringRequestDetailResponse response = mentoringService.getRequestDetail(userId, requestId);
-        return ResponseFactory.success(MentoringSuccessCode.MENTORING_REQUEST_DETAIL_SUCCESS, response);
     }
 }

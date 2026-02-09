@@ -105,7 +105,12 @@ public class MentoringService {
 
         Slice<MentoringRequest> requests = mentoringRequestRepository.findSentRequests(userId, pageable);
 
-        return requests.map(MentoringRequestListResponse::from);
+        return requests.map(request ->
+                MentoringRequestListResponse.from(
+                        request,
+                        request.getMentor().getProfileImageFile()
+                )
+        );
     }
 
     // 멘토링 신청서 상세 조회
@@ -133,7 +138,12 @@ public class MentoringService {
 
         Slice<MentoringRequest> requests = mentoringRequestRepository.findReceivedRequests(userId, pageable);
 
-        return requests.map(MentoringRequestListResponse::from);
+        return requests.map(request ->
+                MentoringRequestListResponse.from(
+                        request,
+                        request.getMentor().getProfileImageFile()
+                )
+        );
     }
 
     // 멘토링 홈 조회

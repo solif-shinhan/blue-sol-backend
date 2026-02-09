@@ -21,6 +21,9 @@ public class MentoringRequestListResponse {
     @Schema(description = "멘토 직함", example = "멘토 SO&L 글로벌자산운용 대표")
     private String mentorTitle;
 
+    @Schema(description = "멘토 프로필 이미지 URL")
+    private String mentorProfileImageUrl;
+
     @Schema(description = "카테고리", example = "STUDY")
     private String category;
 
@@ -44,11 +47,12 @@ public class MentoringRequestListResponse {
     @Schema(description = "답변 일시", example = "2026-02-10T15:00:00", nullable = true)
     private LocalDateTime repliedAt;
 
-    public static MentoringRequestListResponse from(MentoringRequest request) {
+    public static MentoringRequestListResponse from(MentoringRequest request, String mentorProfileImageUrl) {
         return MentoringRequestListResponse.builder()
                 .mentoringRequestId(request.getMentoringRequestId())
                 .mentorName(request.getMentor().getMentorName())
                 .mentorTitle(request.getMentor().getMentorTitle())
+                .mentorProfileImageUrl(mentorProfileImageUrl)
                 .category(request.getCategory().name())
                 .method(request.getMethod().name())
                 .status(request.getStatus().name())

@@ -52,6 +52,7 @@ public class MentoringService {
     private final MentoringCardRepository mentoringCardRepository;
     private final FileService fileService;
     private final MentoringInteractionRepository mentoringInteractionRepository;
+    private final ObjectMapper objectMapper;
 
     @Value("${cloud.aws.region.static}")
     private String region;
@@ -418,8 +419,7 @@ public class MentoringService {
     private List<String> convertJsonToList(String json) {
         if (json == null || json.isBlank()) return List.of();
         try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            return objectMapper.readValue(json, new com.fasterxml.jackson.core.type.TypeReference<List<String>>() {});
+            return objectMapper.readValue(json, new TypeReference<List<String>>() {});
         } catch (Exception e) {
             log.warn("mainGoal JSON 파싱 실패: {}", json, e);
             return List.of();

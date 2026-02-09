@@ -1,5 +1,10 @@
 package com.solif.backend.domain.message.service;
 
+import com.solif.backend.domain.file.entity.AttachmentPurpose;
+import com.solif.backend.domain.file.entity.FileAttachment;
+import com.solif.backend.domain.file.entity.FileTargetType;
+import com.solif.backend.domain.file.repository.FileAttachmentRepository;
+import com.solif.backend.domain.file.service.FileService;
 import com.solif.backend.domain.notification.entity.NotificationType;
 import com.solif.backend.domain.notification.entity.TargetType;
 import com.solif.backend.domain.notification.event.NotificationEvent;
@@ -13,13 +18,13 @@ import com.solif.backend.domain.user.repository.UserRepository;
 import com.solif.backend.global.common.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
 import java.util.List;
 
 @Slf4j
@@ -31,7 +36,11 @@ public class MessageService {
     private final MessageRepository messageRepository;
     private final UserRepository userRepository;
     private final ApplicationEventPublisher eventPublisher;
-    // TODO: FileAttachmentRepository 추가 (파일 첨부 기능 구현 시)
+    private final FileService fileService;
+    private final FileAttachmentRepository fileAttachmentRepository;
+
+    @Value("${cloud.aws.region.static}")
+    private String region;
 
     // 쪽지 발송
     @Transactional
@@ -60,6 +69,16 @@ public class MessageService {
                 .build();
 
         Message savedMessage = messageRepository.save(message);
+
+        // 파일 확정 (fileIds가 있으면)
+        if (request.getFileIds() != null && !request.getFileIds().isEmpty()) {
+            fileService.confirmFiles(
+                    request.getFileIds(),
+                    FileTargetType.MESSAGE,
+                    savedMessage.getMessageId(),
+                    AttachmentPurpose.MESSAGE_ATTACHMENT
+            );
+        }
 
         // 수신자에게 알림 생성 + SSE 실시간 전송 (트랜잭션 커밋 후 이벤트 리스너에서 처리)
         eventPublisher.publishEvent(new NotificationEvent(
@@ -119,11 +138,15 @@ public class MessageService {
             throw new CustomException(MessageErrorCode.ALREADY_DELETED_MESSAGE);
         }
 
-        // TODO: 첨부 파일 URL 조회
-        List<String> fileUrls = Collections.emptyList();
-        // List<String> fileUrls = fileAttachmentService.getFileUrls("MESSAGE", messageId);
+        // 첨부 파일 URL 조회
+        List<FileAttachment> attachments = fileAttachmentRepository
+                .findByFileTargetTypeAndTargetIdOrderBySortOrder(FileTargetType.MESSAGE, messageId);
 
-        return MessageDetailResponse.from(message, fileUrls);
+        List<String> imageUrls = attachments.stream()
+                .map(attachment -> attachment.getFile().getUrl(region))
+                .toList();
+
+        return MessageDetailResponse.from(message, imageUrls);
     }
 
     // 쪽지 삭제

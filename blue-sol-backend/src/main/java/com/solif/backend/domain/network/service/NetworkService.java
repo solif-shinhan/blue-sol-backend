@@ -7,6 +7,9 @@ import com.solif.backend.domain.council.entity.CouncilMember;
 import com.solif.backend.domain.council.repository.CouncilMemberRepository;
 import com.solif.backend.domain.interest.entity.UserInterest;
 import com.solif.backend.domain.interest.repository.UserInterestRepository;
+import com.solif.backend.domain.mentoring.entity.MentoringInteraction;
+import com.solif.backend.domain.mentoring.entity.MentoringInteractionType;
+import com.solif.backend.domain.mentoring.repository.MentoringInteractionRepository;
 import com.solif.backend.domain.network.dto.*;
 import com.solif.backend.domain.network.entity.Connection;
 import com.solif.backend.domain.network.entity.ConnectionStatus;
@@ -66,6 +69,7 @@ public class NetworkService {
     private final UserInterestRepository userInterestRepository;
     private final CouncilMemberRepository councilMemberRepository;
     private final ObjectMapper objectMapper;
+    private final MentoringInteractionRepository mentoringInteractionRepository;
 
     // Connection에서 상대방 가져오기 (내가 register면 target을, 내가 target이면 register를 반환)
     private User getOtherUser(Connection conn, User me) {
@@ -232,9 +236,34 @@ public class NetworkService {
             throw new CustomException(NetworkErrorCode.INVALID_INTERACTION_TYPE);
         }
 
-        // 역할 기반 상호작용 타입 검증
-        validateInteractionType(sender, receiver, notificationType);
+        // Enum 변환
+        MentoringInteractionType interactionType;
+        try {
+            interactionType = MentoringInteractionType.valueOf(request.getInteractionType().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new CustomException(NetworkErrorCode.INVALID_INTERACTION_TYPE);
+        }
 
+        // 역할 기반 상호작용 타입 검증
+        validateInteractionType(sender, receiver, interactionType);
+
+        // 이미 보냈는지 확인 (중복 방지)
+        boolean alreadySent = mentoringInteractionRepository.existsBySender_UserIdAndReceiver_UserIdAndInteractionType(
+                sender.getUserId(), receiver.getUserId(), interactionType);
+
+        if (alreadySent) {
+            throw new CustomException(NetworkErrorCode.INTERACTION_ALREADY_SENT);
+        }
+
+        // DB에 상호작용 저장
+        MentoringInteraction interaction = MentoringInteraction.builder()
+                .sender(sender)
+                .receiver(receiver)
+                .interactionType(interactionType)
+                .build();
+        mentoringInteractionRepository.save(interaction);
+
+        // 알림 메시지 설정
         if (notificationType == NotificationType.CHEER) {
             title = "응원이 도착했어요!";
             content = sender.getName() + "님이 응원을 보냈어요";
@@ -398,17 +427,22 @@ public class NetworkService {
         };
     }
 
-    private void validateInteractionType(User sender, User receiver, NotificationType type) {
-        int senderLevel = getRoleLevel(sender.getUserRole());
-        int receiverLevel = getRoleLevel(receiver.getUserRole());
-
-        // CHEER는 보내는 사람이 받는 사람보다 윗 역할일 때만 가능
-        if (type == NotificationType.CHEER && senderLevel <= receiverLevel) {
+    private void validateInteractionType(User sender, User receiver, MentoringInteractionType type) {
+        // MASTER(관리자) 제외
+        if (sender.getUserRole() == User.UserRole.MASTER || receiver.getUserRole() == User.UserRole.MASTER) {
             throw new CustomException(NetworkErrorCode.INTERACTION_NOT_ALLOWED);
         }
 
-        // HELP는 보내는 사람이 받는 사람과 같거나 아래 역할일 때만 가능
-        if (type == NotificationType.HELP && senderLevel > receiverLevel) {
+        int senderLevel = getRoleLevel(sender.getUserRole());
+        int receiverLevel = getRoleLevel(receiver.getUserRole());
+
+        // CHEER(응원하기)는 받는 사람이 보내는 사람보다 선배일 때만 가능
+        if (type == MentoringInteractionType.CHEER && receiverLevel <= senderLevel) {
+            throw new CustomException(NetworkErrorCode.INTERACTION_NOT_ALLOWED);
+        }
+
+        // HELP(경험나누기)는 받는 사람이 보내는 사람과 같거나 후배일 때만 가능
+        if (type == MentoringInteractionType.HELP && receiverLevel > senderLevel) {
             throw new CustomException(NetworkErrorCode.INTERACTION_NOT_ALLOWED);
         }
     }

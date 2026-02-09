@@ -15,4 +15,7 @@ public interface UserInterestRepository extends JpaRepository<UserInterest, Long
 
     // 특정 관심사를 가진 사용자 조회
     List<UserInterest> findAllByCategoryNameIn(List<String> categoryNames);
+
+    // 여러 사용자 ID로 관심사 배치 조회
+    List<UserInterest> findAllByUser_UserIdIn(List<Long> userIds);
 }

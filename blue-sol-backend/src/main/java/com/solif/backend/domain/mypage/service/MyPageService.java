@@ -149,7 +149,7 @@ public class MyPageService {
 
         // 썸네일 이미지 배치 조회 (sortOrder=1, purpose=POST_ATTACHMENT)
         List<FileAttachment> thumbnails = fileAttachmentRepository
-                .findByFileTargetTypeAndTargetIdInAndSortOrderAndPurpose(
+                .findByFileTargetTypeAndFileTargetIdInAndSortOrderAndPurpose(
                         FileTargetType.COUNCIL_POST,  // ← 이 부분 수정!
                         councilReviewPostIds,  // ← postId가 아니라 councilReviewPostId
                         1,
@@ -159,7 +159,7 @@ public class MyPageService {
         // councilReviewPostId -> thumbnailUrl 맵 생성
         Map<Long, String> thumbnailMap = thumbnails.stream()
                 .collect(Collectors.toMap(
-                        FileAttachment::getTargetId,
+                        FileAttachment::getFileTargetId,
                         fa -> fa.getFile().getUrl(region),
                         (existing, replacement) -> existing  // 중복 키 발생 시 첫 번째 값 유지
                 ));

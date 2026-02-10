@@ -15,7 +15,11 @@ public enum PostCategory {
 
     // 장학재단 소식 카테고리
     NOTICE("운영공지"),
-    PROGRAM("프로그램");
+    PROGRAM("프로그램"),
+
+    // 장학 프로그램 카테고리
+    REQUIRED("필수 프로그램"),
+    OPTIONAL("선택 프로그램");
 
     private final String description;
 }

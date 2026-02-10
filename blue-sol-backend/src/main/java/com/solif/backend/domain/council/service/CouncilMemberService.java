@@ -10,11 +10,15 @@ import com.solif.backend.domain.council.entity.CouncilMember;
 import com.solif.backend.domain.council.entity.CouncilMemberRole;
 import com.solif.backend.domain.council.repository.CouncilMemberRepository;
 import com.solif.backend.domain.council.repository.CouncilRepository;
+import com.solif.backend.domain.notification.entity.NotificationType;
+import com.solif.backend.domain.notification.entity.NotificationTargetType;
+import com.solif.backend.domain.notification.event.NotificationEvent;
 import com.solif.backend.domain.user.entity.User;
 import com.solif.backend.domain.user.repository.UserRepository;
 import com.solif.backend.global.common.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +35,7 @@ public class CouncilMemberService {
     private final CouncilRepository councilRepository;
     private final CouncilMemberRepository councilMemberRepository;
     private final UserRepository userRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     // 자치회 멤버 목록 조회
     public MemberListResponse getMembers(Long councilId) {
@@ -116,7 +121,36 @@ public class CouncilMemberService {
         // 총 멤버 수 조회
         Long totalMemberCount = councilMemberRepository.countByCouncil(council);
 
-        // 알림 발송 (TODO: 나중에 구현)
+        // 알림 발송: 새로 추가된 멤버에게 초대 알림
+        String councilName = council.getCouncilName();
+        for (CouncilMember newMember : newMembers) {
+            eventPublisher.publishEvent(new NotificationEvent(
+                    newMember.getUser().getUserId(),
+                    NotificationType.COUNCIL_INVITE,
+                    NotificationTargetType.COUNCIL,
+                    councilId,
+                    "자치회에 초대되었어요!",
+                    "'" + currentUser.getName() + "' 팀장이 [" + councilName + "]에 초대했어요. 수락하러 갈까요?"
+            ));
+        }
+
+        // 알림 발송: 기존 멤버에게 새 멤버 추가 알림
+        List<Long> existingMemberIds = councilMemberRepository.findUserIdsByCouncilId(councilId);
+        for (Long memberId : existingMemberIds) {
+            // 리더 본인과 새로 추가된 멤버 제외
+            boolean isNewMember = newMembers.stream()
+                    .anyMatch(nm -> nm.getUser().getUserId().equals(memberId));
+            if (!memberId.equals(userId) && !isNewMember) {
+                eventPublisher.publishEvent(new NotificationEvent(
+                        memberId,
+                        NotificationType.COUNCIL_MEMBER_ADD,
+                        NotificationTargetType.COUNCIL_MEMBER,
+                        councilId,
+                        "새로운 멤버가 합류했어요!",
+                        "새로운 멤버가 " + councilName + "에 합류했습니다. 환영해 주세요!"
+                ));
+            }
+        }
 
         return AddMemberResponse.of(councilId, newMembers.size(), totalMemberCount.intValue());
     }
@@ -159,5 +193,15 @@ public class CouncilMemberService {
 
         // 멤버 삭제
         councilMemberRepository.delete(memberToDelete);
+
+        // 알림 발송: 강퇴된 멤버에게 알림
+        eventPublisher.publishEvent(new NotificationEvent(
+                userIdToDelete,
+                NotificationType.COUNCIL_MEMBER_REMOVE,
+                NotificationTargetType.COUNCIL_MEMBER,
+                councilId,
+                "[" + council.getCouncilName() + "] 멤버 명단에서 제외되었습니다.",
+                "[" + council.getCouncilName() + "] 멤버 명단에서 제외되었습니다."
+        ));
     }
 }

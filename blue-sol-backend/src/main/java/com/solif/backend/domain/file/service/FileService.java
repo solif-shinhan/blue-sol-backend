@@ -107,7 +107,7 @@ public class FileService {
      */
     @Transactional
     public List<FileAttachmentResponse> confirmFiles(List<Long> fileIds, FileTargetType fileTargetType,
-                                                     Long targetId, AttachmentPurpose purpose) {
+                                                     Long fileTargetId, AttachmentPurpose purpose) {
         if (fileIds == null || fileIds.isEmpty()) {
             return new ArrayList<>();
         }
@@ -130,7 +130,7 @@ public class FileService {
             FileAttachment attachment = FileAttachment.builder()
                     .file(file)
                     .fileTargetType(fileTargetType)
-                    .targetId(targetId)
+                    .fileTargetId(fileTargetId)
                     .purpose(purpose)
                     .sortOrder(sortOrder++)
                     .build();
@@ -140,7 +140,7 @@ public class FileService {
         }
 
         log.info("{}개의 파일 확정 완료 - targetType: {}, targetId: {}",
-                files.size(), fileTargetType, targetId);
+                files.size(), fileTargetType, fileTargetId);
         return responses;
     }
 
@@ -182,7 +182,7 @@ public class FileService {
         FileAttachment attachment = FileAttachment.builder()
                 .file(file)
                 .fileTargetType(request.getFileTargetType())
-                .targetId(request.getTargetId())
+                .fileTargetId(request.getFileId())
                 .purpose(request.getPurpose())
                 .sortOrder(request.getSortOrder())
                 .build();
@@ -215,7 +215,7 @@ public class FileService {
      */
     public List<FileAttachmentResponse> getAttachments(FileTargetType fileTargetType, Long targetId) {
         List<FileAttachment> attachments = fileAttachmentRepository
-                .findByFileTargetTypeAndTargetIdOrderBySortOrder(fileTargetType, targetId);
+                .findByFileTargetTypeAndFileTargetIdOrderBySortOrder(fileTargetType, targetId);
 
         return attachments.stream()
                 .map(attachment -> FileAttachmentResponse.from(attachment, region))

@@ -10,11 +10,15 @@ import com.solif.backend.domain.council.entity.CouncilRule;
 import com.solif.backend.domain.council.repository.CouncilMemberRepository;
 import com.solif.backend.domain.council.repository.CouncilRepository;
 import com.solif.backend.domain.council.repository.CouncilRuleRepository;
+import com.solif.backend.domain.notification.entity.NotificationType;
+import com.solif.backend.domain.notification.entity.NotificationTargetType;
+import com.solif.backend.domain.notification.event.NotificationEvent;
 import com.solif.backend.domain.user.entity.User;
 import com.solif.backend.domain.user.repository.UserRepository;
 import com.solif.backend.global.common.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +37,7 @@ public class CouncilService {
     private final CouncilMemberRepository councilMemberRepository;
     private final CouncilRuleRepository councilRuleRepository;
     private final UserRepository userRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     // 자치회 목록 조회
     public CouncilListResponse getCouncils(Long userId) {
@@ -215,7 +220,24 @@ public class CouncilService {
             councilRuleRepository.saveAll(rules);
         }
 
-        // 알림 발송
+        // 알림 발송: 초대된 멤버들에게 초대 알림
+        if (request.getMemberUserIds() != null && !request.getMemberUserIds().isEmpty()) {
+            List<Long> memberIds = request.getMemberUserIds().stream()
+                    .filter(id -> !id.equals(userId))
+                    .distinct()
+                    .collect(Collectors.toList());
+
+            for (Long memberId : memberIds) {
+                eventPublisher.publishEvent(new NotificationEvent(
+                        memberId,
+                        NotificationType.COUNCIL_INVITE,
+                        NotificationTargetType.COUNCIL,
+                        savedCouncil.getCouncilId(),
+                        "자치회에 초대되었어요!",
+                        "'" + leader.getName() + "' 팀장이 [" + savedCouncil.getCouncilName() + "]에 초대했어요. 수락하러 갈까요?"
+                ));
+            }
+        }
 
         return CouncilCreateResponse.from(savedCouncil, addedMemberCount + 1);
     }
@@ -251,5 +273,20 @@ public class CouncilService {
                 request.getTotalBudget(),
                 request.getProfileImageFileId()
         );
+
+        // 알림 발송: 팀원 전체에게 홈 편집 알림 (리더 제외)
+        List<Long> memberUserIds = councilMemberRepository.findUserIdsByCouncilId(councilId);
+        for (Long memberId : memberUserIds) {
+            if (!memberId.equals(userId)) {
+                eventPublisher.publishEvent(new NotificationEvent(
+                        memberId,
+                        NotificationType.COUNCIL_HOME_EDIT,
+                        NotificationTargetType.COUNCIL,
+                        councilId,
+                        "우리 자치회 홈이 새롭게 단장했어요!",
+                        "우리 자치회 홈이 새롭게 단장했어요!"
+                ));
+            }
+        }
     }
 }

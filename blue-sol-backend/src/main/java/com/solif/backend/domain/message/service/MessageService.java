@@ -8,7 +8,7 @@ import com.solif.backend.domain.file.service.FileService;
 import com.solif.backend.domain.mission.entity.MissionConditionType;
 import com.solif.backend.domain.mission.service.MissionService;
 import com.solif.backend.domain.notification.entity.NotificationType;
-import com.solif.backend.domain.notification.entity.TargetType;
+import com.solif.backend.domain.notification.entity.NotificationTargetType;
 import com.solif.backend.domain.notification.event.NotificationEvent;
 import com.solif.backend.domain.auth.code.AuthErrorCode;
 import com.solif.backend.domain.message.code.MessageErrorCode;
@@ -90,7 +90,7 @@ public class MessageService {
         eventPublisher.publishEvent(new NotificationEvent(
                 request.getReceiverId(),
                 NotificationType.MESSAGE,
-                TargetType.MESSAGE,
+                NotificationTargetType.MESSAGE,
                 savedMessage.getMessageId(),
                 "새로운 쪽지가 도착했습니다.",
                 savedMessage.getMessageTitle()
@@ -146,7 +146,7 @@ public class MessageService {
 
         // 첨부 파일 URL 조회
         List<FileAttachment> attachments = fileAttachmentRepository
-                .findByFileTargetTypeAndTargetIdOrderBySortOrder(FileTargetType.MESSAGE, messageId);
+                .findByFileTargetTypeAndFileTargetIdOrderBySortOrder(FileTargetType.MESSAGE, messageId);
 
         List<String> imageUrls = attachments.stream()
                 .map(attachment -> attachment.getFile().getUrl(region))

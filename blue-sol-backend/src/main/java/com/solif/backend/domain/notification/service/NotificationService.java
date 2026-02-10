@@ -60,7 +60,7 @@ public class NotificationService {
      //알림 생성 후 실시간 전송
      //다른 도메인 서비스(MessageService 등)에서 호출합니다.
     @Transactional
-    public Notification send(Long receiverUserId, NotificationType type, TargetType targetType,
+    public Notification send(Long receiverUserId, NotificationType type, NotificationTargetType notificationTargetType,
                              Long targetId, String title, String content) {
 
         User receiver = userRepository.findById(receiverUserId)
@@ -70,7 +70,7 @@ public class NotificationService {
         Notification notification = Notification.builder()
                 .receiver(receiver)
                 .notificationType(type)
-                .targetType(targetType)
+                .notificationTargetType(notificationTargetType)
                 .targetId(targetId)
                 .notificationTitle(title)
                 .notificationContent(content)

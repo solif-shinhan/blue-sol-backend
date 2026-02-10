@@ -25,7 +25,7 @@ public class FileAttachmentResponse {
                 .originalName(attachment.getFile().getOriginalName())
                 .url(attachment.getFile().getUrl(region))
                 .fileTargetType(attachment.getFileTargetType())
-                .targetId(attachment.getTargetId())
+                .targetId(attachment.getFileTargetId())
                 .purpose(attachment.getPurpose())
                 .sortOrder(attachment.getSortOrder())
                 .build();

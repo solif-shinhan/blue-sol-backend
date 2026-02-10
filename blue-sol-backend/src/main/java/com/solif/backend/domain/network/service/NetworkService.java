@@ -18,7 +18,7 @@ import com.solif.backend.domain.network.entity.ConnectionStatus;
 import com.solif.backend.domain.network.code.NetworkErrorCode;
 import com.solif.backend.domain.network.repository.ConnectionRepository;
 import com.solif.backend.domain.notification.entity.NotificationType;
-import com.solif.backend.domain.notification.entity.TargetType;
+import com.solif.backend.domain.notification.entity.NotificationTargetType;
 import com.solif.backend.domain.notification.service.NotificationService;
 import com.solif.backend.domain.profile.entity.UserProfile;
 import com.solif.backend.domain.profile.repository.UserProfileRepository;
@@ -180,7 +180,7 @@ public class NetworkService {
         notificationService.send(
                 targetUser.getUserId(),
                 NotificationType.CONNECTION,
-                TargetType.NETWORK,
+                NotificationTargetType.NETWORK,
                 scanner.getUserId(),
                 "교류망에 추가되었어요!",
                 scanner.getName() + "님이 교류망에 나를 추가했어요"
@@ -285,7 +285,7 @@ public class NetworkService {
                 notificationService.send(
                         receiver.getUserId(),
                         notificationType,
-                        TargetType.NETWORK,
+                        NotificationTargetType.NETWORK,
                         sender.getUserId(),
                         title,
                         content
@@ -305,13 +305,16 @@ public class NetworkService {
         User user = findUserById(userId);
         List<String> myInterests = getInterestsByUser(user);
 
-        // 나와 같은 관심사를 가진 사용자 조회
-        List<NetworkRecommendationResponse.RecommendedUser> interestBasedUsers =
-                findUsersWithSameInterests(user, myInterests);
+        // 이미 교류망에 추가된 사용자 ID 목록 조회
+        Set<Long> connectedUserIds = getConnectedUserIds(user);
 
-        // 전체 사용자 둘러보기 (본인 제외)
+        // 나와 같은 관심사를 가진 사용자 조회 (이미 추가된 사용자 제외)
+        List<NetworkRecommendationResponse.RecommendedUser> interestBasedUsers =
+                findUsersWithSameInterests(user, myInterests, connectedUserIds);
+
+        // 전체 사용자 둘러보기 (본인 및 이미 추가된 사용자 제외)
         List<NetworkRecommendationResponse.RecommendedUser> allUsersList =
-                findAllUsersExcept(user);
+                findAllUsersExcept(user, connectedUserIds);
 
         return NetworkRecommendationResponse.builder()
                 .interestBased(NetworkRecommendationResponse.RecommendationGroup.builder()
@@ -398,6 +401,18 @@ public class NetworkService {
                 .collect(Collectors.toList());
     }
 
+    // 이미 교류망에 연결된 사용자 ID 목록 조회
+    private Set<Long> getConnectedUserIds(User user) {
+        List<Connection> connections =
+                connectionRepository.findAllByRegisterAndStatusOrTargetAndStatus(
+                        user, ConnectionStatus.ACCEPTED,
+                        user, ConnectionStatus.ACCEPTED
+                );
+        return connections.stream()
+                .map(conn -> getOtherUser(conn, user).getUserId())
+                .collect(Collectors.toSet());
+    }
+
     // 자치회 멤버십 배치 조회 (N+1 방지)
     private Map<Long, CouncilMember> getCouncilMembershipMap(List<Long> userIds) {
         if (userIds.isEmpty()) {
@@ -453,7 +468,7 @@ public class NetworkService {
         }
     }
 
-    private List<NetworkRecommendationResponse.RecommendedUser> findUsersWithSameInterests(User user, List<String> myInterests) {
+    private List<NetworkRecommendationResponse.RecommendedUser> findUsersWithSameInterests(User user, List<String> myInterests, Set<Long> connectedUserIds) {
         if (myInterests.isEmpty()) {
             return List.of();
         }
@@ -461,6 +476,7 @@ public class NetworkService {
         List<User> users = userInterestRepository.findAllByCategoryNameIn(myInterests).stream()
                 .map(UserInterest::getUser)
                 .filter(u -> !u.getUserId().equals(user.getUserId()))
+                .filter(u -> !connectedUserIds.contains(u.getUserId()))
                 .distinct()
                 .limit(10)
                 .toList();
@@ -495,9 +511,10 @@ public class NetworkService {
                 .collect(Collectors.toList());
     }
 
-    private List<NetworkRecommendationResponse.RecommendedUser> findAllUsersExcept(User user) {
+    private List<NetworkRecommendationResponse.RecommendedUser> findAllUsersExcept(User user, Set<Long> connectedUserIds) {
         List<User> users = userRepository.findAll().stream()
                 .filter(u -> !u.getUserId().equals(user.getUserId()))
+                .filter(u -> !connectedUserIds.contains(u.getUserId()))
                 .limit(20)
                 .toList();
 

@@ -42,7 +42,7 @@ public class NotificationListResponse {
                 .notificationType(notification.getNotificationType().name())
                 .notificationTitle(notification.getNotificationTitle())
                 .notificationContent(notification.getNotificationContent())
-                .targetType(notification.getTargetType().name())
+                .targetType(notification.getNotificationTargetType().name())
                 .targetId(notification.getTargetId())
                 .isRead(notification.getIsRead())
                 .createdAt(notification.getCreatedAt())

@@ -25,7 +25,7 @@ public class NotificationSseResponse {
                 .notificationType(notification.getNotificationType().name())
                 .notificationTitle(notification.getNotificationTitle())
                 .notificationContent(notification.getNotificationContent())
-                .targetType(notification.getTargetType().name())
+                .targetType(notification.getNotificationTargetType().name())
                 .targetId(notification.getTargetId())
                 .createdAt(notification.getCreatedAt())
                 .build();

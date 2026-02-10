@@ -28,12 +28,12 @@ public class Notification {
     private User receiver;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "notification_type", nullable = false, length = 20)
+    @Column(name = "notification_type", nullable = false, length = 50)
     private NotificationType notificationType;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "target_type", nullable = false)
-    private TargetType targetType;
+    private NotificationTargetType notificationTargetType;
 
     @Column(name = "target_id", nullable = false)
     private Long targetId;
@@ -55,11 +55,11 @@ public class Notification {
     private LocalDateTime createdAt;
 
     @Builder
-    public Notification(User receiver, NotificationType notificationType, TargetType targetType,
+    public Notification(User receiver, NotificationType notificationType, NotificationTargetType notificationTargetType,
                         Long targetId, String notificationTitle, String notificationContent) {
         this.receiver = receiver;
         this.notificationType = notificationType;
-        this.targetType = targetType;
+        this.notificationTargetType = notificationTargetType;
         this.targetId = targetId;
         this.notificationTitle = notificationTitle;
         this.notificationContent = notificationContent;

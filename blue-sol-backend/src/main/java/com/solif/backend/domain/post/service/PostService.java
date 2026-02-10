@@ -293,6 +293,9 @@ public class PostService {
                     .build();
             counselingPostRepository.save(counselingPost);
             log.info("고민상담 생성 - counselingPostId: {}", counselingPost.getCounselingPostId());
+
+            // 미션 체크: 고민상담 게시글 작성 (post_id를 sourceId로 전달)
+            missionService.checkAndCompleteMission(userId, MissionConditionType.POST_CREATE, savedPost.getPostId());
         } else if (request.getBoardId() == 4L) {
             // 재단소식
             NoticePost noticePost = NoticePost.builder()

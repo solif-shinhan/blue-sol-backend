@@ -43,4 +43,8 @@ public interface CouncilMemberRepository extends JpaRepository<CouncilMember, Lo
     @Modifying(clearAutomatically = true)
     @Query("DELETE FROM CouncilMember cm WHERE cm.council = :council AND cm.user IN :users")
     int deleteByCouncilAndUserIn(@Param("council") Council council, @Param("users") List<User> users);
+
+    // 자치회 멤버 userId 목록 조회 (알림 발송용)
+    @Query("SELECT cm.user.userId FROM CouncilMember cm WHERE cm.council.councilId = :councilId")
+    List<Long> findUserIdsByCouncilId(@Param("councilId") Long councilId);
 }

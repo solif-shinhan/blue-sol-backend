@@ -1,6 +1,7 @@
 package com.solif.backend.domain.councilreview.service;
 
 import com.solif.backend.domain.auth.code.AuthErrorCode;
+import com.solif.backend.domain.council.repository.CouncilMemberRepository;
 import com.solif.backend.domain.councilreview.code.CouncilReviewErrorCode;
 import com.solif.backend.domain.councilreview.dto.request.CouncilReviewRelayCreateRequest;
 import com.solif.backend.domain.councilreview.dto.request.CouncilReviewRelayUpdateRequest;
@@ -11,11 +12,15 @@ import com.solif.backend.domain.councilreview.entity.CouncilReviewRelay;
 import com.solif.backend.domain.councilreview.repository.CouncilReviewParticipantRepository;
 import com.solif.backend.domain.councilreview.repository.CouncilReviewPostRepository;
 import com.solif.backend.domain.councilreview.repository.CouncilReviewRelayRepository;
+import com.solif.backend.domain.notification.entity.NotificationType;
+import com.solif.backend.domain.notification.entity.NotificationTargetType;
+import com.solif.backend.domain.notification.event.NotificationEvent;
 import com.solif.backend.domain.user.entity.User;
 import com.solif.backend.domain.user.repository.UserRepository;
 import com.solif.backend.global.common.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,7 +38,9 @@ public class CouncilReviewRelayService {
     private final CouncilReviewPostRepository postRepository;
     private final CouncilReviewParticipantRepository participantRepository;
     private final CouncilReviewQuestionService questionService;
+    private final CouncilMemberRepository councilMemberRepository;
     private final UserRepository userRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     // 릴레이 후기 작성
     @Transactional
@@ -90,6 +97,28 @@ public class CouncilReviewRelayService {
         CouncilReviewRelay savedRelay = relayRepository.save(relay);
 
         log.info("릴레이 작성 완료 - relayId: {}, relayOrder: {}", savedRelay.getCouncilReviewRelayId(), newOrder);
+
+        // 활동 완료 체크: 모든 참여자가 릴레이 작성을 완료했는지 확인
+        long participantCount = participantRepository.countByCouncilReviewPost_CouncilReviewPostId(councilReviewPostId);
+        long relayCount = relayRepository.countByCouncilReviewPost_CouncilReviewPostId(councilReviewPostId);
+
+        if (relayCount >= participantCount) {
+            // 모든 참여자 작성 완료 → 팀원 전체에게 활동 완료 알림
+            Long councilId = post.getCouncil().getCouncilId();
+            List<Long> memberUserIds = councilMemberRepository.findUserIdsByCouncilId(councilId);
+            String postTitle = post.getPost().getPostTitle();
+
+            for (Long memberId : memberUserIds) {
+                eventPublisher.publishEvent(new NotificationEvent(
+                        memberId,
+                        NotificationType.COUNCIL_ACTIVITY_DONE,
+                        NotificationTargetType.COUNCIL_POST,
+                        councilReviewPostId,
+                        "[" + postTitle + "] 작성이 완료되었어요!",
+                        "[" + postTitle + "] 작성이 완료되었어요! 완성된 글을 확인해 보세요."
+                ));
+            }
+        }
 
         return Map.of(
                 "councilReviewRelayId", savedRelay.getCouncilReviewRelayId(),

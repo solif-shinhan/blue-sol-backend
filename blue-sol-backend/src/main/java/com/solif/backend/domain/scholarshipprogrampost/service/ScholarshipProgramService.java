@@ -72,7 +72,7 @@ public class ScholarshipProgramService {
 
         // 썸네일 일괄 조회 (N+1 방지) - sortOrder=1인 대표 이미지만
         List<FileAttachment> thumbnails = fileAttachmentRepository
-                .findByFileTargetTypeAndTargetIdInAndSortOrderAndPurpose(
+                .findByFileTargetTypeAndFileTargetIdInAndSortOrderAndPurpose(
                         FileTargetType.POST,
                         allPostIds,
                         1,  // 첫 번째 이미지만
@@ -81,7 +81,7 @@ public class ScholarshipProgramService {
 
         Map<Long, String> thumbnailMap = thumbnails.stream()
                 .collect(Collectors.toMap(
-                        FileAttachment::getTargetId,
+                        FileAttachment::getFileTargetId,
                         attachment -> attachment.getFile().getUrl(region),
                         (existing, replacement) -> existing  // 중복 시 첫 번째 유지
                 ));

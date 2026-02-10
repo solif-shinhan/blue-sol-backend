@@ -16,7 +16,7 @@ import com.solif.backend.domain.network.entity.ConnectionStatus;
 import com.solif.backend.domain.network.code.NetworkErrorCode;
 import com.solif.backend.domain.network.repository.ConnectionRepository;
 import com.solif.backend.domain.notification.entity.NotificationType;
-import com.solif.backend.domain.notification.entity.TargetType;
+import com.solif.backend.domain.notification.entity.NotificationTargetType;
 import com.solif.backend.domain.notification.service.NotificationService;
 import com.solif.backend.domain.profile.entity.UserProfile;
 import com.solif.backend.domain.profile.repository.UserProfileRepository;
@@ -177,7 +177,7 @@ public class NetworkService {
         notificationService.send(
                 targetUser.getUserId(),
                 NotificationType.CONNECTION,
-                TargetType.NETWORK,
+                NotificationTargetType.NETWORK,
                 scanner.getUserId(),
                 "교류망에 추가되었어요!",
                 scanner.getName() + "님이 교류망에 나를 추가했어요"
@@ -279,7 +279,7 @@ public class NetworkService {
                 notificationService.send(
                         receiver.getUserId(),
                         notificationType,
-                        TargetType.NETWORK,
+                        NotificationTargetType.NETWORK,
                         sender.getUserId(),
                         title,
                         content

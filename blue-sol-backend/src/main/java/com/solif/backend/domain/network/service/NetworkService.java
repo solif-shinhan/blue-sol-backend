@@ -10,6 +10,8 @@ import com.solif.backend.domain.interest.repository.UserInterestRepository;
 import com.solif.backend.domain.mentoring.entity.MentoringInteraction;
 import com.solif.backend.domain.mentoring.entity.MentoringInteractionType;
 import com.solif.backend.domain.mentoring.repository.MentoringInteractionRepository;
+import com.solif.backend.domain.mission.entity.MissionConditionType;
+import com.solif.backend.domain.mission.service.MissionService;
 import com.solif.backend.domain.network.dto.*;
 import com.solif.backend.domain.network.entity.Connection;
 import com.solif.backend.domain.network.entity.ConnectionStatus;
@@ -70,6 +72,7 @@ public class NetworkService {
     private final CouncilMemberRepository councilMemberRepository;
     private final ObjectMapper objectMapper;
     private final MentoringInteractionRepository mentoringInteractionRepository;
+    private final MissionService missionService;
 
     // Connection에서 상대방 가져오기 (내가 register면 target을, 내가 target이면 register를 반환)
     private User getOtherUser(Connection conn, User me) {
@@ -262,6 +265,9 @@ public class NetworkService {
                 .interactionType(interactionType)
                 .build();
         mentoringInteractionRepository.save(interaction);
+
+        // 미션 체크: 응원/경험나누기 카운트 증가 (CHEER/HELP 구분 없이)
+        missionService.incrementMissionProgress(userId, MissionConditionType.CONNECTION_ACTION);
 
         // 알림 메시지 설정
         if (notificationType == NotificationType.CHEER) {
@@ -457,7 +463,7 @@ public class NetworkService {
                 .filter(u -> !u.getUserId().equals(user.getUserId()))
                 .distinct()
                 .limit(10)
-                .collect(Collectors.toList());
+                .toList();
 
         // 자치회 정보 배치 조회 (N+1 방지)
         List<Long> userIds = users.stream()
@@ -493,7 +499,7 @@ public class NetworkService {
         List<User> users = userRepository.findAll().stream()
                 .filter(u -> !u.getUserId().equals(user.getUserId()))
                 .limit(20)
-                .collect(Collectors.toList());
+                .toList();
 
         // 자치회 정보 배치 조회 (N+1 방지)
         List<Long> userIds = users.stream()

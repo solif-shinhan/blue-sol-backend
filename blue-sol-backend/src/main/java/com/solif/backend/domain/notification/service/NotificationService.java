@@ -1,16 +1,21 @@
 package com.solif.backend.domain.notification.service;
 
 import com.solif.backend.domain.auth.code.AuthErrorCode;
+import com.solif.backend.domain.message.entity.Message;
+import com.solif.backend.domain.message.repository.MessageRepository;
 import com.solif.backend.domain.notification.code.NotificationErrorCode;
 import com.solif.backend.domain.notification.dto.*;
 import com.solif.backend.domain.notification.entity.*;
 import com.solif.backend.domain.notification.repository.NotificationRepository;
 import com.solif.backend.domain.notification.repository.SseEmitterRepository;
+import com.solif.backend.domain.profile.entity.UserProfile;
+import com.solif.backend.domain.profile.repository.UserProfileRepository;
 import com.solif.backend.domain.user.entity.User;
 import com.solif.backend.domain.user.repository.UserRepository;
 import com.solif.backend.global.common.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
@@ -34,6 +39,14 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final SseEmitterRepository sseEmitterRepository;
     private final UserRepository userRepository;
+    private final MessageRepository messageRepository;
+    private final UserProfileRepository userProfileRepository;
+
+    @Value("${cloud.aws.s3.bucket}")
+    private String bucket;
+
+    @Value("${cloud.aws.region.static}")
+    private String region;
 
     //  SSE 연결
 
@@ -109,7 +122,69 @@ public class NotificationService {
                             receiver, types, pageable);
         }
 
-        return notifications.map(NotificationListResponse::from);
+        // MESSAGE 타입 알림의 발신자 정보 배치 조회
+        List<Long> messageTargetIds = notifications.getContent().stream()
+                .filter(n -> n.getNotificationType() == NotificationType.MESSAGE)
+                .map(Notification::getTargetId)
+                .distinct()
+                .toList();
+
+        Map<Long, Message> messageMap = messageTargetIds.isEmpty()
+                ? Collections.emptyMap()
+                : messageRepository.findAllByIdWithSender(messageTargetIds).stream()
+                    .collect(java.util.stream.Collectors.toMap(Message::getMessageId, m -> m));
+
+        // CHEER, HELP, CONNECTION 타입은 targetId가 sender userId임
+        List<Long> userTargetIds = notifications.getContent().stream()
+                .filter(n -> n.getNotificationType() == NotificationType.CHEER
+                        || n.getNotificationType() == NotificationType.HELP
+                        || n.getNotificationType() == NotificationType.CONNECTION)
+                .map(Notification::getTargetId)
+                .distinct()
+                .toList();
+
+        Map<Long, User> userMap = userTargetIds.isEmpty()
+                ? Collections.emptyMap()
+                : userRepository.findAllById(userTargetIds).stream()
+                    .collect(java.util.stream.Collectors.toMap(User::getUserId, u -> u));
+
+        // 발신자들의 프로필 이미지 배치 조회 (MESSAGE 발신자 + CHEER/HELP/CONNECTION 발신자)
+        List<Long> allSenderUserIds = new java.util.ArrayList<>();
+        messageMap.values().stream()
+                .map(m -> m.getSender().getUserId())
+                .distinct()
+                .forEach(allSenderUserIds::add);
+        allSenderUserIds.addAll(userTargetIds);
+
+        Map<Long, String> profileImageMap = allSenderUserIds.isEmpty()
+                ? Collections.emptyMap()
+                : userProfileRepository.findByUser_UserIdIn(allSenderUserIds.stream().distinct().toList()).stream()
+                    .filter(profile -> profile.getUserCharacter() != null)
+                    .collect(java.util.stream.Collectors.toMap(
+                            profile -> profile.getUser().getUserId(),
+                            profile -> String.format("https://%s.s3.%s.amazonaws.com/%s", bucket, region, profile.getUserCharacter()),
+                            (existing, replacement) -> existing
+                    ));
+
+        return notifications.map(notification -> {
+            if (notification.getNotificationType() == NotificationType.MESSAGE) {
+                Message message = messageMap.get(notification.getTargetId());
+                if (message != null) {
+                    String senderName = message.getSender().getName();
+                    String senderProfileImage = profileImageMap.get(message.getSender().getUserId());
+                    return NotificationListResponse.from(notification, senderName, senderProfileImage);
+                }
+            } else if (notification.getNotificationType() == NotificationType.CHEER
+                    || notification.getNotificationType() == NotificationType.HELP
+                    || notification.getNotificationType() == NotificationType.CONNECTION) {
+                User sender = userMap.get(notification.getTargetId());
+                if (sender != null) {
+                    String senderProfileImage = profileImageMap.get(sender.getUserId());
+                    return NotificationListResponse.from(notification, sender.getName(), senderProfileImage);
+                }
+            }
+            return NotificationListResponse.from(notification);
+        });
     }
 
     //  REST API: 알림 읽음 처리
@@ -156,11 +231,41 @@ public class NotificationService {
         validateOwner(userId, notification);
 
         // TODO: 알림의 targetType/targetId 기반으로 첨부 이미지 조회
-        // List<NotificationDetailResponse.ImageInfo> images =
-        //     fileAttachmentService.getImages(notification.getTargetType().name(), notification.getTargetId());
         List<NotificationDetailResponse.ImageInfo> images = Collections.emptyList();
 
-        return NotificationDetailResponse.from(notification, images);
+        // 발신자 정보 조회
+        String senderName = null;
+        String senderProfileImage = null;
+
+        if (notification.getNotificationType() == NotificationType.MESSAGE) {
+            // 쪽지 알림: Message 엔티티에서 발신자 조회
+            Message message = messageRepository.findById(notification.getTargetId()).orElse(null);
+            if (message != null) {
+                senderName = message.getSender().getName();
+                senderProfileImage = getCharacterImageUrl(message.getSender().getUserId());
+            }
+        } else if (notification.getNotificationType() == NotificationType.CHEER
+                || notification.getNotificationType() == NotificationType.HELP
+                || notification.getNotificationType() == NotificationType.CONNECTION) {
+            // CHEER/HELP/CONNECTION 알림: targetId가 sender userId
+            User sender = userRepository.findById(notification.getTargetId()).orElse(null);
+            if (sender != null) {
+                senderName = sender.getName();
+                senderProfileImage = getCharacterImageUrl(sender.getUserId());
+            }
+        }
+
+        return NotificationDetailResponse.from(notification, images, senderName, senderProfileImage);
+    }
+
+    /**
+     * 사용자 ID로 캐릭터 이미지 URL을 생성합니다.
+     */
+    private String getCharacterImageUrl(Long userId) {
+        return userProfileRepository.findByUser_UserId(userId)
+                .filter(profile -> profile.getUserCharacter() != null)
+                .map(profile -> String.format("https://%s.s3.%s.amazonaws.com/%s", bucket, region, profile.getUserCharacter()))
+                .orElse(null);
     }
 
     //  Private 메서드

@@ -22,11 +22,23 @@ public class MessageDetailResponse {
     @Schema(description = "보낸 사람 이름", example = "박민수")
     private String senderName;
 
+    @Schema(description = "보낸 사람 프로필 이미지 URL")
+    private String senderProfileImage;
+
+    @Schema(description = "보낸 사람 배경 이미지 URL")
+    private String senderBackgroundImage;
+
     @Schema(description = "받는 사람 ID", example = "3")
     private Long receiverId;
 
     @Schema(description = "받는 사람 이름", example = "박민수")
     private String receiverName;
+
+    @Schema(description = "받는 사람 프로필 이미지 URL")
+    private String receiverProfileImage;
+
+    @Schema(description = "받는 사람 배경 이미지 URL")
+    private String receiverBackgroundImage;
 
     @Schema(description = "쪽지 제목", example = "한국대학교 재학생 박민수 입니다.")
     private String messageTitle;
@@ -46,13 +58,19 @@ public class MessageDetailResponse {
     @Schema(description = "첨부 이미지 URL 목록")
     private List<String> imageUrls;
 
-    public static MessageDetailResponse from(Message message, List<String> imageUrls) {
+    public static MessageDetailResponse from(Message message, List<String> imageUrls,
+                                               String senderProfileImage, String senderBackgroundImage,
+                                               String receiverProfileImage, String receiverBackgroundImage) {
         return MessageDetailResponse.builder()
                 .messageId(message.getMessageId())
                 .senderId(message.getSender().getUserId())
                 .senderName(message.getSender().getName())
+                .senderProfileImage(senderProfileImage)
+                .senderBackgroundImage(senderBackgroundImage)
                 .receiverId(message.getReceiver().getUserId())
                 .receiverName(message.getReceiver().getName())
+                .receiverProfileImage(receiverProfileImage)
+                .receiverBackgroundImage(receiverBackgroundImage)
                 .messageTitle(message.getMessageTitle())
                 .messageContent(message.getMessageContent())
                 .isRead(message.getIsRead())

@@ -36,6 +36,12 @@ public class NotificationListResponse {
     @Schema(description = "생성 일시", example = "2026-01-31T12:00:00")
     private LocalDateTime createdAt;
 
+    @Schema(description = "발신자 이름")
+    private String senderName;
+
+    @Schema(description = "발신자 프로필 이미지 URL")
+    private String senderProfileImage;
+
     public static NotificationListResponse from(Notification notification) {
         return NotificationListResponse.builder()
                 .notificationId(notification.getNotificationId())
@@ -46,6 +52,21 @@ public class NotificationListResponse {
                 .targetId(notification.getTargetId())
                 .isRead(notification.getIsRead())
                 .createdAt(notification.getCreatedAt())
+                .build();
+    }
+
+    public static NotificationListResponse from(Notification notification, String senderName, String senderProfileImage) {
+        return NotificationListResponse.builder()
+                .notificationId(notification.getNotificationId())
+                .notificationType(notification.getNotificationType().name())
+                .notificationTitle(notification.getNotificationTitle())
+                .notificationContent(notification.getNotificationContent())
+                .targetType(notification.getNotificationTargetType().name())
+                .targetId(notification.getTargetId())
+                .isRead(notification.getIsRead())
+                .createdAt(notification.getCreatedAt())
+                .senderName(senderName)
+                .senderProfileImage(senderProfileImage)
                 .build();
     }
 }

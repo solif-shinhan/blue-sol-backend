@@ -537,10 +537,10 @@ public class MissionService {
                 yield post != null ? post.getPostId() : null;
             }
             case COMMENT_CREATE -> {
-                // 첫 번째 작성한 댓글
+                // 첫 번째 작성한 댓글이 달린 게시글
                 Comment comment = commentRepository.findFirstByUser_UserIdOrderByCreatedAtAsc(user.getUserId())
                         .orElse(null);
-                yield comment != null ? comment.getCommentId() : null;
+                yield comment != null ? comment.getPost().getPostId() : null;
             }
             case MENTORING_COMPLETE -> {
                 // TODO: 멘토링 도메인 구현 후 추가
@@ -578,15 +578,16 @@ public class MissionService {
                         .build();
             }
             case COMMENT -> {
-                Comment comment = commentRepository.findById(memory.getSourceId()).orElse(null);
-                if (comment == null) {
+                // sourceId는 post_id (댓글이 달린 게시글)
+                Post post = postRepository.findById(memory.getSourceId()).orElse(null);
+                if (post == null) {
                     yield null;
                 }
                 yield PineconeMemoryResponse.MemoryDetail.builder()
                         .memoryType("COMMENT")
-                        .memoryContent(comment.getCommentContent())
-                        .relatedUserName(comment.getPost().getAuthor().getName())
-                        .createdAt(comment.getCreatedAt().toString())
+                        .memoryContent(post.getPostTitle())
+                        .relatedUserName(post.getAuthor().getName())
+                        .createdAt(post.getCreatedAt().toString())
                         .build();
             }
             case MENTORING -> {

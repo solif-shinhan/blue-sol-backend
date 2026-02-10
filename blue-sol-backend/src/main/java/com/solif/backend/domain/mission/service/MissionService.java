@@ -218,9 +218,6 @@ public class MissionService {
         if (shouldComplete) {
             userMission.complete();
             log.info("미션 완료 - userId: {}, missionId: {}, conditionType: {}", userId, mission.getMissionId(), conditionType);
-
-            // TODO: 알림 발송
-            // notificationService.send(userId, NotificationType.MISSION_COMPLETED, ...);
         }
     }
 
@@ -253,8 +250,6 @@ public class MissionService {
             userMission.complete();
             log.info("미션 완료 (카운트 달성) - userId: {}, missionId: {}, count: {}/{}",
                     userId, mission.getMissionId(), userMission.getProgressCount(), targetCount);
-
-            // TODO: 알림 발송
         }
     }
 

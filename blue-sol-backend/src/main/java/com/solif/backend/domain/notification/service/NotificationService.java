@@ -262,6 +262,7 @@ public class NotificationService {
      */
     private String getCharacterImageUrl(Long userId) {
         return userProfileRepository.findByUser_UserId(userId)
+                .filter(profile -> profile.getUserCharacter() != null)
                 .map(profile -> String.format("https://%s.s3.%s.amazonaws.com/%s", bucket, region, profile.getUserCharacter()))
                 .orElse(null);
     }

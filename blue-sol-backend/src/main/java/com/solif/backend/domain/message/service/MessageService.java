@@ -56,8 +56,12 @@ public class MessageService {
     private String[] getProfileImageUrls(Long userId) {
         return userProfileRepository.findByUser_UserId(userId)
                 .map(profile -> new String[]{
-                        String.format("https://%s.s3.%s.amazonaws.com/%s", bucket, region, profile.getUserCharacter()),
-                        String.format("https://%s.s3.%s.amazonaws.com/%s", bucket, region, profile.getBackgroundPattern())
+                        profile.getUserCharacter() != null
+                                ? String.format("https://%s.s3.%s.amazonaws.com/%s", bucket, region, profile.getUserCharacter())
+                                : null,
+                        profile.getBackgroundPattern() != null
+                                ? String.format("https://%s.s3.%s.amazonaws.com/%s", bucket, region, profile.getBackgroundPattern())
+                                : null
                 })
                 .orElse(new String[]{null, null});
     }

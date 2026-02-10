@@ -131,7 +131,7 @@ public class NotificationService {
 
         Map<Long, Message> messageMap = messageTargetIds.isEmpty()
                 ? Collections.emptyMap()
-                : messageRepository.findAllById(messageTargetIds).stream()
+                : messageRepository.findAllByIdWithSender(messageTargetIds).stream()
                     .collect(java.util.stream.Collectors.toMap(Message::getMessageId, m -> m));
 
         // CHEER, HELP, CONNECTION 타입은 targetId가 sender userId임

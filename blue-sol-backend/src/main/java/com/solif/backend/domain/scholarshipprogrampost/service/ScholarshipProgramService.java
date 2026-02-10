@@ -35,9 +35,7 @@ public class ScholarshipProgramService {
     @Value("${cloud.aws.region.static}")
     private String region;
 
-    /**
-     * 장학 프로그램 목록 조회 (필수/선택 분리)
-     */
+    // 장학 프로그램 목록 조회 (필수/선택 분리)
     public ScholarshipProgramListResponse getScholarshipPrograms() {
         log.info("장학 프로그램 목록 조회 시작");
 

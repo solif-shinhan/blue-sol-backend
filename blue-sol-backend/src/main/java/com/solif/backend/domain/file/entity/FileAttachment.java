@@ -27,11 +27,11 @@ public class FileAttachment {
     private File file;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "target_type", nullable = false, length = 50)
+    @Column(name = "file_target_type", nullable = false, length = 50)
     private FileTargetType fileTargetType;
 
-    @Column(name = "target_id", nullable = false)
-    private Long targetId;
+    @Column(name = "file_target_id", nullable = false)
+    private Long fileTargetId;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "purpose", nullable = false, length = 50)
@@ -45,11 +45,11 @@ public class FileAttachment {
     private LocalDateTime createdAt;
 
     @Builder
-    public FileAttachment(File file, FileTargetType fileTargetType, Long targetId,
+    public FileAttachment(File file, FileTargetType fileTargetType, Long fileTargetId,
                           AttachmentPurpose purpose, Integer sortOrder) {
         this.file = file;
         this.fileTargetType = fileTargetType;
-        this.targetId = targetId;
+        this.fileTargetId = fileTargetId;
         this.purpose = purpose;
         this.sortOrder = sortOrder != null ? sortOrder : 1;
     }

@@ -532,7 +532,8 @@ public class MissionService {
             }
             case POST_CREATE -> {
                 // 첫 번째 작성한 게시글
-                Post post = postRepository.findFirstByAuthor_UserIdOrderByCreatedAtAsc(user.getUserId())
+                Post post = postRepository
+                        .findTop1ByAuthor_UserIdAndDeletedAtIsNullOrderByCreatedAtAsc(user.getUserId())
                         .orElse(null);
                 yield post != null ? post.getPostId() : null;
             }

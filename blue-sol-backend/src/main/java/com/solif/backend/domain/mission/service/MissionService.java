@@ -445,24 +445,22 @@ public class MissionService {
 
     // 경험 나누기 → 쪽지 소통 조건 체크
     private boolean checkMessageThreadCondition(User user) {
-        // HELP 알림 조회: 내가 보낸 HELP 알림
-        // targetId에 sender(나)의 userId가 저장되어 있음
+        // HELP 알림 조회: 나에게 온 HELP 알림 (내가 receiver인 경우)
         List<Notification> helpNotifications = notificationRepository
-                .findByNotificationTypeAndTargetId(NotificationType.HELP, user.getUserId());
+                .findByReceiverAndNotificationType(user, NotificationType.HELP);
 
         if (helpNotifications.isEmpty()) {
             return false;
         }
 
-        // 해당 사람들(receiver)과 쪽지를 주고받았는지 확인
+        // 나에게 HELP를 보낸 사람들(sender)에게 쪽지를 보냈는지 확인
         for (Notification notification : helpNotifications) {
-            Long receiverId = notification.getReceiver().getUserId();
+            Long senderId = notification.getTargetId();  // HELP를 보낸 사람의 userId
 
-            // 쪽지 확인 (양방향)
-            boolean hasMessage = messageRepository.existsBySender_UserIdAndReceiver_UserId(user.getUserId(), receiverId) ||
-                    messageRepository.existsBySender_UserIdAndReceiver_UserId(receiverId, user.getUserId());
+            // 내가 그 사람에게 쪽지를 보냈는지 확인
+            boolean sentMessage = messageRepository.existsBySender_UserIdAndReceiver_UserId(user.getUserId(), senderId);
 
-            if (hasMessage) {
+            if (sentMessage) {
                 return true;
             }
         }

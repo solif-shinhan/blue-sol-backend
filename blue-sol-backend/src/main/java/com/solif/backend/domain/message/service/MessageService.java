@@ -73,8 +73,11 @@ public class MessageService {
 
         Message savedMessage = messageRepository.save(message);
 
-        // 미션 - 첫 쪽지 발송 (message_id를 sourceId로 전달)
+        // 미션 체크: 미션 #3 (첫 쪽지 발송)
         missionService.checkAndCompleteMission(senderId, MissionConditionType.MESSAGE, savedMessage.getMessageId());
+
+        // 미션 체크: 미션 #5 (경험나누기 → 쪽지 소통)
+        missionService.checkAndCompleteMission(senderId, MissionConditionType.MESSAGE_THREAD, savedMessage.getMessageId());
 
         // 파일 확정 (fileIds가 있으면)
         if (request.getFileIds() != null && !request.getFileIds().isEmpty()) {

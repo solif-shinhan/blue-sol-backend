@@ -127,7 +127,7 @@ public class MyPageService {
         return "푸른SOL 새싹";
     }
 
-    // 나의 지난 활동 (자치회 활동 후기 최신순 3개)
+    // ===== 나의 지난 활동 (자치회 활동 후기 최신순 3개) =====
     private List<MyPageResponse.RecentCouncilReview> getRecentCouncilReviews(Long userId) {
         List<CouncilReviewParticipant> participants =
                 councilReviewParticipantRepository.findByUserIdWithPostOrderByCreatedAtDesc(userId);
@@ -142,21 +142,21 @@ public class MyPageService {
                 .limit(3)
                 .toList();
 
-        // Post ID 목록 추출
-        List<Long> postIds = topThree.stream()
-                .map(p -> p.getCouncilReviewPost().getPost().getPostId())
+        // CouncilReviewPost ID 목록 추출
+        List<Long> councilReviewPostIds = topThree.stream()
+                .map(p -> p.getCouncilReviewPost().getCouncilReviewPostId())
                 .toList();
 
         // 썸네일 이미지 배치 조회 (sortOrder=1, purpose=POST_ATTACHMENT)
         List<FileAttachment> thumbnails = fileAttachmentRepository
                 .findByFileTargetTypeAndTargetIdInAndSortOrderAndPurpose(
-                        FileTargetType.POST,
-                        postIds,
+                        FileTargetType.COUNCIL_POST,  // ← 이 부분 수정!
+                        councilReviewPostIds,  // ← postId가 아니라 councilReviewPostId
                         1,
                         AttachmentPurpose.POST_ATTACHMENT
                 );
 
-        // postId -> thumbnailUrl 맵 생성
+        // councilReviewPostId -> thumbnailUrl 맵 생성
         Map<Long, String> thumbnailMap = thumbnails.stream()
                 .collect(Collectors.toMap(
                         FileAttachment::getTargetId,
@@ -166,19 +166,19 @@ public class MyPageService {
         // Response 구성
         return topThree.stream()
                 .map(participant -> {
-                    Long postId = participant.getCouncilReviewPost().getPost().getPostId();
-                    String thumbnailUrl = thumbnailMap.get(postId);
+                    Long councilReviewPostId = participant.getCouncilReviewPost().getCouncilReviewPostId();
+                    String thumbnailUrl = thumbnailMap.get(councilReviewPostId);
 
                     return MyPageResponse.RecentCouncilReview.builder()
-                            .councilReviewPostId(participant.getCouncilReviewPost().getCouncilReviewPostId())
-                            .postId(postId)
+                            .councilReviewPostId(councilReviewPostId)
+                            .postId(participant.getCouncilReviewPost().getPost().getPostId())
                             .title(participant.getCouncilReviewPost().getPost().getPostTitle())
                             .activityDate(participant.getCouncilReviewPost().getActivityDate())
                             .thumbnailImageUrl(thumbnailUrl)
                             .createdAt(participant.getCouncilReviewPost().getCreatedAt())
                             .build();
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     // ===== Helper Methods =====

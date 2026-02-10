@@ -3,6 +3,10 @@ package com.solif.backend.domain.mypage.service;
 import com.solif.backend.domain.auth.code.AuthErrorCode;
 import com.solif.backend.domain.councilreview.entity.CouncilReviewParticipant;
 import com.solif.backend.domain.councilreview.repository.CouncilReviewParticipantRepository;
+import com.solif.backend.domain.file.entity.AttachmentPurpose;
+import com.solif.backend.domain.file.entity.FileAttachment;
+import com.solif.backend.domain.file.entity.FileTargetType;
+import com.solif.backend.domain.file.repository.FileAttachmentRepository;
 import com.solif.backend.domain.mission.entity.MissionCategory;
 import com.solif.backend.domain.mission.entity.MissionStatus;
 import com.solif.backend.domain.mission.repository.UserMissionRepository;
@@ -15,10 +19,12 @@ import com.solif.backend.domain.user.repository.UserRepository;
 import com.solif.backend.global.common.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -31,6 +37,10 @@ public class MyPageService {
     private final UserProfileRepository userProfileRepository;
     private final UserMissionRepository userMissionRepository;
     private final CouncilReviewParticipantRepository councilReviewParticipantRepository;
+    private final FileAttachmentRepository fileAttachmentRepository;
+
+    @Value("${cloud.aws.region.static}")
+    private String region;
 
     // 마이페이지 조회
     public MyPageResponse getMyPage(Long userId) {
@@ -122,17 +132,52 @@ public class MyPageService {
         List<CouncilReviewParticipant> participants =
                 councilReviewParticipantRepository.findByUserIdWithPostOrderByCreatedAtDesc(userId);
 
+        // 빈 결과 처리
+        if (participants.isEmpty()) {
+            return List.of();
+        }
+
         // 최신순 3개만 가져오기
-        return participants.stream()
+        List<CouncilReviewParticipant> topThree = participants.stream()
                 .limit(3)
-                .map(participant -> MyPageResponse.RecentCouncilReview.builder()
-                        .councilReviewPostId(participant.getCouncilReviewPost().getCouncilReviewPostId())
-                        .postId(participant.getCouncilReviewPost().getPost().getPostId())
-                        .title(participant.getCouncilReviewPost().getPost().getPostTitle())
-                        .activityDate(participant.getCouncilReviewPost().getActivityDate())
-                        .createdAt(participant.getCouncilReviewPost().getCreatedAt())
-                        .build()
-                )
+                .toList();
+
+        // Post ID 목록 추출
+        List<Long> postIds = topThree.stream()
+                .map(p -> p.getCouncilReviewPost().getPost().getPostId())
+                .toList();
+
+        // 썸네일 이미지 배치 조회 (sortOrder=1, purpose=POST_ATTACHMENT)
+        List<FileAttachment> thumbnails = fileAttachmentRepository
+                .findByFileTargetTypeAndTargetIdInAndSortOrderAndPurpose(
+                        FileTargetType.POST,
+                        postIds,
+                        1,
+                        AttachmentPurpose.POST_ATTACHMENT
+                );
+
+        // postId -> thumbnailUrl 맵 생성
+        Map<Long, String> thumbnailMap = thumbnails.stream()
+                .collect(Collectors.toMap(
+                        FileAttachment::getTargetId,
+                        fa -> fa.getFile().getUrl(region)
+                ));
+
+        // Response 구성
+        return topThree.stream()
+                .map(participant -> {
+                    Long postId = participant.getCouncilReviewPost().getPost().getPostId();
+                    String thumbnailUrl = thumbnailMap.get(postId);
+
+                    return MyPageResponse.RecentCouncilReview.builder()
+                            .councilReviewPostId(participant.getCouncilReviewPost().getCouncilReviewPostId())
+                            .postId(postId)
+                            .title(participant.getCouncilReviewPost().getPost().getPostTitle())
+                            .activityDate(participant.getCouncilReviewPost().getActivityDate())
+                            .thumbnailImageUrl(thumbnailUrl)
+                            .createdAt(participant.getCouncilReviewPost().getCreatedAt())
+                            .build();
+                })
                 .collect(Collectors.toList());
     }
 

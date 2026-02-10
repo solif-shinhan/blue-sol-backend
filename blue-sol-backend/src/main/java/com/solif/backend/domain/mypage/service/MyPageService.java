@@ -160,7 +160,8 @@ public class MyPageService {
         Map<Long, String> thumbnailMap = thumbnails.stream()
                 .collect(Collectors.toMap(
                         FileAttachment::getTargetId,
-                        fa -> fa.getFile().getUrl(region)
+                        fa -> fa.getFile().getUrl(region),
+                        (existing, replacement) -> existing  // 중복 키 발생 시 첫 번째 값 유지
                 ));
 
         // Response 구성

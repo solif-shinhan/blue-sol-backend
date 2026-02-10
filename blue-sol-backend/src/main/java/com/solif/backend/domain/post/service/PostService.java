@@ -4,6 +4,8 @@ import com.solif.backend.domain.mentoringpost.entity.MentoringPost;
 import com.solif.backend.domain.mentoringpost.repository.MentoringPostRepository;
 import com.solif.backend.domain.counselingpost.entity.CounselingPost;
 import com.solif.backend.domain.counselingpost.repository.CounselingPostRepository;
+import com.solif.backend.domain.mission.entity.MissionConditionType;
+import com.solif.backend.domain.mission.service.MissionService;
 import com.solif.backend.domain.noticepost.entity.NoticePost;
 import com.solif.backend.domain.noticepost.repository.NoticePostRepository;
 import com.solif.backend.domain.auth.code.AuthErrorCode;
@@ -59,6 +61,7 @@ public class PostService {
     private final MentoringPostRepository mentoringPostRepository;
     private final CounselingPostRepository counselingPostRepository;
     private final NoticePostRepository noticePostRepository;
+    private final MissionService missionService;
 
     @Value("${cloud.aws.region.static}")
     private String region;
@@ -214,6 +217,12 @@ public class PostService {
 
         // 조회수 증가
         post.increaseViewCount();
+
+        // 미션 체크: 재단 소식(공지사항) 확인
+        // boardId = 4 (재단소식) AND category = NOTICE (공지사항)
+        if (post.getBoard().getBoardId() == 4L && post.getPostCategory() == PostCategory.NOTICE) {
+            missionService.incrementMissionProgress(userId, MissionConditionType.POST_VIEW);
+        }
 
         // 익명 여부 판단 (boardId=3만 익명)
         boolean isAnonymous = (post.getBoard().getBoardId() == 3L);

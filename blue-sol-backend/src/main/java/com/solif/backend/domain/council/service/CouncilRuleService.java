@@ -11,11 +11,15 @@ import com.solif.backend.domain.council.entity.CouncilRule;
 import com.solif.backend.domain.council.repository.CouncilMemberRepository;
 import com.solif.backend.domain.council.repository.CouncilRepository;
 import com.solif.backend.domain.council.repository.CouncilRuleRepository;
+import com.solif.backend.domain.notification.entity.NotificationType;
+import com.solif.backend.domain.notification.entity.TargetType;
+import com.solif.backend.domain.notification.event.NotificationEvent;
 import com.solif.backend.domain.user.entity.User;
 import com.solif.backend.domain.user.repository.UserRepository;
 import com.solif.backend.global.common.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +36,7 @@ public class CouncilRuleService {
     private final CouncilRuleRepository councilRuleRepository;
     private final CouncilMemberRepository councilMemberRepository;
     private final UserRepository userRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     // 자치회 활동 규칙 목록 조회
     public RuleListResponse getRules(Long councilId) {
@@ -79,6 +84,9 @@ public class CouncilRuleService {
         // 총 규칙 수 조회
         Long totalRuleCount = councilRuleRepository.countByCouncil(council);
 
+        // 알림 발송: 규칙 변경 알림
+        publishRuleChangeNotification(userId, councilId);
+
         return AddRuleResponse.of(
                 councilId,
                 savedRule.getCouncilRuleId(),
@@ -114,6 +122,9 @@ public class CouncilRuleService {
 
         // 규칙 삭제
         councilRuleRepository.delete(rule);
+
+        // 알림 발송: 규칙 변경 알림
+        publishRuleChangeNotification(userId, councilId);
     }
 
     // 리더 권한 검증 (private helper method)
@@ -124,6 +135,23 @@ public class CouncilRuleService {
 
         if (!member.isLeader()) {
             throw new CustomException(errorCode);
+        }
+    }
+
+    // 규칙 변경 알림 발송 (팀원 전체, 리더 제외)
+    private void publishRuleChangeNotification(Long leaderId, Long councilId) {
+        List<Long> memberUserIds = councilMemberRepository.findUserIdsByCouncilId(councilId);
+        for (Long memberId : memberUserIds) {
+            if (!memberId.equals(leaderId)) {
+                eventPublisher.publishEvent(new NotificationEvent(
+                        memberId,
+                        NotificationType.COUNCIL_RULE_CHANGE,
+                        TargetType.COUNCIL,
+                        councilId,
+                        "자치회 활동 규칙이 변경되었습니다.",
+                        "자치회 활동 규칙이 변경되었습니다. 확인해 주세요."
+                ));
+            }
         }
     }
 }

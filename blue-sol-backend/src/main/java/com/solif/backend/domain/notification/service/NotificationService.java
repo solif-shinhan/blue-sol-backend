@@ -113,9 +113,10 @@ public class NotificationService {
 
         Slice<Notification> notifications;
         if ("UNREAD".equalsIgnoreCase(filter)) {
+            // 안읽음 필터: 카테고리 무관 전체 안읽은 알림 조회
             notifications = notificationRepository
-                    .findByReceiverAndNotificationTypeInAndIsReadFalseOrderByCreatedAtDesc(
-                            receiver, types, pageable);
+                    .findByReceiverAndIsReadFalseOrderByCreatedAtDesc(
+                            receiver, pageable);
         } else {
             notifications = notificationRepository
                     .findByReceiverAndNotificationTypeInOrderByCreatedAtDesc(

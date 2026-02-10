@@ -3,8 +3,7 @@ package com.solif.backend.domain.notification.event;
 import com.solif.backend.domain.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.transaction.event.TransactionalEventListener;
-import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
@@ -19,7 +18,7 @@ public class NotificationEventListener {
     private final NotificationService notificationService;
 
     @Async
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
+    @EventListener
     public void handleNotificationEvent(NotificationEvent event) {
         log.info(">>> 알림 이벤트 수신됨 - type: {}, receiverId: {}, targetType: {}",
                 event.getNotificationType(), event.getReceiverUserId(), event.getNotificationTargetType());

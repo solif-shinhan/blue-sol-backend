@@ -107,7 +107,7 @@ public class CommentService {
         Long postAuthorId = post.getAuthor().getUserId();
         String commentPreview = truncate(comment.getCommentContent(), 30);
 
-        if (boardId.equals(1L)) {
+        if (boardId == 1L) {
             // 자치회 활동 후기 → 팀원 전체에게 COUNCIL_COMMENT
             CouncilReviewPost reviewPost = councilReviewPostRepository.findByPostId(post.getPostId()).orElse(null);
             if (reviewPost != null) {
@@ -127,7 +127,7 @@ public class CommentService {
                     }
                 }
             }
-        } else if (boardId.equals(2L)) {
+        } else if (boardId == 2L) {
             // 멘토링 후기 → 글 작성자에게 MENTORING_REVIEW_COMMENT
             if (!commenterId.equals(postAuthorId)) {
                 eventPublisher.publishEvent(new NotificationEvent(

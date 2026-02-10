@@ -182,7 +182,7 @@ public class FileService {
         FileAttachment attachment = FileAttachment.builder()
                 .file(file)
                 .fileTargetType(request.getFileTargetType())
-                .fileTargetId(request.getTargetId())
+                .fileTargetId(request.getFileId())
                 .purpose(request.getPurpose())
                 .sortOrder(request.getSortOrder())
                 .build();

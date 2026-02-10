@@ -5,6 +5,8 @@ import com.solif.backend.domain.file.entity.FileAttachment;
 import com.solif.backend.domain.file.entity.FileTargetType;
 import com.solif.backend.domain.file.repository.FileAttachmentRepository;
 import com.solif.backend.domain.file.service.FileService;
+import com.solif.backend.domain.mission.entity.MissionConditionType;
+import com.solif.backend.domain.mission.service.MissionService;
 import com.solif.backend.domain.notification.entity.NotificationType;
 import com.solif.backend.domain.notification.entity.TargetType;
 import com.solif.backend.domain.notification.event.NotificationEvent;
@@ -38,6 +40,7 @@ public class MessageService {
     private final ApplicationEventPublisher eventPublisher;
     private final FileService fileService;
     private final FileAttachmentRepository fileAttachmentRepository;
+    private final MissionService missionService;
 
     @Value("${cloud.aws.region.static}")
     private String region;
@@ -69,6 +72,9 @@ public class MessageService {
                 .build();
 
         Message savedMessage = messageRepository.save(message);
+
+        // 미션 - 첫 쪽지 발송 (message_id를 sourceId로 전달)
+        missionService.checkAndCompleteMission(senderId, MissionConditionType.MESSAGE, savedMessage.getMessageId());
 
         // 파일 확정 (fileIds가 있으면)
         if (request.getFileIds() != null && !request.getFileIds().isEmpty()) {

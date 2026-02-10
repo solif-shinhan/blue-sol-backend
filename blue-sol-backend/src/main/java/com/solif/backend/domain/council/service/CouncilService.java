@@ -11,7 +11,7 @@ import com.solif.backend.domain.council.repository.CouncilMemberRepository;
 import com.solif.backend.domain.council.repository.CouncilRepository;
 import com.solif.backend.domain.council.repository.CouncilRuleRepository;
 import com.solif.backend.domain.notification.entity.NotificationType;
-import com.solif.backend.domain.notification.entity.TargetType;
+import com.solif.backend.domain.notification.entity.NotificationTargetType;
 import com.solif.backend.domain.notification.event.NotificationEvent;
 import com.solif.backend.domain.user.entity.User;
 import com.solif.backend.domain.user.repository.UserRepository;
@@ -231,7 +231,7 @@ public class CouncilService {
                 eventPublisher.publishEvent(new NotificationEvent(
                         memberId,
                         NotificationType.COUNCIL_INVITE,
-                        TargetType.COUNCIL,
+                        NotificationTargetType.COUNCIL,
                         savedCouncil.getCouncilId(),
                         "자치회에 초대되었어요!",
                         "'" + leader.getName() + "' 팀장이 [" + savedCouncil.getCouncilName() + "]에 초대했어요. 수락하러 갈까요?"
@@ -281,7 +281,7 @@ public class CouncilService {
                 eventPublisher.publishEvent(new NotificationEvent(
                         memberId,
                         NotificationType.COUNCIL_HOME_EDIT,
-                        TargetType.COUNCIL,
+                        NotificationTargetType.COUNCIL,
                         councilId,
                         "우리 자치회 홈이 새롭게 단장했어요!",
                         "우리 자치회 홈이 새롭게 단장했어요!"

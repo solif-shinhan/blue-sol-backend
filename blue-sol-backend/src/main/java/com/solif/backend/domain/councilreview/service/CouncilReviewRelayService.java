@@ -13,7 +13,7 @@ import com.solif.backend.domain.councilreview.repository.CouncilReviewParticipan
 import com.solif.backend.domain.councilreview.repository.CouncilReviewPostRepository;
 import com.solif.backend.domain.councilreview.repository.CouncilReviewRelayRepository;
 import com.solif.backend.domain.notification.entity.NotificationType;
-import com.solif.backend.domain.notification.entity.TargetType;
+import com.solif.backend.domain.notification.entity.NotificationTargetType;
 import com.solif.backend.domain.notification.event.NotificationEvent;
 import com.solif.backend.domain.user.entity.User;
 import com.solif.backend.domain.user.repository.UserRepository;
@@ -112,7 +112,7 @@ public class CouncilReviewRelayService {
                 eventPublisher.publishEvent(new NotificationEvent(
                         memberId,
                         NotificationType.COUNCIL_ACTIVITY_DONE,
-                        TargetType.COUNCIL_POST,
+                        NotificationTargetType.COUNCIL_POST,
                         councilReviewPostId,
                         "[" + postTitle + "] 작성이 완료되었어요!",
                         "[" + postTitle + "] 작성이 완료되었어요! 완성된 글을 확인해 보세요."

@@ -137,7 +137,7 @@ public class PostService {
 
             if (!councilReviewPostIds.isEmpty()) {
                 thumbnailUrlMap = fileAttachmentRepository
-                        .findByFileTargetTypeAndTargetIdInAndSortOrderAndPurpose(
+                        .findByFileTargetTypeAndFileTargetIdInAndSortOrderAndPurpose(
                                 FileTargetType.COUNCIL_POST,
                                 councilReviewPostIds,
                                 1,
@@ -145,7 +145,7 @@ public class PostService {
                         )
                         .stream()
                         .collect(Collectors.toMap(
-                                FileAttachment::getTargetId,
+                                FileAttachment::getFileTargetId,
                                 attachment -> attachment.getFile().getUrl(region),
                                 (existing, replacement) -> existing  // 중복 키 처리
                         ));
@@ -154,7 +154,7 @@ public class PostService {
             // 통합 게시글: postId 수집
             if (!postIds.isEmpty()) {
                 thumbnailUrlMap = fileAttachmentRepository
-                        .findByFileTargetTypeAndTargetIdInAndSortOrderAndPurpose(
+                        .findByFileTargetTypeAndFileTargetIdInAndSortOrderAndPurpose(
                                 FileTargetType.POST,
                                 postIds,
                                 1,
@@ -162,7 +162,7 @@ public class PostService {
                         )
                         .stream()
                         .collect(Collectors.toMap(
-                                FileAttachment::getTargetId,
+                                FileAttachment::getFileTargetId,
                                 attachment -> attachment.getFile().getUrl(region),
                                 (existing, replacement) -> existing  // 중복 키 처리
                         ));
@@ -229,7 +229,7 @@ public class PostService {
 
         // 첨부 이미지 조회
         List<FileAttachment> attachments = fileAttachmentRepository
-                .findByFileTargetTypeAndTargetIdOrderBySortOrder(FileTargetType.POST, postId);
+                .findByFileTargetTypeAndFileTargetIdOrderBySortOrder(FileTargetType.POST, postId);
 
         List<String> imageUrls = attachments.stream()
                 .map(attachment -> attachment.getFile().getUrl(region))
@@ -332,7 +332,7 @@ public class PostService {
         if (request.getFileIds() != null) {
             // 1. 기존 FileAttachment 조회
             List<FileAttachment> existingAttachments = fileAttachmentRepository
-                    .findByFileTargetTypeAndTargetId(FileTargetType.POST, postId);
+                    .findByFileTargetTypeAndFileTargetId(FileTargetType.POST, postId);
 
             // 2. 기존 파일 ID 목록
             List<Long> existingFileIds = existingAttachments.stream()

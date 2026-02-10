@@ -11,7 +11,7 @@ import com.solif.backend.domain.council.repository.CouncilMemberRepository;
 import com.solif.backend.domain.councilreview.entity.CouncilReviewPost;
 import com.solif.backend.domain.councilreview.repository.CouncilReviewPostRepository;
 import com.solif.backend.domain.notification.entity.NotificationType;
-import com.solif.backend.domain.notification.entity.TargetType;
+import com.solif.backend.domain.notification.entity.NotificationTargetType;
 import com.solif.backend.domain.notification.event.NotificationEvent;
 import com.solif.backend.domain.post.code.PostErrorCode;
 import com.solif.backend.domain.post.entity.Post;
@@ -119,7 +119,7 @@ public class CommentService {
                         eventPublisher.publishEvent(new NotificationEvent(
                                 memberId,
                                 NotificationType.COUNCIL_COMMENT,
-                                TargetType.COUNCIL_POST,
+                                NotificationTargetType.COUNCIL_POST,
                                 reviewPost.getCouncilReviewPostId(),
                                 "우리 팀 활동에 새 댓글이 달렸어요",
                                 commentPreview
@@ -133,7 +133,7 @@ public class CommentService {
                 eventPublisher.publishEvent(new NotificationEvent(
                         postAuthorId,
                         NotificationType.MENTORING_REVIEW_COMMENT,
-                        TargetType.MENTORING_REVIEW,
+                        NotificationTargetType.MENTORING_REVIEW,
                         post.getPostId(),
                         "작성하신 멘토링 후기에 댓글이 달렸어요.",
                         commentPreview
@@ -145,7 +145,7 @@ public class CommentService {
                 eventPublisher.publishEvent(new NotificationEvent(
                         postAuthorId,
                         NotificationType.COMMENT,
-                        TargetType.POST,
+                        NotificationTargetType.POST,
                         post.getPostId(),
                         "회원님의 글에 새로운 댓글이 달렸어요.",
                         commentPreview

@@ -1,6 +1,6 @@
 package com.solif.backend.domain.notification.entity;
 
-public enum TargetType {
+public enum NotificationTargetType {
     POST,               // 게시글
     MESSAGE,            // 쪽지
     NETWORK,            // 교류망

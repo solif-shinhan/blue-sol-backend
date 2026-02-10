@@ -30,7 +30,18 @@ public enum NotificationCategory {
                 NotificationType.MESSAGE,
                 NotificationType.CHEER,
                 NotificationType.HELP,
-                NotificationType.COUNCIL_ACTIVITY
+                NotificationType.COUNCIL_INVITE,
+                NotificationType.COUNCIL_ACTIVITY_START,
+                NotificationType.COUNCIL_ACTIVITY_DONE,
+                NotificationType.COUNCIL_COMMENT,
+                NotificationType.COUNCIL_RULE_CHANGE,
+                NotificationType.COUNCIL_HOME_EDIT,
+                NotificationType.COUNCIL_MEMBER_ADD,
+                NotificationType.COUNCIL_MEMBER_REMOVE,
+                NotificationType.MENTORING_REVIEW_COMMENT,
+                NotificationType.MENTORING_REQUEST_RESULT,
+                NotificationType.MENTORING_CARD_REPLY,
+                NotificationType.MENTORING_REQUEST_ARRIVED
         );
     }
 }

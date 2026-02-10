@@ -63,6 +63,9 @@ public class MyPageResponse {
         @Schema(description = "활동 날짜", example = "2026-02-10")
         private LocalDate activityDate;
 
+        @Schema(description = "썸네일 이미지 URL (첫 번째 이미지)", example = "https://...")
+        private String thumbnailImageUrl;
+
         @Schema(description = "작성 시간", example = "2026-02-10T15:30:00")
         private LocalDateTime createdAt;
     }

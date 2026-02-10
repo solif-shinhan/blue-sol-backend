@@ -32,7 +32,7 @@ import com.solif.backend.domain.postlike.repository.PostLikeRepository;
 import com.solif.backend.domain.user.entity.User;
 import com.solif.backend.domain.user.repository.UserRepository;
 import com.solif.backend.domain.notification.entity.NotificationType;
-import com.solif.backend.domain.notification.entity.TargetType;
+import com.solif.backend.domain.notification.entity.NotificationTargetType;
 import com.solif.backend.domain.notification.event.NotificationEvent;
 import com.solif.backend.global.common.exception.CustomException;
 import lombok.RequiredArgsConstructor;
@@ -108,7 +108,7 @@ public class CouncilReviewPostService {
 
         // N+1 해결: 대표 이미지를 배치로 조회
         Map<Long, String> thumbnailUrlMap = fileAttachmentRepository
-                .findByFileTargetTypeAndTargetIdInAndSortOrderAndPurpose(
+                .findByFileTargetTypeAndFileTargetIdInAndSortOrderAndPurpose(
                         FileTargetType.COUNCIL_POST,
                         councilReviewPostIds,
                         1,
@@ -116,7 +116,7 @@ public class CouncilReviewPostService {
                 )
                 .stream()
                 .collect(Collectors.toMap(
-                        FileAttachment::getTargetId,
+                        FileAttachment::getFileTargetId,
                         attachment -> attachment.getFile().getUrl(region),
                         (existing, replacement) -> existing  // 중복 키 처리
                 ));
@@ -151,7 +151,7 @@ public class CouncilReviewPostService {
 
         // 3. 이미지 URL 목록 조회
         List<FileAttachment> attachments = fileAttachmentRepository
-                .findByFileTargetTypeAndTargetIdOrderBySortOrder(
+                .findByFileTargetTypeAndFileTargetIdOrderBySortOrder(
                         FileTargetType.COUNCIL_POST,
                         councilReviewPostId
                 );
@@ -286,7 +286,7 @@ public class CouncilReviewPostService {
                 eventPublisher.publishEvent(new NotificationEvent(
                         memberId,
                         NotificationType.COUNCIL_ACTIVITY_START,
-                        TargetType.COUNCIL_POST,
+                        NotificationTargetType.COUNCIL_POST,
                         savedReviewPost.getCouncilReviewPostId(),
                         "릴레이 활동이 시작됐어요!",
                         "릴레이 활동이 시작됐어요! 내 파트를 작성해 주세요."
@@ -345,7 +345,7 @@ public class CouncilReviewPostService {
         if (request.getFileIds() != null) {
             // 기존 일반 이미지 조회
             List<FileAttachment> existingImages = fileAttachmentRepository
-                    .findByFileTargetTypeAndTargetId(
+                    .findByFileTargetTypeAndFileTargetId(
                             FileTargetType.COUNCIL_POST,
                             councilReviewPostId
                     )
@@ -392,7 +392,7 @@ public class CouncilReviewPostService {
         if (request.getReceiptFileId() != null) {
             // 기존 영수증 삭제
             List<FileAttachment> existingReceipts = fileAttachmentRepository
-                    .findByFileTargetTypeAndTargetId(
+                    .findByFileTargetTypeAndFileTargetId(
                             FileTargetType.COUNCIL_POST,
                             councilReviewPostId
                     )

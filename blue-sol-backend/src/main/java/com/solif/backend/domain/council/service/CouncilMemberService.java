@@ -11,7 +11,7 @@ import com.solif.backend.domain.council.entity.CouncilMemberRole;
 import com.solif.backend.domain.council.repository.CouncilMemberRepository;
 import com.solif.backend.domain.council.repository.CouncilRepository;
 import com.solif.backend.domain.notification.entity.NotificationType;
-import com.solif.backend.domain.notification.entity.TargetType;
+import com.solif.backend.domain.notification.entity.NotificationTargetType;
 import com.solif.backend.domain.notification.event.NotificationEvent;
 import com.solif.backend.domain.user.entity.User;
 import com.solif.backend.domain.user.repository.UserRepository;
@@ -127,7 +127,7 @@ public class CouncilMemberService {
             eventPublisher.publishEvent(new NotificationEvent(
                     newMember.getUser().getUserId(),
                     NotificationType.COUNCIL_INVITE,
-                    TargetType.COUNCIL,
+                    NotificationTargetType.COUNCIL,
                     councilId,
                     "자치회에 초대되었어요!",
                     "'" + currentUser.getName() + "' 팀장이 [" + councilName + "]에 초대했어요. 수락하러 갈까요?"
@@ -144,7 +144,7 @@ public class CouncilMemberService {
                 eventPublisher.publishEvent(new NotificationEvent(
                         memberId,
                         NotificationType.COUNCIL_MEMBER_ADD,
-                        TargetType.COUNCIL_MEMBER,
+                        NotificationTargetType.COUNCIL_MEMBER,
                         councilId,
                         "새로운 멤버가 합류했어요!",
                         "새로운 멤버가 " + councilName + "에 합류했습니다. 환영해 주세요!"
@@ -198,7 +198,7 @@ public class CouncilMemberService {
         eventPublisher.publishEvent(new NotificationEvent(
                 userIdToDelete,
                 NotificationType.COUNCIL_MEMBER_REMOVE,
-                TargetType.COUNCIL_MEMBER,
+                NotificationTargetType.COUNCIL_MEMBER,
                 councilId,
                 "[" + council.getCouncilName() + "] 멤버 명단에서 제외되었습니다.",
                 "[" + council.getCouncilName() + "] 멤버 명단에서 제외되었습니다."

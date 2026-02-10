@@ -280,7 +280,7 @@ public class MentoringService {
 
         // 첨부 파일 URL 조회
         List<FileAttachment> attachments = fileAttachmentRepository
-                .findByFileTargetTypeAndTargetIdOrderBySortOrder(FileTargetType.MENTORING_CARD, cardId);
+                .findByFileTargetTypeAndFileTargetIdOrderBySortOrder(FileTargetType.MENTORING_CARD, cardId);
 
         List<String> imageUrls = attachments.stream()
                 .map(attachment -> attachment.getFile().getUrl(region))

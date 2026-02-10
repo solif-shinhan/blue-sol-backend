@@ -12,7 +12,7 @@ import com.solif.backend.domain.council.repository.CouncilMemberRepository;
 import com.solif.backend.domain.council.repository.CouncilRepository;
 import com.solif.backend.domain.council.repository.CouncilRuleRepository;
 import com.solif.backend.domain.notification.entity.NotificationType;
-import com.solif.backend.domain.notification.entity.TargetType;
+import com.solif.backend.domain.notification.entity.NotificationTargetType;
 import com.solif.backend.domain.notification.event.NotificationEvent;
 import com.solif.backend.domain.user.entity.User;
 import com.solif.backend.domain.user.repository.UserRepository;
@@ -146,7 +146,7 @@ public class CouncilRuleService {
                 eventPublisher.publishEvent(new NotificationEvent(
                         memberId,
                         NotificationType.COUNCIL_RULE_CHANGE,
-                        TargetType.COUNCIL,
+                        NotificationTargetType.COUNCIL,
                         councilId,
                         "자치회 활동 규칙이 변경되었습니다.",
                         "자치회 활동 규칙이 변경되었습니다. 확인해 주세요."

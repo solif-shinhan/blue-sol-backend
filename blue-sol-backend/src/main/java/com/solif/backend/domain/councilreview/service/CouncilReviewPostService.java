@@ -31,10 +31,14 @@ import com.solif.backend.domain.post.repository.PostRepository;
 import com.solif.backend.domain.postlike.repository.PostLikeRepository;
 import com.solif.backend.domain.user.entity.User;
 import com.solif.backend.domain.user.repository.UserRepository;
+import com.solif.backend.domain.notification.entity.NotificationType;
+import com.solif.backend.domain.notification.entity.TargetType;
+import com.solif.backend.domain.notification.event.NotificationEvent;
 import com.solif.backend.global.common.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
@@ -63,6 +67,7 @@ public class CouncilReviewPostService {
     private final PostLikeRepository postLikeRepository;
     private final FileService fileService;
     private final FileAttachmentRepository fileAttachmentRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Value("${cloud.aws.region.static}")
     private String region;
@@ -273,6 +278,21 @@ public class CouncilReviewPostService {
 
         log.info("활동 후기 생성 완료 - reviewPostId: {}, postId: {}",
                 savedReviewPost.getCouncilReviewPostId(), savedPost.getPostId());
+
+        // 알림 발송: 팀원 전체에게 활동 시작 알림 (작성자 제외)
+        List<Long> memberUserIds = councilMemberRepository.findUserIdsByCouncilId(councilId);
+        for (Long memberId : memberUserIds) {
+            if (!memberId.equals(userId)) {
+                eventPublisher.publishEvent(new NotificationEvent(
+                        memberId,
+                        NotificationType.COUNCIL_ACTIVITY_START,
+                        TargetType.COUNCIL_POST,
+                        savedReviewPost.getCouncilReviewPostId(),
+                        "릴레이 활동이 시작됐어요!",
+                        "릴레이 활동이 시작됐어요! 내 파트를 작성해 주세요."
+                ));
+            }
+        }
 
         return CouncilReviewPostCreateResponse.of(
                 savedReviewPost.getCouncilReviewPostId(),

@@ -37,6 +37,12 @@ public class NotificationDetailResponse {
     @Schema(description = "이동 대상 ID", example = "10")
     private Long targetId;
 
+    @Schema(description = "발신자 이름")
+    private String senderName;
+
+    @Schema(description = "발신자 프로필 이미지 URL")
+    private String senderProfileImage;
+
     @Getter
     @Builder
     @Schema(description = "이미지 정보")
@@ -49,7 +55,8 @@ public class NotificationDetailResponse {
         private String imageUrl;
     }
 
-    public static NotificationDetailResponse from(Notification notification, List<ImageInfo> images) {
+    public static NotificationDetailResponse from(Notification notification, List<ImageInfo> images,
+                                                      String senderName, String senderProfileImage) {
         return NotificationDetailResponse.builder()
                 .notificationId(notification.getNotificationId())
                 .notificationTitle(notification.getNotificationTitle())
@@ -59,6 +66,8 @@ public class NotificationDetailResponse {
                 .images(images)
                 .targetType(notification.getNotificationTargetType().name())
                 .targetId(notification.getTargetId())
+                .senderName(senderName)
+                .senderProfileImage(senderProfileImage)
                 .build();
     }
 }

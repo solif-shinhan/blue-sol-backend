@@ -55,6 +55,15 @@ public class ScholarshipProgramService {
                 optionalPrograms.stream().map(spp -> spp.getPost().getPostId())
         ).collect(Collectors.toList());
 
+        // Early return
+        if (allPostIds.isEmpty()) {
+            log.info("장학 프로그램 데이터 없음 - 빈 응답 반환");
+            return ScholarshipProgramListResponse.builder()
+                    .required(List.of())
+                    .optional(List.of())
+                    .build();
+        }
+
         Map<Long, Long> commentCountMap = commentRepository.countByPostIds(allPostIds).stream()
                 .collect(Collectors.toMap(
                         PostCommentCount::getPostId,

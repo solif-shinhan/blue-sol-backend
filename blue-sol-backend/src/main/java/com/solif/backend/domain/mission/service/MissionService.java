@@ -146,26 +146,51 @@ public class MissionService {
                 user, category, currentSeason
         ).orElseThrow(() -> new CustomException(MissionErrorCode.PINECONE_NOT_FOUND));
 
+        // 완료된 미션 3개 조회 (UserMission 기준 - sequenceOrder 순)
+        List<UserMission> completedUserMissions = userMissionRepository
+                .findByUserAndMission_MissionCategory(user, category)
+                .stream()
+                .filter(UserMission::isCompleted)
+                .sorted((um1, um2) -> Integer.compare(
+                        um1.getMission().getSequenceOrder(),
+                        um2.getMission().getSequenceOrder()
+                ))
+                .limit(3)
+                .toList();
+
         // 추억 조회
         List<PineconeMemory> memories = pineconeMemoryRepository.findByUserPineconeOrderByCreatedAtAsc(pinecone);
+
+        // conditionType 기준으로 Map 생성 (빠른 조회용)
+        Map<MissionConditionType, PineconeMemory> memoryMap = memories.stream()
+                .collect(Collectors.toMap(PineconeMemory::getConditionType, m -> m, (m1, m2) -> m1));
 
         // 완료한 미션 3개 구성
         List<PineconeMemoryResponse.CompletedMission> completedMissions = new ArrayList<>();
 
-        for (PineconeMemory memory : memories) {
-            MissionConditionType conditionType = memory.getConditionType();
-            String missionTitle = getMissionTitleByConditionType(conditionType);
+        for (UserMission userMission : completedUserMissions) {
+            Mission mission = userMission.getMission();
+            MissionConditionType conditionType = mission.getConditionType();
+            String missionTitle = mission.getMissionTitle();
 
-            boolean hasMemoryDetail = hasMemoryDetail(memory.getSourceType());
+            // 해당 미션의 PineconeMemory가 있는지 확인
+            PineconeMemory memory = memoryMap.get(conditionType);
+
+            boolean hasMemoryDetail = false;
             PineconeMemoryResponse.MemoryDetail memoryDetail = null;
 
-            if (hasMemoryDetail) {
-                memoryDetail = buildMemoryDetail(memory);
-                // null인 경우 hasMemoryDetail을 false로 변경
-                if (memoryDetail == null) {
-                    hasMemoryDetail = false;
+            if (memory != null) {
+                hasMemoryDetail = hasMemoryDetail(memory.getSourceType());
+
+                if (hasMemoryDetail) {
+                    memoryDetail = buildMemoryDetail(memory);
+                    // null인 경우 hasMemoryDetail을 false로 변경
+                    if (memoryDetail == null) {
+                        hasMemoryDetail = false;
+                    }
                 }
             }
+
 
             completedMissions.add(
                     PineconeMemoryResponse.CompletedMission.builder()
@@ -556,6 +581,7 @@ public class MissionService {
                 }
                 yield PineconeMemoryResponse.MemoryDetail.builder()
                         .memoryType("MESSAGE")
+                        .sourceId(memory.getSourceId())
                         .memoryContent(message.getMessageTitle())
                         .relatedUserName(message.getReceiver().getName())
                         .createdAt(message.getCreatedAt().toString())
@@ -568,6 +594,7 @@ public class MissionService {
                 }
                 yield PineconeMemoryResponse.MemoryDetail.builder()
                         .memoryType("POST")
+                        .sourceId(memory.getSourceId())
                         .memoryContent(post.getPostTitle())
                         .relatedUserName(null)
                         .createdAt(post.getCreatedAt().toString())
@@ -581,6 +608,7 @@ public class MissionService {
                 }
                 yield PineconeMemoryResponse.MemoryDetail.builder()
                         .memoryType("COMMENT")
+                        .sourceId(memory.getSourceId())
                         .memoryContent(post.getPostTitle())
                         .relatedUserName(post.getAuthor().getName())
                         .createdAt(post.getCreatedAt().toString())

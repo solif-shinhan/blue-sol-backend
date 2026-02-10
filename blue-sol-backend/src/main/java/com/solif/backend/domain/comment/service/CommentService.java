@@ -7,6 +7,12 @@ import com.solif.backend.domain.comment.dto.CommentResponse;
 import com.solif.backend.domain.comment.dto.CommentUpdateRequest;
 import com.solif.backend.domain.comment.entity.Comment;
 import com.solif.backend.domain.comment.repository.CommentRepository;
+import com.solif.backend.domain.council.repository.CouncilMemberRepository;
+import com.solif.backend.domain.councilreview.entity.CouncilReviewPost;
+import com.solif.backend.domain.councilreview.repository.CouncilReviewPostRepository;
+import com.solif.backend.domain.notification.entity.NotificationType;
+import com.solif.backend.domain.notification.entity.TargetType;
+import com.solif.backend.domain.notification.event.NotificationEvent;
 import com.solif.backend.domain.post.code.PostErrorCode;
 import com.solif.backend.domain.post.entity.Post;
 import com.solif.backend.domain.post.repository.PostRepository;
@@ -15,6 +21,7 @@ import com.solif.backend.domain.user.repository.UserRepository;
 import com.solif.backend.global.common.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +36,9 @@ public class CommentService {
     private final CommentRepository commentRepository;
     private final PostRepository postRepository;
     private final UserRepository userRepository;
+    private final ApplicationEventPublisher eventPublisher;
+    private final CouncilMemberRepository councilMemberRepository;
+    private final CouncilReviewPostRepository councilReviewPostRepository;
 
     // 댓글 목록 조회
     public List<CommentResponse> getComments(Long postId) {
@@ -80,7 +90,73 @@ public class CommentService {
         // 저장
         Comment savedComment = commentRepository.save(comment);
 
+        // 알림 발송
+        publishCommentNotification(userId, post, savedComment);
+
         return CommentResponse.from(savedComment);
+    }
+
+    /**
+     * 댓글 알림 발송 (boardId 기반 분기)
+     * - boardId=1 (자치회 활동 후기): COUNCIL_COMMENT → 팀원 전체 (작성자 제외)
+     * - boardId=2 (멘토링 후기): MENTORING_REVIEW_COMMENT → 글 작성자
+     * - boardId=3,4 (고민상담, 재단소식 등): COMMENT → 글 작성자
+     */
+    private void publishCommentNotification(Long commenterId, Post post, Comment comment) {
+        Long boardId = post.getBoard().getBoardId();
+        Long postAuthorId = post.getAuthor().getUserId();
+        String commentPreview = truncate(comment.getCommentContent(), 30);
+
+        if (boardId == 1L) {
+            // 자치회 활동 후기 → 팀원 전체에게 COUNCIL_COMMENT
+            CouncilReviewPost reviewPost = councilReviewPostRepository.findByPostId(post.getPostId()).orElse(null);
+            if (reviewPost != null) {
+                Long councilId = reviewPost.getCouncil().getCouncilId();
+                List<Long> memberUserIds = councilMemberRepository.findUserIdsByCouncilId(councilId);
+
+                for (Long memberId : memberUserIds) {
+                    if (!memberId.equals(commenterId)) {
+                        eventPublisher.publishEvent(new NotificationEvent(
+                                memberId,
+                                NotificationType.COUNCIL_COMMENT,
+                                TargetType.COUNCIL_POST,
+                                reviewPost.getCouncilReviewPostId(),
+                                "우리 팀 활동에 새 댓글이 달렸어요",
+                                commentPreview
+                        ));
+                    }
+                }
+            }
+        } else if (boardId == 2L) {
+            // 멘토링 후기 → 글 작성자에게 MENTORING_REVIEW_COMMENT
+            if (!commenterId.equals(postAuthorId)) {
+                eventPublisher.publishEvent(new NotificationEvent(
+                        postAuthorId,
+                        NotificationType.MENTORING_REVIEW_COMMENT,
+                        TargetType.MENTORING_REVIEW,
+                        post.getPostId(),
+                        "작성하신 멘토링 후기에 댓글이 달렸어요.",
+                        commentPreview
+                ));
+            }
+        } else {
+            // 일반 게시판 (고민상담, 재단소식 등) → 글 작성자에게 COMMENT
+            if (!commenterId.equals(postAuthorId)) {
+                eventPublisher.publishEvent(new NotificationEvent(
+                        postAuthorId,
+                        NotificationType.COMMENT,
+                        TargetType.POST,
+                        post.getPostId(),
+                        "회원님의 글에 새로운 댓글이 달렸어요.",
+                        commentPreview
+                ));
+            }
+        }
+    }
+
+    private String truncate(String text, int maxLength) {
+        if (text == null) return "";
+        return text.length() <= maxLength ? text : text.substring(0, maxLength) + "...";
     }
 
     // 댓글 수정

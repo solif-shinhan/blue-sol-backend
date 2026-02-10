@@ -75,8 +75,12 @@ public class MessageService {
                 .collect(Collectors.toMap(
                         profile -> profile.getUser().getUserId(),
                         profile -> new String[]{
-                                String.format("https://%s.s3.%s.amazonaws.com/%s", bucket, region, profile.getUserCharacter()),
-                                String.format("https://%s.s3.%s.amazonaws.com/%s", bucket, region, profile.getBackgroundPattern())
+                                profile.getUserCharacter() != null
+                                        ? String.format("https://%s.s3.%s.amazonaws.com/%s", bucket, region, profile.getUserCharacter())
+                                        : null,
+                                profile.getBackgroundPattern() != null
+                                        ? String.format("https://%s.s3.%s.amazonaws.com/%s", bucket, region, profile.getBackgroundPattern())
+                                        : null
                         },
                         (existing, replacement) -> existing
                 ));

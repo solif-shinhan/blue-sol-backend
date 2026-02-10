@@ -159,6 +159,7 @@ public class NotificationService {
         Map<Long, String> profileImageMap = allSenderUserIds.isEmpty()
                 ? Collections.emptyMap()
                 : userProfileRepository.findByUser_UserIdIn(allSenderUserIds.stream().distinct().toList()).stream()
+                    .filter(profile -> profile.getUserCharacter() != null)
                     .collect(java.util.stream.Collectors.toMap(
                             profile -> profile.getUser().getUserId(),
                             profile -> String.format("https://%s.s3.%s.amazonaws.com/%s", bucket, region, profile.getUserCharacter()),

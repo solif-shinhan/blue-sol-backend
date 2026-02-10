@@ -13,6 +13,8 @@ import com.solif.backend.domain.message.code.MessageErrorCode;
 import com.solif.backend.domain.message.dto.*;
 import com.solif.backend.domain.message.entity.Message;
 import com.solif.backend.domain.message.repository.MessageRepository;
+import com.solif.backend.domain.profile.entity.UserProfile;
+import com.solif.backend.domain.profile.repository.UserProfileRepository;
 import com.solif.backend.domain.user.entity.User;
 import com.solif.backend.domain.user.repository.UserRepository;
 import com.solif.backend.global.common.exception.CustomException;
@@ -26,6 +28,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -38,9 +42,41 @@ public class MessageService {
     private final ApplicationEventPublisher eventPublisher;
     private final FileService fileService;
     private final FileAttachmentRepository fileAttachmentRepository;
+    private final UserProfileRepository userProfileRepository;
+
+    @Value("${cloud.aws.s3.bucket}")
+    private String bucket;
 
     @Value("${cloud.aws.region.static}")
     private String region;
+
+    /**
+     * 사용자 ID로 캐릭터 이미지 URL과 배경 이미지 URL을 조회합니다.
+     */
+    private String[] getProfileImageUrls(Long userId) {
+        return userProfileRepository.findByUser_UserId(userId)
+                .map(profile -> new String[]{
+                        String.format("https://%s.s3.%s.amazonaws.com/%s", bucket, region, profile.getUserCharacter()),
+                        String.format("https://%s.s3.%s.amazonaws.com/%s", bucket, region, profile.getBackgroundPattern())
+                })
+                .orElse(new String[]{null, null});
+    }
+
+    /**
+     * 여러 사용자 ID의 캐릭터 이미지 URL과 배경 이미지 URL을 배치 조회합니다.
+     */
+    private Map<Long, String[]> getProfileImageUrlsBatch(List<Long> userIds) {
+        List<UserProfile> profiles = userProfileRepository.findByUser_UserIdIn(userIds);
+        return profiles.stream()
+                .collect(Collectors.toMap(
+                        profile -> profile.getUser().getUserId(),
+                        profile -> new String[]{
+                                String.format("https://%s.s3.%s.amazonaws.com/%s", bucket, region, profile.getUserCharacter()),
+                                String.format("https://%s.s3.%s.amazonaws.com/%s", bucket, region, profile.getBackgroundPattern())
+                        },
+                        (existing, replacement) -> existing
+                ));
+    }
 
     // 쪽지 발송
     @Transactional
@@ -99,7 +135,17 @@ public class MessageService {
 
         Slice<Message> messages = messageRepository.findReceivedMessages(userId, pageable);
 
-        return messages.map(MessageListResponse::fromReceived);
+        // 상대방(발신자)들의 프로필 이미지 배치 조회
+        List<Long> senderIds = messages.getContent().stream()
+                .map(m -> m.getSender().getUserId())
+                .distinct()
+                .toList();
+        Map<Long, String[]> profileImages = getProfileImageUrlsBatch(senderIds);
+
+        return messages.map(message -> {
+            String[] images = profileImages.getOrDefault(message.getSender().getUserId(), new String[]{null, null});
+            return MessageListResponse.fromReceived(message, images[0], images[1]);
+        });
     }
 
     // 보낸 쪽지 목록 조회
@@ -108,7 +154,17 @@ public class MessageService {
 
         Slice<Message> messages = messageRepository.findSentMessages(userId, pageable);
 
-        return messages.map(MessageListResponse::fromSent);
+        // 상대방(수신자)들의 프로필 이미지 배치 조회
+        List<Long> receiverIds = messages.getContent().stream()
+                .map(m -> m.getReceiver().getUserId())
+                .distinct()
+                .toList();
+        Map<Long, String[]> profileImages = getProfileImageUrlsBatch(receiverIds);
+
+        return messages.map(message -> {
+            String[] images = profileImages.getOrDefault(message.getReceiver().getUserId(), new String[]{null, null});
+            return MessageListResponse.fromSent(message, images[0], images[1]);
+        });
     }
 
     // 쪽지 상세 조회
@@ -146,7 +202,12 @@ public class MessageService {
                 .map(attachment -> attachment.getFile().getUrl(region))
                 .toList();
 
-        return MessageDetailResponse.from(message, imageUrls);
+        // 발신자/수신자 프로필 이미지 조회
+        String[] senderImages = getProfileImageUrls(message.getSender().getUserId());
+        String[] receiverImages = getProfileImageUrls(message.getReceiver().getUserId());
+
+        return MessageDetailResponse.from(message, imageUrls,
+                senderImages[0], senderImages[1], receiverImages[0], receiverImages[1]);
     }
 
     // 쪽지 삭제

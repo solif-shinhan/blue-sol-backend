@@ -1,7 +1,7 @@
 package com.solif.backend.domain.notification.event;
 
 import com.solif.backend.domain.notification.entity.NotificationType;
-import com.solif.backend.domain.notification.entity.TargetType;
+import com.solif.backend.domain.notification.entity.NotificationTargetType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -15,7 +15,7 @@ public class NotificationEvent {
 
     private final Long receiverUserId;
     private final NotificationType notificationType;
-    private final TargetType targetType;
+    private final NotificationTargetType notificationTargetType;
     private final Long targetId;
     private final String title;
     private final String content;

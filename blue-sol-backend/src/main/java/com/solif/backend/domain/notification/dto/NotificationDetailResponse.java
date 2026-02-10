@@ -57,7 +57,7 @@ public class NotificationDetailResponse {
                 .notificationType(notification.getNotificationType().name())
                 .createdAt(notification.getCreatedAt())
                 .images(images)
-                .targetType(notification.getTargetType().name())
+                .targetType(notification.getNotificationTargetType().name())
                 .targetId(notification.getTargetId())
                 .build();
     }

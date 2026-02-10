@@ -72,4 +72,13 @@ public interface CouncilReviewParticipantRepository extends JpaRepository<Counci
                         row -> (Long) row[1]
                 ));
     }
+
+    // 특정 사용자가 참여한 활동 후기 목록 조회 (최신순, 삭제되지 않은 것만)
+    @Query("SELECT crp FROM CouncilReviewParticipant crp " +
+            "JOIN FETCH crp.councilReviewPost post " +
+            "JOIN FETCH post.post p " +
+            "WHERE crp.user.userId = :userId " +
+            "AND post.deletedAt IS NULL " +
+            "ORDER BY post.createdAt DESC")
+    List<CouncilReviewParticipant> findByUserIdWithPostOrderByCreatedAtDesc(@Param("userId") Long userId);
 }

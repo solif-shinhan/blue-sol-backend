@@ -2,6 +2,7 @@ package com.solif.backend.domain.scholarshipprogrampost.repository;
 
 import com.solif.backend.domain.post.entity.PostCategory;
 import com.solif.backend.domain.scholarshipprogrampost.entity.ScholarshipProgramPost;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -25,4 +26,17 @@ public interface ScholarshipProgramPostRepository extends JpaRepository<Scholars
     List<ScholarshipProgramPost> findByPostCategoryWithPostAndAuthor(
             @Param("postCategory") PostCategory postCategory
     );
+
+    /**
+     * 장학 프로그램 최신 3개 조회 (카테고리 구분 없이)
+     * - N+1 문제 해결을 위한 fetch join
+     * - 삭제되지 않은 게시글만 조회
+     * - 최신순 정렬
+     */
+    @Query("SELECT spp FROM ScholarshipProgramPost spp " +
+            "JOIN FETCH spp.post p " +
+            "JOIN FETCH p.author " +
+            "WHERE p.deletedAt IS NULL " +
+            "ORDER BY p.createdAt DESC")
+    List<ScholarshipProgramPost> findTop3WithPostAndAuthor(Pageable pageable);
 }

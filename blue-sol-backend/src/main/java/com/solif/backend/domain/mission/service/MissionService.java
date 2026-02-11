@@ -3,6 +3,10 @@ package com.solif.backend.domain.mission.service;
 import com.solif.backend.domain.auth.code.AuthErrorCode;
 import com.solif.backend.domain.comment.entity.Comment;
 import com.solif.backend.domain.comment.repository.CommentRepository;
+import com.solif.backend.domain.file.entity.AttachmentPurpose;
+import com.solif.backend.domain.file.entity.FileAttachment;
+import com.solif.backend.domain.file.entity.FileTargetType;
+import com.solif.backend.domain.file.repository.FileAttachmentRepository;
 import com.solif.backend.domain.message.entity.Message;
 import com.solif.backend.domain.message.repository.MessageRepository;
 import com.solif.backend.domain.mission.code.MissionErrorCode;
@@ -18,14 +22,19 @@ import com.solif.backend.domain.notification.entity.Notification;
 import com.solif.backend.domain.notification.entity.NotificationType;
 import com.solif.backend.domain.notification.repository.NotificationRepository;
 import com.solif.backend.domain.post.entity.Post;
+import com.solif.backend.domain.post.entity.PostCategory;
 import com.solif.backend.domain.post.repository.PostRepository;
 import com.solif.backend.domain.profile.entity.UserProfile;
 import com.solif.backend.domain.profile.repository.UserProfileRepository;
+import com.solif.backend.domain.scholarshipprogrampost.entity.ScholarshipProgramPost;
+import com.solif.backend.domain.scholarshipprogrampost.repository.ScholarshipProgramPostRepository;
 import com.solif.backend.domain.user.entity.User;
 import com.solif.backend.domain.user.repository.UserRepository;
 import com.solif.backend.global.common.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -52,6 +61,11 @@ public class MissionService {
     private final MessageRepository messageRepository;
     private final PostRepository postRepository;
     private final CommentRepository commentRepository;
+    private final ScholarshipProgramPostRepository scholarshipProgramPostRepository;
+    private final FileAttachmentRepository fileAttachmentRepository;
+
+    @Value("${cloud.aws.region.static}")
+    private String region;
 
     // ===== 미션 진행 상황 조회 =====
     public MissionProgressResponse getMissionProgress(Long userId) {
@@ -73,12 +87,16 @@ public class MissionService {
         // 이번주 미션 리스트 (각 카테고리의 현재 진행 중인 미션)
         List<MissionProgressResponse.WeeklyMissionCard> weeklyMissions = buildWeeklyMissions(userMissions);
 
+        // 장학 프로그램 최신 3개
+        List<MissionProgressResponse.ScholarshipProgramCard> scholarshipPrograms = buildScholarshipPrograms();
+
         return MissionProgressResponse.builder()
                 .currentSeason(currentSeason)
                 .earnedPineconeCount(earnedPineconeCount.intValue())
                 .daysUntilSeasonEnd(daysUntilEnd)
                 .categoryProgress(categoryProgress)
                 .weeklyMissions(weeklyMissions)
+                .scholarshipPrograms(scholarshipPrograms)
                 .build();
     }
 
@@ -660,5 +678,53 @@ public class MissionService {
         }
 
         log.info("사용자 미션 초기화 완료 - userId: {}, 미션 개수: {}", user.getUserId(), allMissions.size());
+    }
+
+    // 장학 프로그램 최신 3개 구성
+    private List<MissionProgressResponse.ScholarshipProgramCard> buildScholarshipPrograms() {
+        // 최신 3개 조회
+        List<ScholarshipProgramPost> posts = scholarshipProgramPostRepository
+                .findTop3WithPostAndAuthor(PageRequest.of(0, 3));
+
+        if (posts.isEmpty()) {
+            return List.of();
+        }
+
+        // postId 수집 (썸네일 이미지 조회용)
+        List<Long> postIds = posts.stream()
+                .map(spp -> spp.getPost().getPostId())
+                .toList();
+
+        // N+1 해결: 썸네일 이미지 배치 조회
+        Map<Long, String> thumbnailUrlMap = fileAttachmentRepository
+                .findByFileTargetTypeAndFileTargetIdInAndSortOrderAndPurpose(
+                        FileTargetType.POST,
+                        postIds,
+                        1,
+                        AttachmentPurpose.POST_ATTACHMENT
+                )
+                .stream()
+                .collect(Collectors.toMap(
+                        FileAttachment::getFileTargetId,
+                        attachment -> attachment.getFile().getUrl(region),
+                        (existing, replacement) -> existing
+                ));
+
+        // ScholarshipProgramCard 생성
+        return posts.stream()
+                .map(spp -> {
+                    Post post = spp.getPost();
+                    PostCategory category = post.getPostCategory();
+
+                    return MissionProgressResponse.ScholarshipProgramCard.builder()
+                            .postId(post.getPostId())
+                            .category(category != null ? category.name() : null)
+                            .categoryName(category != null ? category.getDescription() : null)
+                            .title(post.getPostTitle())
+                            .thumbnailUrl(thumbnailUrlMap.get(post.getPostId()))
+                            .createdAt(post.getCreatedAt().toString())
+                            .build();
+                })
+                .toList();
     }
 }

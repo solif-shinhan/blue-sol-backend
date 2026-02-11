@@ -67,6 +67,9 @@ public class YouTubeController {
         log.info("카테고리별 동영상 조회: category={}, maxResults={}", category, maxResults);
         
         // 최대값 제한
+        if (maxResults < 1) {
+            maxResults = 1;
+        }
         if (maxResults > 50) {
             maxResults = 50;
         }

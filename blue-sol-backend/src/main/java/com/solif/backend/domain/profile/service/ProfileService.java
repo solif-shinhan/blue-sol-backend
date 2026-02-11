@@ -5,6 +5,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.solif.backend.domain.interest.entity.UserInterest;
 import com.solif.backend.domain.interest.repository.UserInterestRepository;
+import com.solif.backend.domain.mission.entity.MissionConditionType;
+import com.solif.backend.domain.mission.service.MissionService;
 import com.solif.backend.domain.profile.dto.*;
 import com.solif.backend.domain.profile.entity.UserProfile;
 import com.solif.backend.domain.profile.exception.ProfileErrorCode;
@@ -38,6 +40,7 @@ public class ProfileService {
     private final QrCodeService qrCodeService;
     private final ObjectMapper objectMapper;
     private final S3Service s3Service;
+    private final MissionService missionService;
 
     // 프로필 생성
     @Transactional
@@ -69,6 +72,10 @@ public class ProfileService {
                 .build();
 
         userProfileRepository.save(profile);
+
+        // 미션 체크: 프로필 100% 완성 (온보딩 완료)
+        missionService.checkAndCompleteMission(userId, MissionConditionType.PROFILE_COMPLETE, null);
+
 
         return ProfileCreateResponse.of(profile.getProfileId(), qrResult.imageUrl());
     }

@@ -3,6 +3,10 @@ package com.solif.backend.domain.mission.service;
 import com.solif.backend.domain.auth.code.AuthErrorCode;
 import com.solif.backend.domain.comment.entity.Comment;
 import com.solif.backend.domain.comment.repository.CommentRepository;
+import com.solif.backend.domain.file.entity.AttachmentPurpose;
+import com.solif.backend.domain.file.entity.FileAttachment;
+import com.solif.backend.domain.file.entity.FileTargetType;
+import com.solif.backend.domain.file.repository.FileAttachmentRepository;
 import com.solif.backend.domain.message.entity.Message;
 import com.solif.backend.domain.message.repository.MessageRepository;
 import com.solif.backend.domain.mission.code.MissionErrorCode;
@@ -18,14 +22,19 @@ import com.solif.backend.domain.notification.entity.Notification;
 import com.solif.backend.domain.notification.entity.NotificationType;
 import com.solif.backend.domain.notification.repository.NotificationRepository;
 import com.solif.backend.domain.post.entity.Post;
+import com.solif.backend.domain.post.entity.PostCategory;
 import com.solif.backend.domain.post.repository.PostRepository;
 import com.solif.backend.domain.profile.entity.UserProfile;
 import com.solif.backend.domain.profile.repository.UserProfileRepository;
+import com.solif.backend.domain.scholarshipprogrampost.entity.ScholarshipProgramPost;
+import com.solif.backend.domain.scholarshipprogrampost.repository.ScholarshipProgramPostRepository;
 import com.solif.backend.domain.user.entity.User;
 import com.solif.backend.domain.user.repository.UserRepository;
 import com.solif.backend.global.common.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -52,6 +61,11 @@ public class MissionService {
     private final MessageRepository messageRepository;
     private final PostRepository postRepository;
     private final CommentRepository commentRepository;
+    private final ScholarshipProgramPostRepository scholarshipProgramPostRepository;
+    private final FileAttachmentRepository fileAttachmentRepository;
+
+    @Value("${cloud.aws.region.static}")
+    private String region;
 
     // ===== 미션 진행 상황 조회 =====
     public MissionProgressResponse getMissionProgress(Long userId) {
@@ -73,12 +87,16 @@ public class MissionService {
         // 이번주 미션 리스트 (각 카테고리의 현재 진행 중인 미션)
         List<MissionProgressResponse.WeeklyMissionCard> weeklyMissions = buildWeeklyMissions(userMissions);
 
+        // 장학 프로그램 최신 3개
+        List<MissionProgressResponse.ScholarshipProgramCard> scholarshipPrograms = buildScholarshipPrograms();
+
         return MissionProgressResponse.builder()
                 .currentSeason(currentSeason)
                 .earnedPineconeCount(earnedPineconeCount.intValue())
                 .daysUntilSeasonEnd(daysUntilEnd)
                 .categoryProgress(categoryProgress)
                 .weeklyMissions(weeklyMissions)
+                .scholarshipPrograms(scholarshipPrograms)
                 .build();
     }
 
@@ -146,26 +164,51 @@ public class MissionService {
                 user, category, currentSeason
         ).orElseThrow(() -> new CustomException(MissionErrorCode.PINECONE_NOT_FOUND));
 
+        // 완료된 미션 3개 조회 (UserMission 기준 - sequenceOrder 순)
+        List<UserMission> completedUserMissions = userMissionRepository
+                .findByUserAndMission_MissionCategory(user, category)
+                .stream()
+                .filter(UserMission::isCompleted)
+                .sorted((um1, um2) -> Integer.compare(
+                        um1.getMission().getSequenceOrder(),
+                        um2.getMission().getSequenceOrder()
+                ))
+                .limit(3)
+                .toList();
+
         // 추억 조회
         List<PineconeMemory> memories = pineconeMemoryRepository.findByUserPineconeOrderByCreatedAtAsc(pinecone);
+
+        // conditionType 기준으로 Map 생성 (빠른 조회용)
+        Map<MissionConditionType, PineconeMemory> memoryMap = memories.stream()
+                .collect(Collectors.toMap(PineconeMemory::getConditionType, m -> m, (m1, m2) -> m1));
 
         // 완료한 미션 3개 구성
         List<PineconeMemoryResponse.CompletedMission> completedMissions = new ArrayList<>();
 
-        for (PineconeMemory memory : memories) {
-            MissionConditionType conditionType = memory.getConditionType();
-            String missionTitle = getMissionTitleByConditionType(conditionType);
+        for (UserMission userMission : completedUserMissions) {
+            Mission mission = userMission.getMission();
+            MissionConditionType conditionType = mission.getConditionType();
+            String missionTitle = mission.getMissionTitle();
 
-            boolean hasMemoryDetail = hasMemoryDetail(memory.getSourceType());
+            // 해당 미션의 PineconeMemory가 있는지 확인
+            PineconeMemory memory = memoryMap.get(conditionType);
+
+            boolean hasMemoryDetail = false;
             PineconeMemoryResponse.MemoryDetail memoryDetail = null;
 
-            if (hasMemoryDetail) {
-                memoryDetail = buildMemoryDetail(memory);
-                // null인 경우 hasMemoryDetail을 false로 변경
-                if (memoryDetail == null) {
-                    hasMemoryDetail = false;
+            if (memory != null) {
+                hasMemoryDetail = hasMemoryDetail(memory.getSourceType());
+
+                if (hasMemoryDetail) {
+                    memoryDetail = buildMemoryDetail(memory);
+                    // null인 경우 hasMemoryDetail을 false로 변경
+                    if (memoryDetail == null) {
+                        hasMemoryDetail = false;
+                    }
                 }
             }
+
 
             completedMissions.add(
                     PineconeMemoryResponse.CompletedMission.builder()
@@ -218,9 +261,6 @@ public class MissionService {
         if (shouldComplete) {
             userMission.complete();
             log.info("미션 완료 - userId: {}, missionId: {}, conditionType: {}", userId, mission.getMissionId(), conditionType);
-
-            // TODO: 알림 발송
-            // notificationService.send(userId, NotificationType.MISSION_COMPLETED, ...);
         }
     }
 
@@ -253,8 +293,6 @@ public class MissionService {
             userMission.complete();
             log.info("미션 완료 (카운트 달성) - userId: {}, missionId: {}, count: {}/{}",
                     userId, mission.getMissionId(), userMission.getProgressCount(), targetCount);
-
-            // TODO: 알림 발송
         }
     }
 
@@ -445,24 +483,22 @@ public class MissionService {
 
     // 경험 나누기 → 쪽지 소통 조건 체크
     private boolean checkMessageThreadCondition(User user) {
-        // HELP 알림 조회: 내가 보낸 HELP 알림
-        // targetId에 sender(나)의 userId가 저장되어 있음
+        // HELP 알림 조회: 나에게 온 HELP 알림 (내가 receiver인 경우)
         List<Notification> helpNotifications = notificationRepository
-                .findByNotificationTypeAndTargetId(NotificationType.HELP, user.getUserId());
+                .findByReceiverAndNotificationType(user, NotificationType.HELP);
 
         if (helpNotifications.isEmpty()) {
             return false;
         }
 
-        // 해당 사람들(receiver)과 쪽지를 주고받았는지 확인
+        // 나에게 HELP를 보낸 사람들(sender)에게 쪽지를 보냈는지 확인
         for (Notification notification : helpNotifications) {
-            Long receiverId = notification.getReceiver().getUserId();
+            Long senderId = notification.getTargetId();  // HELP를 보낸 사람의 userId
 
-            // 쪽지 확인 (양방향)
-            boolean hasMessage = messageRepository.existsBySender_UserIdAndReceiver_UserId(user.getUserId(), receiverId) ||
-                    messageRepository.existsBySender_UserIdAndReceiver_UserId(receiverId, user.getUserId());
+            // 내가 그 사람에게 쪽지를 보냈는지 확인
+            boolean sentMessage = messageRepository.existsBySender_UserIdAndReceiver_UserId(user.getUserId(), senderId);
 
-            if (hasMessage) {
+            if (sentMessage) {
                 return true;
             }
         }
@@ -534,15 +570,16 @@ public class MissionService {
             }
             case POST_CREATE -> {
                 // 첫 번째 작성한 게시글
-                Post post = postRepository.findFirstByAuthor_UserIdOrderByCreatedAtAsc(user.getUserId())
+                Post post = postRepository
+                        .findTop1ByAuthor_UserIdAndDeletedAtIsNullOrderByCreatedAtAsc(user.getUserId())
                         .orElse(null);
                 yield post != null ? post.getPostId() : null;
             }
             case COMMENT_CREATE -> {
-                // 첫 번째 작성한 댓글
+                // 첫 번째 작성한 댓글이 달린 게시글
                 Comment comment = commentRepository.findFirstByUser_UserIdOrderByCreatedAtAsc(user.getUserId())
                         .orElse(null);
-                yield comment != null ? comment.getCommentId() : null;
+                yield comment != null ? comment.getPost().getPostId() : null;
             }
             case MENTORING_COMPLETE -> {
                 // TODO: 멘토링 도메인 구현 후 추가
@@ -562,6 +599,7 @@ public class MissionService {
                 }
                 yield PineconeMemoryResponse.MemoryDetail.builder()
                         .memoryType("MESSAGE")
+                        .sourceId(memory.getSourceId())
                         .memoryContent(message.getMessageTitle())
                         .relatedUserName(message.getReceiver().getName())
                         .createdAt(message.getCreatedAt().toString())
@@ -574,21 +612,24 @@ public class MissionService {
                 }
                 yield PineconeMemoryResponse.MemoryDetail.builder()
                         .memoryType("POST")
+                        .sourceId(memory.getSourceId())
                         .memoryContent(post.getPostTitle())
                         .relatedUserName(null)
                         .createdAt(post.getCreatedAt().toString())
                         .build();
             }
             case COMMENT -> {
-                Comment comment = commentRepository.findById(memory.getSourceId()).orElse(null);
-                if (comment == null) {
+                // sourceId는 post_id (댓글이 달린 게시글)
+                Post post = postRepository.findById(memory.getSourceId()).orElse(null);
+                if (post == null) {
                     yield null;
                 }
                 yield PineconeMemoryResponse.MemoryDetail.builder()
                         .memoryType("COMMENT")
-                        .memoryContent(comment.getCommentContent())
-                        .relatedUserName(comment.getPost().getAuthor().getName())
-                        .createdAt(comment.getCreatedAt().toString())
+                        .sourceId(memory.getSourceId())
+                        .memoryContent(post.getPostTitle())
+                        .relatedUserName(post.getAuthor().getName())
+                        .createdAt(post.getCreatedAt().toString())
                         .build();
             }
             case MENTORING -> {
@@ -637,5 +678,53 @@ public class MissionService {
         }
 
         log.info("사용자 미션 초기화 완료 - userId: {}, 미션 개수: {}", user.getUserId(), allMissions.size());
+    }
+
+    // 장학 프로그램 최신 3개 구성
+    private List<MissionProgressResponse.ScholarshipProgramCard> buildScholarshipPrograms() {
+        // 최신 3개 조회
+        List<ScholarshipProgramPost> posts = scholarshipProgramPostRepository
+                .findTop3WithPostAndAuthor(PageRequest.of(0, 3));
+
+        if (posts.isEmpty()) {
+            return List.of();
+        }
+
+        // postId 수집 (썸네일 이미지 조회용)
+        List<Long> postIds = posts.stream()
+                .map(spp -> spp.getPost().getPostId())
+                .toList();
+
+        // N+1 해결: 썸네일 이미지 배치 조회
+        Map<Long, String> thumbnailUrlMap = fileAttachmentRepository
+                .findByFileTargetTypeAndFileTargetIdInAndSortOrderAndPurpose(
+                        FileTargetType.POST,
+                        postIds,
+                        1,
+                        AttachmentPurpose.POST_ATTACHMENT
+                )
+                .stream()
+                .collect(Collectors.toMap(
+                        FileAttachment::getFileTargetId,
+                        attachment -> attachment.getFile().getUrl(region),
+                        (existing, replacement) -> existing
+                ));
+
+        // ScholarshipProgramCard 생성
+        return posts.stream()
+                .map(spp -> {
+                    Post post = spp.getPost();
+                    PostCategory category = post.getPostCategory();
+
+                    return MissionProgressResponse.ScholarshipProgramCard.builder()
+                            .postId(post.getPostId())
+                            .category(category != null ? category.name() : null)
+                            .categoryName(category != null ? category.getDescription() : null)
+                            .title(post.getPostTitle())
+                            .thumbnailUrl(thumbnailUrlMap.get(post.getPostId()))
+                            .createdAt(post.getCreatedAt().toString())
+                            .build();
+                })
+                .toList();
     }
 }

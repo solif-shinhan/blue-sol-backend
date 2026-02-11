@@ -6,8 +6,6 @@ import com.solif.backend.domain.user.entity.User;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
@@ -30,4 +28,7 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 
     // targetId로 조회 (targetId에 sender userId 저장됨)
     List<Notification> findByNotificationTypeAndTargetId(NotificationType type, Long targetId);
+
+    // 수신자와 알림 타입으로 조회 (미션 #5용)
+    List<Notification> findByReceiverAndNotificationType(User receiver, NotificationType type);
 }

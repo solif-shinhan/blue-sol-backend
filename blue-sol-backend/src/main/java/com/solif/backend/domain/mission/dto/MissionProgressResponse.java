@@ -28,6 +28,9 @@ public class MissionProgressResponse {
     @Schema(description = "이번주 미션 리스트 (최대 3개)")
     private List<WeeklyMissionCard> weeklyMissions;
 
+    @Schema(description = "장학 프로그램 최신 3개")
+    private List<ScholarshipProgramCard> scholarshipPrograms;
+
     @Getter
     @Builder
     @Schema(description = "카테고리별 솔방울 획득 상태")
@@ -84,5 +87,28 @@ public class MissionProgressResponse {
 
         @Schema(description = "완료 여부")
         private Boolean isCompleted;
+    }
+
+    @Getter
+    @Builder
+    @Schema(description = "장학 프로그램 카드")
+    public static class ScholarshipProgramCard {
+        @Schema(description = "게시글 ID")
+        private Long postId;
+
+        @Schema(description = "카테고리 (REQUIRED/OPTIONAL)")
+        private String category;
+
+        @Schema(description = "카테고리명 (필수 프로그램/선택 프로그램)")
+        private String categoryName;
+
+        @Schema(description = "프로그램 제목")
+        private String title;
+
+        @Schema(description = "썸네일 이미지 URL")
+        private String thumbnailUrl;
+
+        @Schema(description = "작성 일시")
+        private String createdAt;
     }
 }

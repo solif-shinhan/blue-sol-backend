@@ -4,6 +4,8 @@ import com.solif.backend.domain.mentoringpost.entity.MentoringPost;
 import com.solif.backend.domain.mentoringpost.repository.MentoringPostRepository;
 import com.solif.backend.domain.counselingpost.entity.CounselingPost;
 import com.solif.backend.domain.counselingpost.repository.CounselingPostRepository;
+import com.solif.backend.domain.mission.entity.MissionConditionType;
+import com.solif.backend.domain.mission.event.MissionEvent;
 import com.solif.backend.domain.noticepost.entity.NoticePost;
 import com.solif.backend.domain.noticepost.repository.NoticePostRepository;
 import com.solif.backend.domain.auth.code.AuthErrorCode;
@@ -31,6 +33,7 @@ import com.solif.backend.global.common.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
@@ -59,6 +62,7 @@ public class PostService {
     private final MentoringPostRepository mentoringPostRepository;
     private final CounselingPostRepository counselingPostRepository;
     private final NoticePostRepository noticePostRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Value("${cloud.aws.region.static}")
     private String region;
@@ -215,6 +219,16 @@ public class PostService {
         // 조회수 증가
         post.increaseViewCount();
 
+        // 미션 체크: 재단 소식(공지사항) 확인 (트랜잭션 커밋 후 비동기 처리)
+        // boardId = 4 (재단소식) AND category = NOTICE (공지사항)
+        if (post.getBoard().getBoardId() == 4L && post.getPostCategory() == PostCategory.NOTICE) {
+            eventPublisher.publishEvent(new MissionEvent(
+                    userId,
+                    MissionConditionType.POST_VIEW,
+                    post.getPostId()
+            ));
+        }
+
         // 익명 여부 판단 (boardId=3만 익명)
         boolean isAnonymous = (post.getBoard().getBoardId() == 3L);
 
@@ -284,6 +298,13 @@ public class PostService {
                     .build();
             counselingPostRepository.save(counselingPost);
             log.info("고민상담 생성 - counselingPostId: {}", counselingPost.getCounselingPostId());
+
+            // 미션 체크: 고민상담 게시글 작성 (트랜잭션 커밋 후 비동기 처리)
+            eventPublisher.publishEvent(new MissionEvent(
+                    userId,
+                    MissionConditionType.POST_CREATE,
+                    savedPost.getPostId()
+            ));
         } else if (request.getBoardId() == 4L) {
             // 재단소식
             NoticePost noticePost = NoticePost.builder()

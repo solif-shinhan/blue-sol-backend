@@ -10,6 +10,8 @@ import com.solif.backend.domain.comment.repository.CommentRepository;
 import com.solif.backend.domain.council.repository.CouncilMemberRepository;
 import com.solif.backend.domain.councilreview.entity.CouncilReviewPost;
 import com.solif.backend.domain.councilreview.repository.CouncilReviewPostRepository;
+import com.solif.backend.domain.mission.entity.MissionConditionType;
+import com.solif.backend.domain.mission.event.MissionEvent;
 import com.solif.backend.domain.notification.entity.NotificationType;
 import com.solif.backend.domain.notification.entity.NotificationTargetType;
 import com.solif.backend.domain.notification.event.NotificationEvent;
@@ -89,6 +91,15 @@ public class CommentService {
 
         // 저장
         Comment savedComment = commentRepository.save(comment);
+
+        // 미션 체크: 타인의 게시글에 댓글 작성 (트랜잭션 커밋 후 비동기 처리)
+        if (!post.getAuthor().getUserId().equals(userId)) {
+            eventPublisher.publishEvent(new MissionEvent(
+                    userId,
+                    MissionConditionType.COMMENT_CREATE,
+                    postId
+            ));
+        }
 
         // 알림 발송
         publishCommentNotification(userId, post, savedComment);

@@ -45,6 +45,9 @@ public class PineconeMemoryResponse {
         @Schema(description = "추억 타입 (MESSAGE/POST/COMMENT/MENTORING)")
         private String memoryType;
 
+        @Schema(description = "추억 ID (messageId 또는 postId)")
+        private Long sourceId;
+
         @Schema(description = "추억 제목/내용")
         private String memoryContent;
 

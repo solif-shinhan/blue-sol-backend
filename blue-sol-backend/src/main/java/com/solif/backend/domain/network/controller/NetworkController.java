@@ -106,4 +106,17 @@ public class NetworkController {
         NetworkSearchResponse response = networkService.searchNetworks(userId, keyword);
         return ResponseFactory.success(NetworkSuccessCode.NETWORK_SEARCH_SUCCESS, response);
     }
+
+    @Operation(
+            summary = "교류망 사용자 카드 조회",
+            description = "특정 사용자의 SOLID 카드 정보를 조회합니다. (NFC/QR 연동용)",
+            security = @SecurityRequirement(name = "Bearer Authentication")
+    )
+    @GetMapping("/users/{userId}/card")
+    public ResponseEntity<SuccessResponse<NetworkUserCardResponse>> getUserCard(
+            @PathVariable Long userId
+    ) {
+        NetworkUserCardResponse response = networkService.getUserCard(userId);
+        return ResponseFactory.success(NetworkSuccessCode.NETWORK_USER_CARD_SUCCESS, response);
+    }
 }

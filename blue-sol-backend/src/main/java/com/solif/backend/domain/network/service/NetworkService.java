@@ -556,4 +556,24 @@ public class NetworkService {
             return List.of();
         }
     }
+
+    // 교류망 사용자 카드 조회
+    public NetworkUserCardResponse getUserCard(Long targetUserId) {
+        User targetUser = findUserById(targetUserId);
+        UserProfile profile = userProfileRepository.findByUser_UserId(targetUserId).orElse(null);
+        List<String> interests = getInterestsByUser(targetUser);
+        Integer joinYear = getJoinYear(targetUser);
+
+        return NetworkUserCardResponse.builder()
+                .userId(targetUser.getUserId())
+                .userName(targetUser.getName())
+                .userCharacter(profile != null ? profile.getUserCharacter() : null)
+                .characterImageUrl(buildS3Url(profile != null ? profile.getUserCharacter() : null))
+                .backgroundPattern(profile != null ? profile.getBackgroundPattern() : null)
+                .backgroundImageUrl(buildS3Url(profile != null ? profile.getBackgroundPattern() : null))
+                .solidGoalName(profile != null ? profile.getSolidGoalName() : null)
+                .interests(interests)
+                .joinYear(joinYear)
+                .build();
+    }
 }

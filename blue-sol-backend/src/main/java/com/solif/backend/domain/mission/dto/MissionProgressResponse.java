@@ -28,6 +28,9 @@ public class MissionProgressResponse {
     @Schema(description = "이번주 미션 리스트 (최대 3개)")
     private List<WeeklyMissionCard> weeklyMissions;
 
+    @Schema(description = "푸른 SOL 역량강화 동영상 목록 (최대 20개)")
+    private List<SkillDevelopmentVideo> skillDevelopmentVideos;
+
     @Schema(description = "장학 프로그램 최신 3개")
     private List<ScholarshipProgramCard> scholarshipPrograms;
 
@@ -87,6 +90,29 @@ public class MissionProgressResponse {
 
         @Schema(description = "완료 여부")
         private Boolean isCompleted;
+    }
+
+    @Getter
+    @Builder
+    @Schema(description = "역량강화 동영상 카드")
+    public static class SkillDevelopmentVideo {
+        @Schema(description = "동영상 ID")
+        private String videoId;
+
+        @Schema(description = "제목")
+        private String title;
+
+        @Schema(description = "썸네일 URL")
+        private String thumbnailUrl;
+
+        @Schema(description = "카테고리 (인성/사회/과학/창업/취업)")
+        private String category;
+
+        @Schema(description = "강연자")
+        private String speaker;
+
+        @Schema(description = "동영상 URL")
+        private String videoUrl;
     }
 
     @Getter

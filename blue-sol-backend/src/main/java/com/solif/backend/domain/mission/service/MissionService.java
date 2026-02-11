@@ -30,6 +30,8 @@ import com.solif.backend.domain.scholarshipprogrampost.entity.ScholarshipProgram
 import com.solif.backend.domain.scholarshipprogrampost.repository.ScholarshipProgramPostRepository;
 import com.solif.backend.domain.user.entity.User;
 import com.solif.backend.domain.user.repository.UserRepository;
+import com.solif.backend.domain.youtube.dto.VideoDto;
+import com.solif.backend.domain.youtube.service.YouTubeService;
 import com.solif.backend.global.common.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -61,6 +63,9 @@ public class MissionService {
     private final MessageRepository messageRepository;
     private final PostRepository postRepository;
     private final CommentRepository commentRepository;
+
+    // YouTube API 연동
+    private final YouTubeService youtubeService;
     private final ScholarshipProgramPostRepository scholarshipProgramPostRepository;
     private final FileAttachmentRepository fileAttachmentRepository;
 
@@ -87,6 +92,9 @@ public class MissionService {
         // 이번주 미션 리스트 (각 카테고리의 현재 진행 중인 미션)
         List<MissionProgressResponse.WeeklyMissionCard> weeklyMissions = buildWeeklyMissions(userMissions);
 
+        // 푸른 SOL 역량강화 동영상 조회 (YouTube API)
+        List<MissionProgressResponse.SkillDevelopmentVideo> skillDevelopmentVideos = buildSkillDevelopmentVideos();
+
         // 장학 프로그램 최신 3개
         List<MissionProgressResponse.ScholarshipProgramCard> scholarshipPrograms = buildScholarshipPrograms();
 
@@ -96,6 +104,7 @@ public class MissionService {
                 .daysUntilSeasonEnd(daysUntilEnd)
                 .categoryProgress(categoryProgress)
                 .weeklyMissions(weeklyMissions)
+                .skillDevelopmentVideos(skillDevelopmentVideos)
                 .scholarshipPrograms(scholarshipPrograms)
                 .build();
     }
@@ -208,7 +217,6 @@ public class MissionService {
                     }
                 }
             }
-
 
             completedMissions.add(
                     PineconeMemoryResponse.CompletedMission.builder()
@@ -663,6 +671,30 @@ public class MissionService {
 //            case MENTORING -> MissionConditionType.MENTORING_COMPLETE;
 //        };
 //    }
+
+    // 푸른 SOL 역량강화 동영상 조회 (YouTube API)
+    private List<MissionProgressResponse.SkillDevelopmentVideo> buildSkillDevelopmentVideos() {
+        try {
+            // YouTube API를 통해 최신 동영상 20개 조회
+            List<VideoDto> youtubeVideos = youtubeService.getLatestVideos(20);
+
+            // DTO 변환
+            return youtubeVideos.stream()
+                .map(video -> MissionProgressResponse.SkillDevelopmentVideo.builder()
+                    .videoId(video.getVideoId())
+                    .title(video.getTitle())
+                    .thumbnailUrl(video.getThumbnailUrl())
+                    .category(video.getCategory())
+                    .speaker(video.getSpeaker())
+                    .videoUrl(video.getVideoUrl())
+                    .build())
+                .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("YouTube 동영상 조회 실패", e);
+            // 에러 발생 시 빈 리스트 반환
+            return new ArrayList<>();
+        }
+    }
 
     // 회원가입 완료 후 미션 초기화
     @Transactional

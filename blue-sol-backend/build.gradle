@@ -48,6 +48,15 @@ dependencies {
 	// Google Cloud Vision API
 	implementation 'com.google.cloud:google-cloud-vision:3.20.0'
 
+	// YouTube Data API
+	implementation 'com.google.api-client:google-api-client:2.8.1'
+	implementation 'com.google.apis:google-api-services-youtube:v3-rev20251217-2.0.0'
+	implementation 'com.google.http-client:google-http-client-jackson2:2.1.0'
+
+	// Caffeine Cache
+	implementation 'org.springframework.boot:spring-boot-starter-cache'
+	implementation 'com.github.ben-manes.caffeine:caffeine:3.1.8'
+
 	runtimeOnly 'com.h2database:h2'
 }
 

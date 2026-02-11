@@ -67,5 +67,8 @@ public class NetworkRecommendationResponse {
 
         @Schema(description = "가입 연도", example = "2026")
         private Integer joinYear;
+
+        @Schema(description = "사용자 역할", example = "JUNIOR")
+        private String userRole;
     }
 }

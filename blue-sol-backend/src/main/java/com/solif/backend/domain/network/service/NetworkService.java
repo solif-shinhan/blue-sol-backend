@@ -543,6 +543,7 @@ public class NetworkService {
                             .councilName(membership != null ? membership.getCouncil().getCouncilName() : null)
                             .schoolName(getSchoolOrJob(u))
                             .joinYear(getJoinYear(u))
+                            .userRole(u.getUserRole().name())
                             .build();
                 })
                 .collect(Collectors.toList());

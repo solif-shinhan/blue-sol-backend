@@ -25,40 +25,53 @@ repositories {
 }
 
 dependencies {
+	// ✅ 구글 클라우드 라이브러리 버전 통일
+	implementation platform("com.google.cloud:libraries-bom:26.46.0")
+
+	// ✅ gRPC 버전도 강제 통일 (문제 계속 나서 넣는거)
+	implementation platform("io.grpc:grpc-bom:1.56.1")
+
+	// ✅ Vision (버전은 BOM이 관리)
+	implementation "com.google.cloud:google-cloud-vision"
+	implementation "io.grpc:grpc-netty-shaded"
+
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
-	compileOnly 'org.projectlombok:lombok'
-	runtimeOnly 'com.mysql:mysql-connector-j'
-	annotationProcessor 'org.projectlombok:lombok'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.15'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.15'
+
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+
+	runtimeOnly 'com.mysql:mysql-connector-j'
+
 	implementation 'io.jsonwebtoken:jjwt-api:0.12.3'
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.3'
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.3'
-	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-	implementation 'software.amazon.awssdk:s3:2.29.43' // AWS S3
+
+	implementation 'software.amazon.awssdk:s3:2.29.43'
+	implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3:3.4.0'
+
 	implementation 'com.google.zxing:core:3.5.4' // QR Code 생성 (ZXing)
 	implementation 'com.google.zxing:javase:3.5.4' // QR Code 생성 (ZXing)
-	implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3:3.4.0'
-//	implementation 'org.springframework.cloud:spring-cloud-starter-aws:2.2.6.RELEASE'
-
-	// Google Cloud Vision API
-	implementation 'com.google.cloud:google-cloud-vision:3.20.0'
 
 	// YouTube Data API
 	implementation 'com.google.api-client:google-api-client:2.8.1'
 	implementation 'com.google.apis:google-api-services-youtube:v3-rev20251217-2.0.0'
 	implementation 'com.google.http-client:google-http-client-jackson2:2.1.0'
 
-	// Caffeine Cache
+	// Cache
 	implementation 'org.springframework.boot:spring-boot-starter-cache'
 	implementation 'com.github.ben-manes.caffeine:caffeine:3.1.8'
 
 	runtimeOnly 'com.h2database:h2'
+
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
+
 
 tasks.named('test') {
 	useJUnitPlatform()

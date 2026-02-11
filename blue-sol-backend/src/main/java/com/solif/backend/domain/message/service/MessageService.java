@@ -6,7 +6,7 @@ import com.solif.backend.domain.file.entity.FileTargetType;
 import com.solif.backend.domain.file.repository.FileAttachmentRepository;
 import com.solif.backend.domain.file.service.FileService;
 import com.solif.backend.domain.mission.entity.MissionConditionType;
-import com.solif.backend.domain.mission.service.MissionService;
+import com.solif.backend.domain.mission.event.MissionEvent;
 import com.solif.backend.domain.notification.entity.NotificationType;
 import com.solif.backend.domain.notification.entity.NotificationTargetType;
 import com.solif.backend.domain.notification.event.NotificationEvent;
@@ -45,7 +45,6 @@ public class MessageService {
     private final FileService fileService;
     private final FileAttachmentRepository fileAttachmentRepository;
     private final UserProfileRepository userProfileRepository;
-    private final MissionService missionService;
 
     @Value("${cloud.aws.s3.bucket}")
     private String bucket;
@@ -117,11 +116,19 @@ public class MessageService {
 
         Message savedMessage = messageRepository.save(message);
 
-        // 미션 체크: 미션 #3 (첫 쪽지 발송)
-        missionService.checkAndCompleteMission(senderId, MissionConditionType.MESSAGE, savedMessage.getMessageId());
+        // 미션 체크: 미션 #3 (첫 쪽지 발송) (트랜잭션 커밋 후 비동기 처리)
+        eventPublisher.publishEvent(new MissionEvent(
+                senderId,
+                MissionConditionType.MESSAGE,
+                savedMessage.getMessageId()
+        ));
 
-        // 미션 체크: 미션 #5 (경험나누기 → 쪽지 소통)
-        missionService.checkAndCompleteMission(senderId, MissionConditionType.MESSAGE_THREAD, savedMessage.getMessageId());
+        // 미션 체크: 미션 #5 (경험나누기 → 쪽지 소통) (트랜잭션 커밋 후 비동기 처리)
+        eventPublisher.publishEvent(new MissionEvent(
+                senderId,
+                MissionConditionType.MESSAGE_THREAD,
+                savedMessage.getMessageId()
+        ));
 
         // 파일 확정 (fileIds가 있으면)
         if (request.getFileIds() != null && !request.getFileIds().isEmpty()) {

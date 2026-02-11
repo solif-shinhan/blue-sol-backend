@@ -13,16 +13,20 @@ import com.solif.backend.domain.council.repository.CouncilRepository;
 import com.solif.backend.domain.notification.entity.NotificationType;
 import com.solif.backend.domain.notification.entity.NotificationTargetType;
 import com.solif.backend.domain.notification.event.NotificationEvent;
+import com.solif.backend.domain.profile.entity.UserProfile;
+import com.solif.backend.domain.profile.repository.UserProfileRepository;
 import com.solif.backend.domain.user.entity.User;
 import com.solif.backend.domain.user.repository.UserRepository;
 import com.solif.backend.global.common.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -35,7 +39,19 @@ public class CouncilMemberService {
     private final CouncilRepository councilRepository;
     private final CouncilMemberRepository councilMemberRepository;
     private final UserRepository userRepository;
+    private final UserProfileRepository userProfileRepository;
     private final ApplicationEventPublisher eventPublisher;
+
+    @Value("${cloud.aws.s3.bucket}")
+    private String bucket;
+
+    @Value("${cloud.aws.region.static}")
+    private String region;
+
+    private String buildS3Url(String key) {
+        if (key == null || key.isBlank()) return null;
+        return String.format("https://%s.s3.%s.amazonaws.com/%s", bucket, region, key);
+    }
 
     // 자치회 멤버 목록 조회
     public MemberListResponse getMembers(Long councilId) {
@@ -49,9 +65,23 @@ public class CouncilMemberService {
         List<CouncilMember> members = councilMemberRepository
                 .findByCouncilOrderByRoleDescJoinedAtAsc(council);
 
+        // UserProfile 배치 조회 (N+1 방지)
+        List<Long> userIds = members.stream()
+                .map(member -> member.getUser().getUserId())
+                .collect(Collectors.toList());
+
+        Map<Long, UserProfile> profileMap = userProfileRepository.findByUser_UserIdIn(userIds).stream()
+                .collect(Collectors.toMap(
+                        profile -> profile.getUser().getUserId(),
+                        profile -> profile
+                ));
+
         // DTO 변환
         List<CouncilMemberResponse> memberResponses = members.stream()
-                .map(CouncilMemberResponse::from)
+                .map(member -> {
+                    UserProfile profile = profileMap.get(member.getUser().getUserId());
+                    return CouncilMemberResponse.from(member, profile, this::buildS3Url);
+                })
                 .collect(Collectors.toList());
 
         return MemberListResponse.of(councilId, memberResponses);

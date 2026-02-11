@@ -2,11 +2,13 @@ package com.solif.backend.domain.council.dto;
 
 import com.solif.backend.domain.council.entity.CouncilMember;
 import com.solif.backend.domain.council.entity.CouncilMemberRole;
+import com.solif.backend.domain.profile.entity.UserProfile;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
+import java.util.function.Function;
 
 @Getter
 @Builder
@@ -31,7 +33,23 @@ public class CouncilMemberResponse {
     @Schema(description = "학교명", example = "제주대학교")
     private String schoolName;
 
-    public static CouncilMemberResponse from(CouncilMember member) {
+    @Schema(description = "캐릭터", example = "character1.png")
+    private String userCharacter;
+
+    @Schema(description = "캐릭터 이미지 URL", example = "https://bucket.s3.region.amazonaws.com/character1.png")
+    private String characterImageUrl;
+
+    @Schema(description = "배경 패턴", example = "pattern1.png")
+    private String backgroundPattern;
+
+    @Schema(description = "배경 이미지 URL", example = "https://bucket.s3.region.amazonaws.com/pattern1.png")
+    private String backgroundImageUrl;
+
+    public static CouncilMemberResponse from(
+            CouncilMember member,
+            UserProfile profile,
+            Function<String, String> buildS3Url
+    ) {
         return CouncilMemberResponse.builder()
                 .userId(member.getUser().getUserId())
                 .name(member.getUser().getName())
@@ -39,6 +57,10 @@ public class CouncilMemberResponse {
                 .joinedAt(member.getJoinedAt())
                 .region(member.getUser().getRegion())
                 .schoolName(member.getUser().getSchoolName())
+                .userCharacter(profile != null ? profile.getUserCharacter() : null)
+                .characterImageUrl(buildS3Url.apply(profile != null ? profile.getUserCharacter() : null))
+                .backgroundPattern(profile != null ? profile.getBackgroundPattern() : null)
+                .backgroundImageUrl(buildS3Url.apply(profile != null ? profile.getBackgroundPattern() : null))
                 .build();
     }
 }

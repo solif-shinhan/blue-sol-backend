@@ -22,6 +22,10 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     // 안읽은 알림 수
     long countByReceiverAndIsReadFalse(User receiver);
 
+    // 전체 안읽은 알림 목록 (카테고리 무관)
+    Slice<Notification> findByReceiverAndIsReadFalseOrderByCreatedAtDesc(
+            User receiver, Pageable pageable);
+
     // targetId로 조회 (targetId에 sender userId 저장됨)
     List<Notification> findByNotificationTypeAndTargetId(NotificationType type, Long targetId);
 

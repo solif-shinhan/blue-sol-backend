@@ -8,7 +8,8 @@ import lombok.RequiredArgsConstructor;
 public enum FileFolder {
     COUNCIL_REVIEW("council-review"),   // 자치회 활동 후기
     POST("post"),                        // 게시판
-    MENTORING("mentoring");              // 멘토링
+    MENTORING("mentoring"),              // 멘토링
+    MESSAGE("message");                  // 쪽지
 
     private final String folderName;
 }

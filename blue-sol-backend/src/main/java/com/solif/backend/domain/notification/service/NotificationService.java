@@ -8,7 +8,6 @@ import com.solif.backend.domain.notification.dto.*;
 import com.solif.backend.domain.notification.entity.*;
 import com.solif.backend.domain.notification.repository.NotificationRepository;
 import com.solif.backend.domain.notification.repository.SseEmitterRepository;
-import com.solif.backend.domain.profile.entity.UserProfile;
 import com.solif.backend.domain.profile.repository.UserProfileRepository;
 import com.solif.backend.domain.user.entity.User;
 import com.solif.backend.domain.user.repository.UserRepository;
@@ -300,5 +299,19 @@ public class NotificationService {
         if (!notification.getReceiver().getUserId().equals(userId)) {
             throw new CustomException(NotificationErrorCode.UNAUTHORIZED_NOTIFICATION_ACCESS);
         }
+    }
+
+    /**
+     * 팝업 알림 전송 (DB 저장 없음)
+     * 미션 완료, 솔방울 획득 등 일회성 팝업에 사용
+     */
+    public void sendPopup(Long receiverUserId, String eventName, Object data) {
+        Map<String, SseEmitter> emitters = sseEmitterRepository.findAllByUserId(receiverUserId);
+
+        emitters.forEach((emitterId, emitter) -> {
+            sendToEmitter(emitter, emitterId, eventName, data);
+        });
+
+        log.info("팝업 알림 전송 - userId: {}, eventName: {}", receiverUserId, eventName);
     }
 }

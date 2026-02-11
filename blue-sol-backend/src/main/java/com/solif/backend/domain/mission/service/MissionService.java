@@ -10,6 +10,7 @@ import com.solif.backend.domain.file.repository.FileAttachmentRepository;
 import com.solif.backend.domain.message.entity.Message;
 import com.solif.backend.domain.message.repository.MessageRepository;
 import com.solif.backend.domain.mission.code.MissionErrorCode;
+import com.solif.backend.domain.mission.dto.MissionPopupResponse;
 import com.solif.backend.domain.mission.dto.MissionProgressResponse;
 import com.solif.backend.domain.mission.dto.PineconeEarnResponse;
 import com.solif.backend.domain.mission.dto.PineconeMemoryResponse;
@@ -21,6 +22,7 @@ import com.solif.backend.domain.mission.repository.UserPineconeRepository;
 import com.solif.backend.domain.notification.entity.Notification;
 import com.solif.backend.domain.notification.entity.NotificationType;
 import com.solif.backend.domain.notification.repository.NotificationRepository;
+import com.solif.backend.domain.notification.service.NotificationService;
 import com.solif.backend.domain.post.entity.Post;
 import com.solif.backend.domain.post.entity.PostCategory;
 import com.solif.backend.domain.post.repository.PostRepository;
@@ -63,6 +65,7 @@ public class MissionService {
     private final MessageRepository messageRepository;
     private final PostRepository postRepository;
     private final CommentRepository commentRepository;
+    private final NotificationService notificationService;
 
     // YouTube API 연동
     private final YouTubeService youtubeService;
@@ -149,10 +152,11 @@ public class MissionService {
             savePineconeMemory(pinecone, userMission);
         }
 
-        // TODO: 알림 발송
-        // notificationService.send(userId, ...);
-
         log.info("솔방울 획득 - userId: {}, category: {}, season: {}", userId, category, currentSeason);
+
+        // 🆕 솔방울 획득 팝업 발송
+        Long totalEarnedCount = userPineconeRepository.countByUserAndSeasonKey(user, currentSeason);
+        sendPineconeEarnedPopup(userId, category, totalEarnedCount.intValue());
 
         return PineconeEarnResponse.builder()
                 .pineconeId(pinecone.getUserPineconeId())
@@ -269,6 +273,9 @@ public class MissionService {
         if (shouldComplete) {
             userMission.complete();
             log.info("미션 완료 - userId: {}, missionId: {}, conditionType: {}", userId, mission.getMissionId(), conditionType);
+
+            // 카테고리 미션 3개 완료 체크 후 팝업 발송
+            checkAndSendCategoryCompletePopup(userId, mission.getMissionCategory());
         }
     }
 
@@ -301,6 +308,9 @@ public class MissionService {
             userMission.complete();
             log.info("미션 완료 (카운트 달성) - userId: {}, missionId: {}, count: {}/{}",
                     userId, mission.getMissionId(), userMission.getProgressCount(), targetCount);
+
+            // 카테고리 미션 3개 완료 체크 후 팝업 발송
+            checkAndSendCategoryCompletePopup(userId, mission.getMissionCategory());
         }
     }
 
@@ -758,5 +768,49 @@ public class MissionService {
                             .build();
                 })
                 .toList();
+    }
+
+    // 카테고리 미션 3개 완료 체크 후 팝업 발송
+    private void checkAndSendCategoryCompletePopup(Long userId, MissionCategory category) {
+        User user = findUserById(userId);
+        String currentSeason = getCurrentSeasonKey();
+
+        // 해당 카테고리 완료된 미션 개수 확인
+        Long completedCount = userMissionRepository.countByUserAndCategoryAndStatus(
+                user, category, MissionStatus.COMPLETED
+        );
+
+        // 3개 모두 완료 && 아직 솔방울 미획득인 경우에만 팝업
+        if (completedCount == 3) {
+            boolean alreadyEarned = userPineconeRepository.existsByUserAndPineconeCategoryAndSeasonKey(
+                    user, category, currentSeason
+            );
+
+            if (!alreadyEarned) {
+                MissionPopupResponse popup = MissionPopupResponse.builder()
+                        .popupType("CATEGORY_COMPLETE")
+                        .category(getCategoryName(category))
+                        .message("미션 완료! " + getCategoryName(category) + " 솔방울 받으러 가기")
+                        .build();
+
+                notificationService.sendPopup(userId, "mission_popup", popup);
+                log.info("카테고리 완료 팝업 발송 - userId: {}, category: {}", userId, category);
+            }
+        }
+    }
+
+    // 솔방울 획득 팝업 발송
+    private void sendPineconeEarnedPopup(Long userId, MissionCategory category, Integer totalEarnedCount) {
+        Integer remainingCount = 3 - totalEarnedCount;
+
+        MissionPopupResponse popup = MissionPopupResponse.builder()
+                .popupType("PINECONE_EARNED")
+                .category(getCategoryName(category))
+                .message(getCategoryName(category) + " 솔방울을 획득했어요! 명함 받기 보상까지 " + remainingCount + "번 남았어요.")
+                .remainingCount(remainingCount)
+                .build();
+
+        notificationService.sendPopup(userId, "mission_popup", popup);
+        log.info("솔방울 획득 팝업 발송 - userId: {}, category: {}, remaining: {}", userId, category, remainingCount);
     }
 }

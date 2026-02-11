@@ -60,6 +60,8 @@ public class SecurityConfig {
                                 "/api/v1/posts/*/comments"          // 댓글 목록 조회
                         ).permitAll()
 
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
                         .requestMatchers(
                                 "/api/auth/signup",               // 회원가입
                                 "/api/auth/login",                // 로그인
@@ -92,7 +94,7 @@ public class SecurityConfig {
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
 
         // 허용할 헤더 (Authorization 헤더 포함)
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Cache-Control"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
 
         // 자격 증명 허용 (JWT 전송에 필요)
         configuration.setAllowCredentials(true);

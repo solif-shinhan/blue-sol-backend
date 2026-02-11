@@ -86,7 +86,7 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
 
         // 요청을 허용할 프론트엔드 주소 (Netlify)
-        configuration.setAllowedOrigins(Arrays.asList("https://blue-sol.netlify.app", "http://localhost:3000", "https://stg-api.bluesol.site"));
+        configuration.setAllowedOrigins(Arrays.asList("https://blue-sol.netlify.app", "http://localhost:3000", "https://stg-api.bluesol.site", "http://192.168.0.136:3000", "https://bluesol.site", "http://bluesol.site"));
 
         // 허용할 HTTP 메서드
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));

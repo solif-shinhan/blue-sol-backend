@@ -38,16 +38,20 @@ public class VideoDto {
         if (searchResult.getId() == null || searchResult.getId().getVideoId() == null) {
             return null;
         }
-        
-        String videoId = searchResult.getId().getVideoId();
+
         var snippet = searchResult.getSnippet();
+        if (snippet == null){
+            return null;
+        }
+
+        String videoId = searchResult.getId().getVideoId();
         
         // publishedAt을 LocalDateTime으로 변환
         LocalDateTime publishedAt = null;
         if (snippet.getPublishedAt() != null) {
             publishedAt = LocalDateTime.ofInstant(
                 Instant.ofEpochMilli(snippet.getPublishedAt().getValue()),
-                ZoneId.systemDefault()
+                ZoneId.of("Asia/Seoul")
             );
         }
         
@@ -64,13 +68,13 @@ public class VideoDto {
         }
         
         return VideoDto.builder()
-            .videoId(videoId)
-            .title(snippet.getTitle())
-            .description(snippet.getDescription())
-            .thumbnailUrl(thumbnailUrl)
-            .channelTitle(snippet.getChannelTitle())
-            .publishedAt(publishedAt)
-            .videoUrl("https://www.youtube.com/watch?v=" + videoId)
-            .build();
+                .videoId(videoId)
+                .title(snippet.getTitle() != null ? snippet.getTitle() : "")  // ← null-safe
+                .description(snippet.getDescription() != null ? snippet.getDescription() : "")
+                .thumbnailUrl(thumbnailUrl)
+                .channelTitle(snippet.getChannelTitle() != null ? snippet.getChannelTitle() : "")
+                .publishedAt(publishedAt)
+                .videoUrl("https://www.youtube.com/watch?v=" + videoId)
+                .build();
     }
 }

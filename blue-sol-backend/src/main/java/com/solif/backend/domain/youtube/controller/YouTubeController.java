@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -38,6 +39,9 @@ public class YouTubeController {
         log.info("동영상 목록 조회 요청: maxResults={}", maxResults);
         
         // 최대값 제한
+        if (maxResults < 1) {
+            maxResults = 1;
+        }
         if (maxResults > 50) {
             maxResults = 50;
         }
@@ -78,6 +82,7 @@ public class YouTubeController {
      * POST /api/youtube/refresh
      */
     @PostMapping("/refresh")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "캐시 수동 갱신", description = "YouTube 동영상 캐시를 수동으로 갱신합니다. (관리자용)")
     public ResponseEntity<String> refreshCache() {
         log.info("YouTube 캐시 수동 갱신 요청");

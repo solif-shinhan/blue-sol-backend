@@ -47,5 +47,3 @@ youtube:
   api:
     key: ${YOUTUBE_API_KEY}
     channel-id: ${YOUTUBE_CHANNEL_ID}
-  cache:
-    ttl: 3600

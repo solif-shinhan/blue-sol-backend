@@ -30,6 +30,8 @@ import com.solif.backend.domain.scholarshipprogrampost.entity.ScholarshipProgram
 import com.solif.backend.domain.scholarshipprogrampost.repository.ScholarshipProgramPostRepository;
 import com.solif.backend.domain.user.entity.User;
 import com.solif.backend.domain.user.repository.UserRepository;
+import com.solif.backend.domain.youtube.dto.VideoDto;
+import com.solif.backend.domain.youtube.service.YouTubeService;
 import com.solif.backend.global.common.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -63,7 +65,7 @@ public class MissionService {
     private final CommentRepository commentRepository;
 
     // YouTube API 연동
-    private final com.solif.backend.domain.youtube.service.YouTubeService youtubeService;
+    private final YouTubeService youtubeService;
     private final ScholarshipProgramPostRepository scholarshipProgramPostRepository;
     private final FileAttachmentRepository fileAttachmentRepository;
 
@@ -674,8 +676,7 @@ public class MissionService {
     private List<MissionProgressResponse.SkillDevelopmentVideo> buildSkillDevelopmentVideos() {
         try {
             // YouTube API를 통해 최신 동영상 20개 조회
-            List<com.solif.backend.domain.youtube.dto.VideoDto> youtubeVideos =
-                youtubeService.getLatestVideos(20);
+            List<VideoDto> youtubeVideos = youtubeService.getLatestVideos(20);
 
             // DTO 변환
             return youtubeVideos.stream()

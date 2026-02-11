@@ -35,8 +35,8 @@ public class MissionEventListener {
                 );
             }
         } catch (Exception e) {
-            log.warn("미션 체크 실패 - userId: {}, conditionType: {}, sourceId: {}, error: {}",
-                    event.getUserId(), event.getConditionType(), event.getSourceId(), e.getMessage());
+            log.warn("미션 체크 실패 - userId: {}, conditionType: {}, sourceId: {}",
+                    +event.getUserId(), event.getConditionType(), event.getSourceId(), e);
         }
     }
 }

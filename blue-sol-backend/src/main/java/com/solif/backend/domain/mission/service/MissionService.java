@@ -569,15 +569,16 @@ public class MissionService {
             }
             case MESSAGE_THREAD -> {
                 // 경험나누기로 연결된 첫 쪽지
-                // targetId에 내(sender) userId가 들어있음
+                // 나에게 온 HELP 알림 조회
                 List<Notification> helpNotifications = notificationRepository
-                        .findByNotificationTypeAndTargetId(NotificationType.HELP, user.getUserId());
+                        .findByReceiverAndNotificationType(user, NotificationType.HELP);
 
                 for (Notification notification : helpNotifications) {
-                    Long receiverId = notification.getReceiver().getUserId();
+                    Long senderId = notification.getTargetId();  // 도움 요청한 사람
 
+                    // 내가 그 사람에게 보낸 첫 쪽지 찾기
                     Message message = messageRepository.findFirstBySender_UserIdAndReceiver_UserIdOrderByCreatedAtAsc(
-                            user.getUserId(), receiverId
+                            user.getUserId(), senderId
                     ).orElse(null);
 
                     if (message != null) {
